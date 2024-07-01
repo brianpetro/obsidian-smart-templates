@@ -1,0 +1,7 @@
+#smart-commands-settings {
+  .setting-item-control {
+    > select {
+      max-width: 500px;
+    }
+  }
+}

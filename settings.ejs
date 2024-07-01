@@ -1,0 +1,54 @@
+<div id="smart-commands-settings">
+  <h1>Smart Commands</h1>
+  <div class="setting-component"
+    data-name="Model Platform"
+    data-setting="chat_model_platform_key"
+    data-type="dropdown"
+    data-description="Select a model platform to use with Smart Chat."
+    data-callback="changed_smart_chat_platform"
+    <%- chat_platforms.map((platform, i) => `data-option-${i + 1}="${platform.key}|${platform.description}"`).join('\n') %>
+  ></div>
+  <% if(chat_platform?.fetch_models) { %>
+    <% if(settings[settings.chat_model_platform_key]?.api_key) { %>
+      <div class="setting-component"
+        data-name="Model Name"
+        data-type="dropdown"
+        data-setting="<%= settings.chat_model_platform_key %>.model_name"
+        <%- platform_chat_models.map((model, i) => `data-option-${i}="${model.key}|${model.model_name} (${model.description})"`).join('\n') %>
+      ></div>
+    <% } %>
+    <% if(!platform_chat_models.length) { %>
+      <div class="setting-component"
+        data-name="Refresh Models List"
+        data-type="button"
+        data-callback="changed_smart_chat_platform"
+      ></div>
+    <% } %>
+    <div class="setting-component"
+      data-name="<%= chat_platform.description %> API Key"
+      data-type="text"
+      data-setting="<%= settings.chat_model_platform_key %>.api_key"
+      <% if(chat_platform.signup_url) { %>
+        data-description="<a href='<%= chat_platform.signup_url %>'>Get API Key</a> for <%= chat_platform.description %>."
+      <% } else { %>
+        data-description="API Key for <%= chat_platform.description %>."
+      <% } %>
+      data-placeholder="Enter an API Key"
+      data-button="Save"
+      data-callback="changed_smart_chat_platform"
+    ></div>
+  <% } %>
+  <h2>Smart Templates</h2>
+  <div class="setting-component"
+    data-name="Templates Folder"
+    data-setting="smart_templates.templates_folder"
+    data-type="text"
+  ></div>
+  <% Object.keys(settings.smart_templates.var_prompts).forEach(var_name => { %>
+    <div class="setting-component"
+      data-name="<%= var_name %>"
+      data-type="textarea"
+      data-setting="smart_templates.var_prompts.<%= var_name %>.prompt"
+    ></div>
+  <% }) %>
+</div>

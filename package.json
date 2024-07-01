@@ -1,0 +1,35 @@
+{
+  "name": "smart-commands",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Configurable commands for utilizing Smart Environments in Obsidian.",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "test": "npx ava --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brianpetro/obsidian-smart-commands.git"
+  },
+  "keywords": [
+    "Obsidian",
+    "Smart",
+    "Connections"
+  ],
+  "author": "🌴 Brian Joseph Petro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brianpetro/obsidian-smart-commands/issues"
+  },
+  "homepage": "https://github.com/brianpetro/obsidian-smart-commands#readme",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "smart-chat-model": "file:../jsbrains/smart-chat-model",
+    "smart-templates": "file:../jsbrains/smart-templates"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "esbuild": "^0.21.5",
+    "obsidian": "^1.5.7-1"
+  }
+}
