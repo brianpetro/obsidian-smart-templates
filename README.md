@@ -16,8 +16,8 @@ Create and use customizable templates with dynamic variables.
 
 *More features coming soon...*:
 - Integration with Smart Connections to retrieve additional context
-- Integration with Smart Memos
-- Integration with Smart Connections Visualizer for visual selection of nodes to use as context
+- Integration with [Smart Memos](https://github.com/Mossy1022/Smart-Memos)
+- Integration with [Smart Connections Visualizer](https://github.com/Mossy1022/Smart-Connections-Visualizer) for visual selection of nodes to use as context
 
 ## Installation
 
@@ -85,3 +85,10 @@ graph TD
 ## About
 
 Created by [🌴 Brian](https://x.com/wfhbrian) as a companion plugin to [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections/), a plugin for Obsidian that implements a Smart Environment for utilizing AI to enhance your notes.
+
+### Development
+
+Uses [JSBrains](https://jsbrains.org/) to minimize dependencies and provide an easily adaptable architecture that supports new models and platforms.
+
+- [Smart Templates](https://github.com/brianpetro/jsbrains/tree/main/smart-templates)
+- [Smart Chat Model](https://github.com/brianpetro/jsbrains/tree/main/smart-chat-model)
