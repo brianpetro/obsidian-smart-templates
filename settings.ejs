@@ -25,6 +25,11 @@
       ></div>
     <% } %>
     <div class="setting-component"
+      data-name="Import Model Config from Smart Connections"
+      data-type="button"
+      data-callback="import_model_config_from_smart_connections"
+    ></div>
+    <div class="setting-component"
       data-name="<%= chat_platform.description %> API Key"
       data-type="text"
       data-setting="<%= settings.chat_model_platform_key %>.api_key"
@@ -40,16 +45,16 @@
   <% } %>
   <div class="setting-component"
     data-name="Templates Folder"
-    data-setting="smart_templates.templates_folder"
+    data-setting="templates_folder"
     data-type="text"
   ></div>
   <h2>Variable Prompts</h2>
   <div id="smart-templates-var-prompts">
-    <% Object.keys(settings.smart_templates.var_prompts).forEach(var_name => { %>
+    <% Object.keys(settings.var_prompts).forEach(var_name => { %>
       <div class="setting-component"
         data-name="<%= var_name %>"
         data-type="textarea"
-        data-setting="smart_templates.var_prompts.<%= var_name %>.prompt"
+        data-setting="var_prompts.<%= var_name %>.prompt"
       ></div>
     <% }) %>
   </div>

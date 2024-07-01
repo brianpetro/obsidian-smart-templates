@@ -15,23 +15,16 @@ const {
 import { SmartTemplates } from "smart-templates/smart_templates.mjs";
 import { MarkdownAdapter } from "smart-templates/adapters/markdown.mjs";
 import { SmartChatModel } from "smart-chat-model/smart_chat_model.js";
-import templates from "./dist/views.json";
+import views from "./dist/views.json";
 import ejs from "ejs";
+import { SmartEnv } from "smart-environment/smart_env.js";
 
-class SmartEnv {
-  constructor(main, opts) {
-    this.main = main;
-    this.plugin = this.main; // DEPRECATED
-    Object.assign(this, opts);
-  }
-}
 class SmartTemplatesSmartEnv extends SmartEnv {
-  async init() {
+  async init_smart_templates() {
     this.load_smart_templates();
     await this.process_templates();
   }
   load_smart_templates() {
-    this.settings.smart_templates.model_config = this.model_config; // used by SmartTemplates for model selection
     const smart_templates_opts = {
       request_adapter: requestUrl, // use obsidian's requestUrl for requests
       read_adapter: this.main.app.vault.adapter.read.bind(this.main.app.vault.adapter),
@@ -72,9 +65,9 @@ export default class SmartTemplatesPlugin extends Plugin {
 
   static get defaults() {
     return {
-      chat_model_platform_key: 'openai',
-      openai: {},
       smart_templates: {
+        openai: {},
+        chat_model_platform_key: 'openai',
         templates_folder: "smart-templates",
         var_prompts: {
           'summary': {prompt: 'A summary paragraph.'},
@@ -89,11 +82,11 @@ export default class SmartTemplatesPlugin extends Plugin {
     console.log(this);
     await this.load_settings();
     this.env = new SmartTemplatesSmartEnv(this, {
-      templates: templates,
+      ejs,
       settings: this.settings,
-      ejs: ejs,
+      views,
     });
-    await this.env.init();
+    await this.env.init_smart_templates();
     this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
     this.add_commands();
   }
@@ -179,17 +172,21 @@ class SmartTemplatesSettingsTab extends PluginSettingTab {
 import { SmartSettings } from "smart-setting";
 // Smart Templates Specific Settings
 class SmartTemplatesSettings extends SmartSettings {
+  get settings() { return this.env.settings.smart_templates; }
+  set settings(settings) {
+    this.env.settings.smart_templates = settings.smart_templates || settings;
+  }
+  get model_config() { return this.settings[this.settings.chat_model_platform_key]; }
   async get_view_data(){
     // for each file in templates folder
     await this.env.process_templates();
     // get chat platforms
     const chat_platforms = SmartChatModel.platforms;
     console.log(chat_platforms);
-    console.log(this.env.model_config);
     const smart_chat_model = new SmartChatModel(
       this.env,
-      this.plugin.settings.chat_model_platform_key || 'openai',
-      this.env.model_config,
+      this.settings.chat_model_platform_key || 'openai',
+      this.model_config,
     )
     const platform_chat_models = await smart_chat_model.get_models();
     console.log(platform_chat_models);
@@ -197,13 +194,28 @@ class SmartTemplatesSettings extends SmartSettings {
       chat_platforms,
       platform_chat_models,
       chat_platform: smart_chat_model.platform,
-      settings: this.plugin.settings,
+      settings: this.settings,
     };
   }
-  get template (){ return this.env.templates[this.template_name]; }
+  get template (){ return this.env.views[this.template_name]; }
   async changed_smart_chat_platform(render = true){
     this.env.load_smart_templates();
     if(render) this.render();
+  }
+  // import model config from smart-connections
+  async import_model_config_from_smart_connections(){
+    const config_file = await this.main.app.vault.adapter.read('.obsidian/plugins/smart-connections/data.json');
+    if(!config_file) return new Notice("[Smart Templates] No model config found in smart-connections");
+    const config = JSON.parse(config_file);
+    console.log(config);
+    console.log(SmartChatModel.platforms);
+    SmartChatModel.platforms.forEach(platform => {
+      if(config[platform.key]) this.settings[platform.key] = config[platform.key];
+    });
+    if(config.chat_model_platform_key) this.settings.chat_model_platform_key = config.chat_model_platform_key;
+    console.log(this.settings);
+    await this.main.save_settings();
+    this.render();
   }
 }
 
