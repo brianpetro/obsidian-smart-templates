@@ -1,4 +1,5 @@
-import {
+import Obsidian from "obsidian";
+const {
   addIcon,
   Keymap,
   MarkdownRenderer,
@@ -10,7 +11,7 @@ import {
   Setting,
   TAbstractFile,
   TFile,
-} from "obsidian";
+} = Obsidian;
 import { SmartTemplates } from "smart-templates/smart_templates.mjs";
 import { MarkdownAdapter } from "smart-templates/adapters/markdown.mjs";
 import { SmartChatModel } from "smart-chat-model/smart_chat_model.js";
@@ -84,8 +85,9 @@ export default class SmartCommandsPlugin extends Plugin {
     };
   }
   async initialize() {
+    this.obsidian = Obsidian;
+    console.log(this);
     await this.load_settings();
-    // temp env
     this.env = new SmartCommandsSmartEnv(this, {
       templates: templates,
       settings: this.settings,
@@ -174,7 +176,7 @@ class SmartCommandsSettingsTab extends PluginSettingTab {
     return this.smart_settings.render();
   }
 }
-import { SmartSettings } from "../sc-obsidian/src/smart_settings";
+import { SmartSettings } from "smart-settings";
 // Smart Commands Specific Settings
 class SmartCommandsSettings extends SmartSettings {
   async get_view_data(){
