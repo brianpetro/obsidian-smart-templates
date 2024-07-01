@@ -26,7 +26,7 @@
   "dependencies": {
     "ejs": "^3.1.10",
     "smart-chat-model": "file:../jsbrains/smart-chat-model",
-    "smart-setting": "file:../jsbrains/smart-settings",
+    "smart-setting": "file:../jsbrains/smart-setting",
     "smart-templates": "file:../jsbrains/smart-templates"
   },
   "devDependencies": {
