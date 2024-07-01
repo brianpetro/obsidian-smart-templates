@@ -1,8 +1,8 @@
 {
-  "name": "smart-commands",
+  "name": "obsidian-smart-templates",
   "type": "module",
   "version": "1.0.0",
-  "description": "Configurable commands for utilizing Smart Environments in Obsidian.",
+  "description": "Configurable templates for use with Smart Environments in Obsidian.",
   "scripts": {
     "build": "node esbuild.config.mjs",
     "release": "node release.js",
@@ -10,19 +10,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brianpetro/obsidian-smart-commands.git"
+    "url": "git+https://github.com/brianpetro/obsidian-smart-templates.git"
   },
   "keywords": [
     "Obsidian",
     "Smart",
-    "Connections"
+    "Templates"
   ],
   "author": "🌴 Brian Joseph Petro",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/brianpetro/obsidian-smart-commands/issues"
+    "url": "https://github.com/brianpetro/obsidian-smart-templates/issues"
   },
-  "homepage": "https://github.com/brianpetro/obsidian-smart-commands#readme",
+  "homepage": "https://github.com/brianpetro/obsidian-smart-templates#readme",
   "dependencies": {
     "ejs": "^3.1.10",
     "smart-chat-model": "file:../jsbrains/smart-chat-model",

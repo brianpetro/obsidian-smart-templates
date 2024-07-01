@@ -1,5 +1,5 @@
-<div id="smart-commands-settings">
-  <h1>Smart Commands</h1>
+<div id="smart-templates-settings">
+  <h1>Smart Templates</h1>
   <div class="setting-component"
     data-name="Model Platform"
     data-setting="chat_model_platform_key"
@@ -38,17 +38,19 @@
       data-callback="changed_smart_chat_platform"
     ></div>
   <% } %>
-  <h2>Smart Templates</h2>
   <div class="setting-component"
     data-name="Templates Folder"
     data-setting="smart_templates.templates_folder"
     data-type="text"
   ></div>
-  <% Object.keys(settings.smart_templates.var_prompts).forEach(var_name => { %>
-    <div class="setting-component"
-      data-name="<%= var_name %>"
-      data-type="textarea"
-      data-setting="smart_templates.var_prompts.<%= var_name %>.prompt"
-    ></div>
-  <% }) %>
+  <h2>Variable Prompts</h2>
+  <div id="smart-templates-var-prompts">
+    <% Object.keys(settings.smart_templates.var_prompts).forEach(var_name => { %>
+      <div class="setting-component"
+        data-name="<%= var_name %>"
+        data-type="textarea"
+        data-setting="smart_templates.var_prompts.<%= var_name %>.prompt"
+      ></div>
+    <% }) %>
+  </div>
 </div>

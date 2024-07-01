@@ -1,12 +1,10 @@
-# Smart Commands for Obsidian
+# Smart Templates for Obsidian
 
-Smart Commands allows you to create and use configurable commands utilizing Smart Environments.
+Smart Templates allows you to create and use configurable templates utilizing Smart Environments.
 
-Smart Commands is a companion plugin to [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections/), a plugin for Obsidian that implements a Smart Environment for utilizing AI to enhance your notes.
+Smart Templates is a companion plugin to [Smart Connections](https://github.com/brianpetro/obsidian-smart-connections/), a plugin for Obsidian that implements a Smart Environment for utilizing AI to enhance your notes.
 
 ## Features
-
-### Smart Templates
 
 Create and use customizable templates with dynamic variables.
 
@@ -72,7 +70,7 @@ graph TD
   A[Smart Template] -->|Contains| B(Variable Placeholders)
   C[var_prompts] -->|Defines| D(Variable Prompts)
   E[Current Context] -->|Provides| F(Content for Processing)
-  B --> G{Smart Commands Plugin}
+  B --> G{Smart Templates Plugin}
   D --> G
   F --> G
   G -->|Processes| H(AI Model)

@@ -1,7 +1,16 @@
-#smart-commands-settings {
+#smart-templates-settings {
   .setting-item-control {
     > select {
       max-width: 500px;
+    }
+    > textarea {
+      max-width: 500px;
+      width: 100%;
+    }
+  }
+  #smart-templates-var-prompts {
+    .setting-item-info {
+      max-width: 200px;
     }
   }
 }

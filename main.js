@@ -25,7 +25,7 @@ class SmartEnv {
     Object.assign(this, opts);
   }
 }
-class SmartCommandsSmartEnv extends SmartEnv {
+class SmartTemplatesSmartEnv extends SmartEnv {
   async init() {
     this.load_smart_templates();
     await this.process_templates();
@@ -67,7 +67,7 @@ class SmartCommandsSmartEnv extends SmartEnv {
   get model_config() { return this.settings[this.settings.chat_model_platform_key]; }
 }
 
-export default class SmartCommandsPlugin extends Plugin {
+export default class SmartTemplatesPlugin extends Plugin {
   async onload() { this.app.workspace.onLayoutReady(this.initialize.bind(this)); } // initialize when layout is ready
 
   static get defaults() {
@@ -88,13 +88,13 @@ export default class SmartCommandsPlugin extends Plugin {
     this.obsidian = Obsidian;
     console.log(this);
     await this.load_settings();
-    this.env = new SmartCommandsSmartEnv(this, {
+    this.env = new SmartTemplatesSmartEnv(this, {
       templates: templates,
       settings: this.settings,
       ejs: ejs,
     });
     await this.env.init();
-    this.addSettingTab(new SmartCommandsSettingsTab(this.app, this));
+    this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
     this.add_commands();
   }
   async load_settings() {
@@ -165,20 +165,20 @@ export default class SmartCommandsPlugin extends Plugin {
 
 }
 
-class SmartCommandsSettingsTab extends PluginSettingTab {
+class SmartTemplatesSettingsTab extends PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
     this.config = plugin.settings;
   }
   display() {
-    this.smart_settings = new SmartCommandsSettings(this.plugin.env, this.containerEl, "settings");
+    this.smart_settings = new SmartTemplatesSettings(this.plugin.env, this.containerEl, "settings");
     return this.smart_settings.render();
   }
 }
-import { SmartSettings } from "smart-settings";
-// Smart Commands Specific Settings
-class SmartCommandsSettings extends SmartSettings {
+import { SmartSettings } from "smart-setting";
+// Smart Templates Specific Settings
+class SmartTemplatesSettings extends SmartSettings {
   async get_view_data(){
     // for each file in templates folder
     await this.env.process_templates();

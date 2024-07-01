@@ -1,9 +1,9 @@
 {
-	"id": "smart-commands",
-	"name": "Smart Commands",
+	"id": "smart-templates",
+	"name": "Smart Templates",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Customizable commands for Smart Environments like that created by Smart Connections.",
+	"description": "Customizable templates for Smart Environments like that created by Smart Connections.",
 	"author": "🌴 Brian Petro",
 	"authorUrl": "https://github.com/brianpetro"
 }
