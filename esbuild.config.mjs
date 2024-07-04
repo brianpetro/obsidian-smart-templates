@@ -19,6 +19,8 @@ fs.readdir("./", (err, files) => {
 		views[path.basename(file, path.extname(file))] = content;
 	});
 	// console.log('views', views);
+	// add dist folder if not exists
+	if (!fs.existsSync('dist')) fs.mkdirSync('dist');
 	fs.writeFileSync('dist/views.json', JSON.stringify(views, null, 2));
 	console.log('EJS templates compiled into templates.json');
 });
