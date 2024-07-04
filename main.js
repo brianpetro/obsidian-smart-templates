@@ -19,52 +19,6 @@ import views from "./dist/views.json";
 import ejs from "ejs";
 import { SmartEnv } from "smart-environment/smart_env.js";
 
-class SmartTemplatesSmartEnv extends SmartEnv {
-  async init_smart_templates() {
-    this.load_smart_templates();
-    await this.process_templates();
-  }
-  load_smart_templates() {
-    const smart_templates_opts = {
-      request_adapter: requestUrl, // use obsidian's requestUrl for requests
-      read_adapter: this.main.app.vault.adapter.read.bind(this.main.app.vault.adapter),
-      file_type_adapters: [
-        MarkdownAdapter,
-      ]
-    };
-    this.smart_templates = new SmartTemplates(this, smart_templates_opts);
-  }
-  get_templates_from_folder() {
-    const templates_folder_path = this.smart_templates_plugin.settings.templates_folder;
-    const templates = this.main.app.vault
-      .getFolderByPath(templates_folder_path)
-      .children
-      .filter(template => template instanceof TFile)
-    ;
-    templates.forEach(template => {
-      this.smart_templates.add_template(template.path);
-    });
-    return templates;
-  }
-  async process_templates() {
-    this.active_template_vars = [];
-    const templates = this.get_templates_from_folder();
-    for(const template of templates) {
-      const template_vars = await this.smart_templates.get_variables(template.path);
-      console.log(template_vars);
-      template_vars.forEach(({name, prompt}) => {
-        if(!this.smart_templates_plugin.settings.var_prompts) this.smart_templates_plugin.settings.var_prompts = {};
-        // if prompt is not in settings, add it
-        if(!this.smart_templates_plugin.settings.var_prompts[name]) {
-          this.smart_templates_plugin.settings.var_prompts[name] = {prompt: prompt};
-          this.active_template_vars.push(name);
-        }
-      });
-    }
-    console.log(this.smart_templates_plugin.settings.var_prompts);
-  }
-}
-
 export default class SmartTemplatesPlugin extends Plugin {
   async onload() { this.app.workspace.onLayoutReady(this.initialize.bind(this)); } // initialize when layout is ready
 
@@ -84,15 +38,26 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.obsidian = Obsidian;
     console.log(this);
     await this.load_settings();
-    this.env = SmartTemplatesSmartEnv.create(this, {
+    SmartEnv.create(this, {
       ejs,
       views,
       global_ref: window,
     });
-    await this.env.init_smart_templates();
+    await this.load_smart_templates();
     this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
     this.add_commands();
   }
+  async load_smart_templates() {
+    await SmartTemplates.load(this.env, {
+      request_adapter: requestUrl, // use obsidian's requestUrl for requests
+      read_adapter: this.app.vault.adapter.read.bind(this.app.vault.adapter),
+      file_type_adapters: [
+        MarkdownAdapter,
+      ],
+    });
+    await this.get_var_prompts_settings();
+  }
+
   async load_settings() {
     this.settings = {
       ...this.constructor.defaults,
@@ -103,6 +68,35 @@ export default class SmartTemplatesPlugin extends Plugin {
   async save_settings(rerender=false) {
     await this.saveData(this.settings); // Obsidian API->saveData
     await this.load_settings(); // re-load settings into memory
+  }
+  get_templates_from_folder() {
+    const templates_folder_path = this.settings.templates_folder;
+    const templates = this.app.vault
+      .getFolderByPath(templates_folder_path)
+      .children
+      .filter(template => template instanceof TFile)
+    ;
+    templates.forEach(template => {
+      this.env.smart_templates.add_template(template.path);
+    });
+    return templates;
+  }
+  async get_var_prompts_settings() {
+    this.active_template_vars = [];
+    const templates = this.get_templates_from_folder();
+    for(const template of templates) {
+      const template_vars = await this.env.smart_templates.get_variables(template.path);
+      console.log(template_vars);
+      template_vars.forEach(({name, prompt}) => {
+        if(!this.settings.var_prompts) this.settings.var_prompts = {};
+        // if prompt is not in settings, add it
+        if(!this.settings.var_prompts[name]) {
+          this.settings.var_prompts[name] = {prompt: prompt};
+          this.active_template_vars.push(name);
+        }
+      });
+    }
+    console.log(this.settings.var_prompts);
   }
   // check if templates folder exists
   // if not, create it
@@ -115,13 +109,13 @@ export default class SmartTemplatesPlugin extends Plugin {
     const default_template = this.app.vault.getFileByPath(`${this.settings.templates_folder}/default.md`);
     if (!default_template) {
       await this.app.vault.create(
-        `${this.smart_templates_plugin.settings.templates_folder}/default.md`,
+        `${this.settings.templates_folder}/default.md`,
         "# Default Smart Template\n### Summary\n{{ summary }}\n### Notes\n{{ notes }}\n### Chart\n<%- '```mermaid' %>\n{{ mermaid }}\n<%- '```' %>",
       );
     }
   }
   add_commands() {
-    const templates = this.env.get_templates_from_folder();
+    const templates = this.get_templates_from_folder();
     for(const template of templates) {
       this.addCommand({
         id: `smart-template-${format_command_name(template.name)}`,
@@ -175,12 +169,12 @@ import { SmartSettings } from "smart-setting";
 class SmartTemplatesSettings extends SmartSettings {
   get settings() { return this.env.smart_templates_plugin.settings; }
   set settings(settings) {
-    this.env.smart_templates_plugin.settings = settings.smart_templates_plugin || settings;
+    this.env.smart_templates_plugin.settings = settings;
   }
   get model_config() { return this.settings[this.settings.chat_model_platform_key]; }
   async get_view_data(){
     // for each file in templates folder
-    await this.env.process_templates();
+    await this.env.smart_templates_plugin.get_var_prompts_settings();
     console.log(this.settings);
     // get chat platforms
     const chat_platforms = SmartChatModel.platforms;
@@ -203,7 +197,7 @@ class SmartTemplatesSettings extends SmartSettings {
   }
   get template (){ return this.env.views[this.template_name]; }
   async changed_smart_chat_platform(render = true){
-    this.env.load_smart_templates();
+    this.env.smart_templates_plugin.load_smart_templates();
     if(render) this.render();
   }
   // import model config from smart-connections
@@ -220,7 +214,7 @@ class SmartTemplatesSettings extends SmartSettings {
     if(config.chat_model_platform_key) settings.chat_model_platform_key = config.chat_model_platform_key;
     console.log(settings);
     this.settings = settings;
-    await this.main.save_settings();
+    await this.env.smart_templates_plugin.save_settings();
     this.render();
   }
 }
