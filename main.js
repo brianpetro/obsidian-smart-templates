@@ -28,9 +28,9 @@ export default class SmartTemplatesPlugin extends Plugin {
       chat_model_platform_key: 'openai',
       templates_folder: "smart-templates",
       var_prompts: {
-        'summary': {prompt: 'A summary paragraph.'},
-        'notes': {prompt: 'Concise notes.'},
-        'mermaid': {prompt: 'A mermaid chart. Ex. graph TD\nA --> B\nB --> C'}
+        'summary': {prompt: 'A brief summary paragraph.'},
+        'notes': {prompt: 'Concise notes in list format.'},
+        'mermaid': {prompt: 'A mermaid chart representing the content. Ex. graph TD\nA --> B\nB --> C'}
       },
     };
   }
@@ -110,7 +110,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     if (!default_template) {
       await this.app.vault.create(
         `${this.settings.templates_folder}/default.md`,
-        "# Default Smart Template\n### Summary\n{{ summary }}\n### Notes\n{{ notes }}\n### Chart\n<%- '```mermaid' %>\n{{ mermaid }}\n<%- '```' %>",
+        "\n\n# Default Smart Template\n### Summary\n{{ summary }}\n### Notes\n{{ notes }}\n### Chart\n<%- '```mermaid' %>\n{{ mermaid }}\n<%- '```' %>\n\n",
       );
     }
   }
