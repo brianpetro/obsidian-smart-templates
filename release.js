@@ -15,6 +15,10 @@ const manifest_id = manifest_json.id;
 // update manifest.json with new version
 manifest_json.version = version;
 fs.writeFileSync('./manifest.json', JSON.stringify(manifest_json, null, 2));
+// commit and push to main
+exec('git add .');
+exec(`git commit -m "Update manifest.json to version ${version}"`);
+exec('git push');
 
 // Create readline interface
 const rl_interface = readline.createInterface({
