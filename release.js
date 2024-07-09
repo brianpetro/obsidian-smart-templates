@@ -16,11 +16,25 @@ const manifest_id = manifest_json.id;
 manifest_json.version = version;
 fs.writeFileSync('./manifest.json', JSON.stringify(manifest_json, null, 2));
 // commit and push to main
-exec('git add .');
-exec(`git commit -m "Update manifest.json to version ${version}"`);
-exec('git push origin main');
-// wait for the push to finish
-await new Promise(resolve => setTimeout(resolve, 1000));
+exec('git add .', (add_error) => {
+  if (add_error) {
+    console.error('Error adding files:', add_error);
+    return;
+  }
+  exec(`git commit -m "Update manifest.json to version ${version}"`, (commit_error) => {
+    if (commit_error) {
+      console.error('Error committing files:', commit_error);
+      return;
+    }
+    exec('git push origin main', (push_error) => {
+      if (push_error) {
+        console.error('Error pushing to main:', push_error);
+        return;
+      }
+      console.log('Successfully pushed to main.');
+    });
+  });
+});
 
 // Create readline interface
 const rl_interface = readline.createInterface({
