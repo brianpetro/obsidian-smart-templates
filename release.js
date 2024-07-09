@@ -12,6 +12,9 @@ const package_json = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 const manifest_json = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
 const version = package_json.version;
 const manifest_id = manifest_json.id;
+// update manifest.json with new version
+manifest_json.version = version;
+fs.writeFileSync('./manifest.json', JSON.stringify(manifest_json, null, 2));
 
 // Create readline interface
 const rl_interface = readline.createInterface({

@@ -1,9 +1,9 @@
 {
-	"id": "smart-templates",
-	"name": "Smart Templates",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Customizable templates for Smart Environments like that created by Smart Connections.",
-	"author": "🌴 Brian Petro",
-	"authorUrl": "https://github.com/brianpetro"
+  "id": "smart-templates",
+  "name": "Smart Templates",
+  "version": "1.0.5",
+  "minAppVersion": "0.15.0",
+  "description": "Customizable templates for Smart Environments like that created by Smart Connections.",
+  "author": "🌴 Brian Petro",
+  "authorUrl": "https://github.com/brianpetro"
 }
