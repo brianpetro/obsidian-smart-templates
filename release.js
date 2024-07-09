@@ -18,7 +18,9 @@ fs.writeFileSync('./manifest.json', JSON.stringify(manifest_json, null, 2));
 // commit and push to main
 exec('git add .');
 exec(`git commit -m "Update manifest.json to version ${version}"`);
-exec('git push');
+exec('git push origin main');
+// wait for the push to finish
+await new Promise(resolve => setTimeout(resolve, 1000));
 
 // Create readline interface
 const rl_interface = readline.createInterface({
