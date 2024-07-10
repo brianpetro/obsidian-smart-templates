@@ -156,6 +156,8 @@ rl_interface.question(`Confirm release version (${version}): `, (confirmed_versi
 
       archive.pipe(output);
       archive.directory('dist/', false);
+      archive.file('manifest.json', { name: 'manifest.json' });
+      archive.file('styles.css', { name: 'styles.css' });
       await archive.finalize();
 
     } catch (error) {
