@@ -140,6 +140,14 @@ rl_interface.question(`Confirm release version (${version}): `, (confirmed_versi
           console.log(`Uploaded file: ${file}`);
         }
 
+        // Upload manifest.json
+        await upload_asset('./manifest.json', 'manifest.json');
+        console.log('Uploaded file: manifest.json');
+
+        // Upload styles.css
+        await upload_asset('./styles.css', 'styles.css');
+        console.log('Uploaded file: styles.css');
+
         // Remove zip file
         fs.unlinkSync(`./${zip_name}`);
 
