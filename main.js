@@ -160,7 +160,7 @@ class SmartTemplatesSettingsTab extends PluginSettingTab {
     this.config = plugin.settings;
   }
   display() {
-    this.smart_settings = new SmartTemplatesSettings(this.plugin.env, this.containerEl, "settings");
+    this.smart_settings = new SmartTemplatesSettings(this.plugin.env, this.containerEl, "smart_templates_settings");
     return this.smart_settings.render();
   }
 }
