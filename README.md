@@ -11,15 +11,19 @@ Create and use customizable templates with dynamic variables.
 - **AI-Powered**: Leverage AI models to generate content based on your templates, variable prompts, and current context (note or highlighted text).
 - **Variable Prompts**: Define prompts for each variable for more control over content generation.
 - **Flexible Configuration**: Choose your preferred AI model platform.
+- **Manual Prompt Input**: Use `{{ "Your prompt here" }}` syntax for on-the-fly custom prompts within templates.
+- **EJS Syntax Support**: Utilize EJS syntax for more advanced template logic and formatting.
 
 *More features coming soon...*:
-- Integration with Smart Connections to retrieve additional context
 - Integration with [Smart Memos](https://github.com/Mossy1022/Smart-Memos)
+- Integration with Smart Connections to retrieve additional context
 - Integration with [Smart Connections Visualizer](https://github.com/Mossy1022/Smart-Connections-Visualizer) for visual selection of nodes to use as context
 
 ## Installation
 
-Currently in beta and requires manual installation.
+Currently in beta. Requires installing manually or via BRAT.
+
+**Smart Connections Supporters**: install using the "Easy Install" button in the early-release (version `2.2`) plugin settings.
 
 ## Usage
 
@@ -45,7 +49,10 @@ Customize the prompts for template variables like summary, notes, and mermaid ch
 
 1. Navigate to your designated templates folder.
 2. Create a new Markdown file for your template.
-3. Use special syntax like `{{ variable_name }}` to define dynamic parts of your template.
+3. Use special syntax to define dynamic parts of your template:
+   - `{{ variable_name }}`: Simple bracket syntax for predefined variables
+   - `{{ "Your custom prompt here" }}`: Manual prompt input syntax
+   - `<%- ... %>`: EJS syntax for advanced logic and formatting
 
 Example template:
 ```markdown
@@ -60,8 +67,7 @@ Example template:
 ### Chart
 <%- '```mermaid' %> <- EJS syntax is also available
 {{ mermaid }}
-<%- '```' %>
-```
+<%- '```' %>```
 
 ## How it Works
 
@@ -90,3 +96,4 @@ Uses [JSBrains](https://jsbrains.org/) to minimize dependencies and provide an e
 
 - [Smart Templates](https://github.com/brianpetro/jsbrains/tree/main/smart-templates)
 - [Smart Chat Model](https://github.com/brianpetro/jsbrains/tree/main/smart-chat-model)
+
