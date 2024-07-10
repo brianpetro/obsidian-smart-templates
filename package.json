@@ -1,7 +1,7 @@
 {
   "name": "obsidian-smart-templates",
   "type": "module",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "Configurable templates for use with Smart Environments in Obsidian.",
   "scripts": {
     "build": "node esbuild.config.mjs",
