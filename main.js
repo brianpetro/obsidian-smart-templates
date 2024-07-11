@@ -63,7 +63,26 @@ export default class SmartTemplatesPlugin extends Plugin {
       ...this.constructor.defaults,
       ...(await this.loadData()),
     };
+    // load var prompts from templates folder (prevents prompts from being lost when uninstalling plugin)
+    this.settings = {
+      ...this.settings,
+      ...(await this.load_var_prompts()),
+    };
     await this.ensure_templates_folder();
+  }
+  async load_var_prompts() {
+    const var_prompts_path = `${this.settings.templates_folder}/var_prompts.json`;
+    try {
+      if (await this.app.vault.adapter.exists(var_prompts_path)) {
+        const var_prompts_file = await this.app.vault.adapter.read(var_prompts_path);
+        if (var_prompts_file) {
+          return JSON.parse(var_prompts_file);
+        }
+      }
+    } catch (error) {
+      console.error(`Error loading var_prompts from ${var_prompts_path}:`, error);
+    }
+    return {};
   }
   async save_settings(rerender=false) {
     await this.saveData(this.settings); // Obsidian API->saveData
@@ -216,6 +235,14 @@ class SmartTemplatesSettings extends SmartSettings {
     this.settings = settings;
     await this.env.smart_templates_plugin.save_settings();
     this.render();
+  }
+  async update(setting, value) {
+    await super.update(setting, value);
+    // save var_prompts to smart templates folder in var_prompts.json
+    await this.main.app.vault.adapter.write(
+      `${this.settings.templates_folder}/var_prompts.json`,
+      JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
+    );
   }
 }
 
