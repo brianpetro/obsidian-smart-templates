@@ -13,7 +13,7 @@ const {
   TFile,
 } = Obsidian;
 import { SmartTemplates } from "smart-templates";
-import { MarkdownAdapter } from "smart-templates/adapters/markdown.mjs";
+import { MarkdownAdapter } from "smart-templates/adapters/markdown.js";
 import { SmartChatModel } from "smart-chat-model";
 import views from "./dist/views.json";
 import ejs from "ejs";
