@@ -1,7 +1,7 @@
 {
   "id": "smart-templates",
   "name": "Smart Templates",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "minAppVersion": "0.15.0",
   "description": "Customizable templates for Smart Environments like that created by Smart Connections.",
   "author": "🌴 Brian Petro",
