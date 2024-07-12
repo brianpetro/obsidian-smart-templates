@@ -96,6 +96,7 @@ async function upload_assets(release_info, github_token) {
         try {
             const stats = fs.statSync(asset_path);
             const content_length = stats.size;
+            console.log(`Content length: ${content_length}`);
 
             const response = await axios.post(upload_url, fs.createReadStream(asset_path), {
                 headers: {
