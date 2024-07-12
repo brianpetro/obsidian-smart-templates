@@ -128,11 +128,13 @@ async function upload_assets(release_info, github_token) {
         console.log('Zip file uploaded.');
 
         // Upload each file in dist folder
-        const files = fs.readdirSync('./dist');
-        for (const file of files) {
-            await upload_asset(`./dist/${file}`, file);
-            console.log(`Uploaded file: ${file}`);
-        }
+        // const files = fs.readdirSync('./dist');
+        // for (const file of files) {
+        //     await upload_asset(`./dist/${file}`, file);
+        //     console.log(`Uploaded file: ${file}`);
+        // }
+        await upload_asset('./dist/main.js', 'main.js');
+        console.log('Uploaded file: main.js');
 
         // Upload manifest.json and styles.css
         await upload_asset('./manifest.json', 'manifest.json');
