@@ -134,17 +134,30 @@ export default class SmartTemplatesPlugin extends Plugin {
     }
   }
   add_commands() {
+    this.add_template_commands();
+    // update templates commands
+    this.addCommand({
+      id: 'smart-templates-update-commands',
+      name: 'Refresh Commands (adds/removes templates from commands)',
+      icon: 'pencil_icon',
+      editorCallback: this.add_template_commands.bind(this),
+    });
+  }
+  add_template_commands() {
     const templates = this.get_templates_from_folder();
-    for(const template of templates) {
+    for (const template of templates) {
+      // exclude json files
+      if(template.name.endsWith('.json')) continue;
       this.addCommand({
         id: `smart-template-${format_command_name(template.name)}`,
-        name: `Smart Template: ${template.name}`,
+        name: `Generate: ${template.name.split('.md')?.[0] || template.name}`,
         icon: "pencil_icon",
         hotkeys: [],
         editorCallback: this.run_smart_template.bind(this, template.path),
       });
     }
   }
+
   async run_smart_template(template, editor, ctx) {
     console.log(template);
     console.log(editor);
