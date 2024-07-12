@@ -134,14 +134,14 @@ async function upload_assets(release_info, github_token) {
         //     await upload_asset(`./dist/${file}`, file);
         //     console.log(`Uploaded file: ${file}`);
         // }
-        await upload_asset('./dist/main.js', 'main.js');
-        console.log('Uploaded file: main.js');
-
+        
         // Upload manifest.json and styles.css
         await upload_asset('./manifest.json', 'manifest.json');
         await upload_asset('./styles.css', 'styles.css');
         console.log('Uploaded files: manifest.json, styles.css');
-
+        await upload_asset('./dist/main.js', 'main.js');
+        console.log('Uploaded file: main.js');
+        
         // Remove zip file
         fs.unlinkSync(`./${zip_name}`);
 
