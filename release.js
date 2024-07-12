@@ -124,9 +124,6 @@ async function upload_assets(release_info, github_token) {
     archive.on('end', async function() {
         console.log('Archive wrote %d bytes', archive.pointer());
 
-        // Upload zip file
-        await upload_asset(`./${zip_name}`, zip_name);
-        console.log('Zip file uploaded.');
 
         // Upload each file in dist folder
         // const files = fs.readdirSync('./dist');
@@ -142,6 +139,9 @@ async function upload_assets(release_info, github_token) {
         await upload_asset('./dist/main.js', 'main.js');
         console.log('Uploaded file: main.js');
         
+        // Upload zip file
+        await upload_asset(`./${zip_name}`, zip_name);
+        console.log('Zip file uploaded.');
         // Remove zip file
         fs.unlinkSync(`./${zip_name}`);
 
