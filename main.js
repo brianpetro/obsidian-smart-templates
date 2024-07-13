@@ -221,6 +221,8 @@ class SmartTemplatesSettings extends SmartSettings {
     const platform_chat_models = await smart_chat_model.get_models();
     console.log(platform_chat_models);
     const var_prompts = Object.entries(this.settings.var_prompts)
+      // filter/skip inline
+      .filter(a => !a.inline)
       // map
       .map(([name, prompt]) => ({name, prompt, active: this.env.smart_templates_plugin.active_template_vars.includes(name)}))
       // sort alphabetically by name
