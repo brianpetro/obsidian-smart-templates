@@ -111,8 +111,8 @@ export default class SmartTemplatesPlugin extends Plugin {
         // if prompt is not in settings, add it
         if(!this.settings.var_prompts[name]) {
           this.settings.var_prompts[name] = {prompt: prompt};
-          this.active_template_vars.push(name);
         }
+        this.active_template_vars.push(name);
       });
     }
     console.log(this.settings.var_prompts);
@@ -220,11 +220,20 @@ class SmartTemplatesSettings extends SmartSettings {
     console.log(smart_chat_model);
     const platform_chat_models = await smart_chat_model.get_models();
     console.log(platform_chat_models);
+    const var_prompts = Object.entries(this.settings.var_prompts)
+      // map
+      .map(([name, prompt]) => ({name, prompt, active: this.env.smart_templates_plugin.active_template_vars.includes(name)}))
+      // sort alphabetically by name
+      .sort((a, b) => a.name.localeCompare(b.name))
+      // sort by whether prompt is in active template vars
+      .sort((a, b) => b.active - a.active)
+    ;
     return {
       chat_platforms,
       platform_chat_models,
       chat_platform: smart_chat_model.platform,
       settings: this.settings,
+      var_prompts,
     };
   }
   get template (){ return this.env.views[this.template_name]; }
@@ -256,6 +265,13 @@ class SmartTemplatesSettings extends SmartSettings {
       `${this.settings.templates_folder}/var_prompts.json`,
       JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
     );
+  }
+  async remove_var_prompt(setting, value, elm) {
+    console.log(setting, value, elm);
+    const var_prompt_name = elm.dataset.value;
+    delete this.settings.var_prompts[var_prompt_name];
+    await this.update('var_prompts', this.settings.var_prompts);
+    this.render();
   }
 }
 
