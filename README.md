@@ -69,6 +69,9 @@ Example template:
 {{ mermaid }}
 <%- '```' %>```
 
+### Custom Prompt
+{{ "Your custom prompt here" }} <- Manual prompt input syntax
+
 ## How it Works
 
 ```mermaid
