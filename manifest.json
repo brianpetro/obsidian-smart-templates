@@ -3,7 +3,7 @@
   "name": "Smart Templates",
   "version": "1.0.25",
   "minAppVersion": "0.15.0",
-  "description": "Customizable templates for Smart Environments like that created by Smart Connections.",
+  "description": "AI powered templates for generating structured content. Works with Local Models, Anthropic Claude, Gemini, OpenAI and more.",
   "author": "🌴 Brian Petro",
   "authorUrl": "https://github.com/brianpetro"
 }
