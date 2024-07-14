@@ -72,6 +72,9 @@ Example template:
 ### Custom Prompt
 {{ "Your custom prompt here" }} <- Manual prompt input syntax
 
+## Settings
+![](./assets/Smart%20Templates%20Settings.png)
+
 ## How it Works
 
 ```mermaid
