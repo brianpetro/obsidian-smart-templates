@@ -31,19 +31,10 @@ Currently in beta. Requires installing manually or via BRAT.
 2. Create smart templates in the designated templates folder.
 3. Use the command palette to run your smart templates on your notes or selections.
 
-## Configuration
-
-### Model Platform
-
-Choose your preferred AI model platform (e.g., OpenAI) and enter your API key in the settings.
-
-### Templates Folder
-
-Specify the folder where your smart templates will be stored.
-
-### Variable Prompts
-
-Customize the prompts for template variables like summary, notes, and mermaid charts.
+## Using Templates
+- A command is created for each template in the templates folder.
+- The command is run on the current note or highlighted selection (if any).
+- The template is rendered and the resulting content is inserted at the current cursor location.
 
 ## Creating Templates
 
@@ -75,6 +66,18 @@ Example template:
 
 ## Settings
 ![](./assets/Smart%20Templates%20Settings.png)
+
+### Model Platform
+
+Choose your preferred AI model platform (e.g., OpenAI) and enter your API key in the settings.
+
+### Templates Folder
+
+Specify the folder where your smart templates will be stored.
+
+### Variable Prompts
+
+Customize the prompts for template variables like summary, notes, and mermaid charts.
 
 ## How it Works
 
