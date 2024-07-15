@@ -16,7 +16,6 @@ import { SmartTemplates } from "smart-templates";
 import { MarkdownAdapter } from "smart-templates/adapters/markdown.js";
 import { SmartChatModel } from "smart-chat-model";
 import views from "./dist/views.json";
-import ejs from "ejs";
 import { SmartEnv } from "smart-environment/smart_env.js";
 
 export default class SmartTemplatesPlugin extends Plugin {
@@ -35,17 +34,22 @@ export default class SmartTemplatesPlugin extends Plugin {
     };
   }
   async initialize() {
+    console.log("Initializing");
     this.obsidian = Obsidian;
-    console.log(this);
+    // console.log(this);
     await this.load_settings();
+    console.log("Loaded settings");
     SmartEnv.create(this, {
-      ejs,
-      views,
       global_ref: window,
     });
+    console.log("Created smart env");
     await this.load_smart_templates();
+    console.log("Loaded smart templates");
     this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
+    console.log("Added setting tab");
     this.add_commands();
+    console.log("Added commands");
+    console.log("Initialized");
   }
   async load_smart_templates() {
     await SmartTemplates.load(this.env, {
@@ -162,9 +166,9 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   async run_smart_template(template, editor, ctx) {
-    console.log(template);
-    console.log(editor);
-    console.log(ctx);
+    // console.log(template);
+    // console.log(editor);
+    // console.log(ctx);
     // get path of active file
     const file = this.app.workspace.getActiveFile();
     const file_path = file.path;
@@ -195,7 +199,15 @@ class SmartTemplatesSettingsTab extends PluginSettingTab {
     this.config = plugin.settings;
   }
   display() {
-    this.smart_settings = new SmartTemplatesSettings(this.plugin.env, this.containerEl, "smart_templates_settings");
+    this.smart_settings = new SmartTemplatesSettings(
+      this.plugin.env,
+      this.containerEl,
+      {
+        template_name: "smart_templates_settings",
+        views,
+      }
+    );
+    console.log("Loading settings");
     return this.smart_settings.render();
   }
 }
@@ -212,7 +224,8 @@ class SmartTemplatesSettings extends SmartSettings {
     await this.env.smart_templates_plugin.get_var_prompts_settings();
     console.log(this.settings);
     // get chat platforms
-    if(!this._model_settings) this.load_chat_model_settings();
+    if(!this._model_settings) this.load_model_settings();
+    else console.log("Model settings already loaded");
     const var_prompts = Object.entries(this.settings.var_prompts)
       // map
       .map(([name, prompt]) => ({name, prompt, active: this.env.smart_templates_plugin.active_template_vars.includes(name)}))
@@ -221,10 +234,8 @@ class SmartTemplatesSettings extends SmartSettings {
       // sort by whether prompt is in active template vars
       .sort((a, b) => b.active - a.active)
     ;
+    console.log(JSON.stringify(var_prompts, null, 2));
     return {
-      // chat_platforms,
-      // platform_chat_models,
-      // chat_platform: smart_chat_model.platform,
       model_settings: this._model_settings || null,
       settings: this.settings,
       var_prompts,
@@ -237,11 +248,11 @@ class SmartTemplatesSettings extends SmartSettings {
     const config = JSON.parse(config_file);
     // if has any api_key for SmartChatModel.platforms in smart-connections, but not in settings, return true
     if(config[this.settings.chat_model_platform_key]?.api_key.length && !this.settings[this.settings.chat_model_platform_key]?.api_key?.length) return true;
-    console.log(config[this.settings.chat_model_platform_key]?.api_key);
-    console.log(this.settings[this.settings.chat_model_platform_key]?.api_key);
+    // console.log(config[this.settings.chat_model_platform_key]?.api_key);
+    // console.log(this.settings[this.settings.chat_model_platform_key]?.api_key);
     return false;
   }
-  async load_chat_model_settings() {
+  async load_model_settings() {
     const chat_platforms = SmartChatModel.platforms;
     console.log(chat_platforms);
     console.log(this.model_config);
@@ -250,11 +261,12 @@ class SmartTemplatesSettings extends SmartSettings {
       this.settings.chat_model_platform_key || 'openai',
       this.model_config
     );
-    console.log(smart_chat_model);
+    smart_chat_model._request_adapter = requestUrl;
+    // console.log(smart_chat_model);
     const platform_chat_models = await smart_chat_model.get_models();
-    console.log(platform_chat_models);
-    this._model_settings = await this.env.ejs.render(
-      this.env.views['smart_templates_model_settings'],
+    console.log(JSON.stringify(platform_chat_models, null, 2));
+    this._model_settings = await this.ejs.render(
+      this.views['smart_templates_model_settings'],
       {
         settings: this.settings,
         chat_platforms,
@@ -263,10 +275,11 @@ class SmartTemplatesSettings extends SmartSettings {
         can_import_from_smart_connections: await this.can_import_from_smart_connections(),
       }
     );
+    // console.log(JSON.stringify(this._model_settings, null, 2));
     this.render();
   }
 
-  get template (){ return this.env.views[this.template_name]; }
+  get template (){ return this.views[this.template_name]; }
   async changed_smart_chat_platform(render = true){
     this._model_settings = null;
     this.env.smart_templates_plugin.load_smart_templates();
@@ -296,7 +309,7 @@ class SmartTemplatesSettings extends SmartSettings {
     );
   }
   async remove_var_prompt(setting, value, elm) {
-    console.log(setting, value, elm);
+    // console.log(setting, value, elm);
     const var_prompt_name = elm.dataset.value;
     delete this.settings.var_prompts[var_prompt_name];
     await this.update('var_prompts', this.settings.var_prompts);
