@@ -5,5 +5,6 @@
   "minAppVersion": "0.15.0",
   "description": "AI powered templates for generating structured content. Works with Local Models, Anthropic Claude, Gemini, OpenAI and more.",
   "author": "🌴 Brian Petro",
+  "isDesktopOnly": false,
   "authorUrl": "https://github.com/brianpetro"
 }
