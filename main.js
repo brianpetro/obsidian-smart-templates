@@ -72,6 +72,7 @@ export default class SmartTemplatesPlugin extends Plugin {
       ...this.settings,
       ...(await this.load_var_prompts()),
     };
+    // console.log({loaded_settings: this.settings});
     await this.ensure_templates_folder();
   }
   async load_var_prompts() {
@@ -90,6 +91,7 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
   async save_settings(rerender=false) {
     await this.saveData(this.settings); // Obsidian API->saveData
+    // console.log({saved_settings: this.settings});
     await this.load_settings(); // re-load settings into memory
   }
   get_templates_from_folder() {
@@ -203,6 +205,7 @@ class SmartTemplatesSettingsTab extends PluginSettingTab {
       this.plugin.env,
       this.containerEl,
       {
+        main: this.plugin, // fixes not saving
         template_name: "smart_templates_settings",
         views,
       }
@@ -234,7 +237,7 @@ class SmartTemplatesSettings extends SmartSettings {
       // sort by whether prompt is in active template vars
       .sort((a, b) => b.active - a.active)
     ;
-    console.log(JSON.stringify(var_prompts, null, 2));
+    // console.log(JSON.stringify(var_prompts, null, 2));
     return {
       model_settings: this._model_settings || null,
       settings: this.settings,
@@ -264,7 +267,7 @@ class SmartTemplatesSettings extends SmartSettings {
     smart_chat_model._request_adapter = requestUrl;
     // console.log(smart_chat_model);
     const platform_chat_models = await smart_chat_model.get_models();
-    console.log(JSON.stringify(platform_chat_models, null, 2));
+    // console.log(JSON.stringify(platform_chat_models, null, 2));
     this._model_settings = await this.ejs.render(
       this.views['smart_templates_model_settings'],
       {
@@ -301,7 +304,9 @@ class SmartTemplatesSettings extends SmartSettings {
     this.render();
   }
   async update(setting, value) {
+    // console.log(setting, value);
     await super.update(setting, value);
+    // console.log({updated_settings: this.settings});
     // save var_prompts to smart templates folder in var_prompts.json
     await this.main.app.vault.adapter.write(
       `${this.settings.templates_folder}/var_prompts.json`,
