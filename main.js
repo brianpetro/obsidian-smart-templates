@@ -247,7 +247,7 @@ class SmartTemplatesSettings extends SmartSettings {
     if(!config_file) return false;
     const config = JSON.parse(config_file);
     // if has any api_key for SmartChatModel.platforms in smart-connections, but not in settings, return true
-    if(config[this.settings.chat_model_platform_key]?.api_key.length && !this.settings[this.settings.chat_model_platform_key]?.api_key?.length) return true;
+    if(config[this.settings.chat_model_platform_key]?.api_key?.length && !this.settings[this.settings.chat_model_platform_key]?.api_key?.length) return true;
     // console.log(config[this.settings.chat_model_platform_key]?.api_key);
     // console.log(this.settings[this.settings.chat_model_platform_key]?.api_key);
     return false;
