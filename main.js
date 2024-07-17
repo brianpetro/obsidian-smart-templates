@@ -174,7 +174,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     // get path of active file
     const file = this.app.workspace.getActiveFile();
     const file_path = file.path;
-    let context = file_path + "\n";
+    let context = file_path + "\n"; // add file path to context (folder and file name)
     if(editor.somethingSelected()) context = editor.getSelection();
     else context = editor.getValue();
     if (!context) return new Notice("[Smart Commands] No file or selection found");
