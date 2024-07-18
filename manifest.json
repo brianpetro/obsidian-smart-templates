@@ -1,7 +1,7 @@
 {
   "id": "smart-templates",
   "name": "Smart Templates",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "minAppVersion": "0.15.0",
   "description": "AI powered templates for generating structured content. Works with Local Models, Anthropic Claude, Gemini, OpenAI and more.",
   "author": "🌴 Brian Petro",
