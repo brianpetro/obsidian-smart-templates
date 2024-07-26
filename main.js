@@ -16,6 +16,8 @@ import { SmartTemplates } from "smart-templates";
 import { MarkdownAdapter } from "smart-templates/adapters/markdown.js";
 import { SmartChatModel } from "smart-chat-model";
 import views from "./dist/views.json";
+import default_templates from "./dist/templates.json";
+import default_var_prompts from "./templates/var_prompts.json";
 import { SmartEnv } from "smart-environment/smart_env.js";
 
 export default class SmartTemplatesPlugin extends Plugin {
@@ -38,6 +40,8 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.obsidian = Obsidian;
     // console.log(this);
     await this.load_settings();
+    await this.ensure_templates_folder();
+    await this.include_default_templates();
     console.log("Loaded settings");
     SmartEnv.create(this, {
       global_ref: window,
@@ -73,7 +77,6 @@ export default class SmartTemplatesPlugin extends Plugin {
       ...(await this.load_var_prompts()),
     };
     // console.log({loaded_settings: this.settings});
-    await this.ensure_templates_folder();
   }
   async load_var_prompts() {
     const var_prompts_path = `${this.settings.templates_folder}/var_prompts.json`;
@@ -91,24 +94,37 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
   async save_settings(rerender=false) {
     await this.saveData(this.settings); // Obsidian API->saveData
+    // save var_prompts to smart templates folder in var_prompts.json
+    await this.app.vault.adapter.write(
+      `${this.settings.templates_folder}/var_prompts.json`,
+      JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
+    );
     // console.log({saved_settings: this.settings});
     await this.load_settings(); // re-load settings into memory
   }
-  get_templates_from_folder() {
-    const templates_folder_path = this.settings.templates_folder;
-    const templates = this.app.vault
-      .getFolderByPath(templates_folder_path)
-      .children
-      .filter(template => template instanceof TFile)
+  get_templates_from_folder(templates_folder_path) {
+    const templates = [];
+    const folder = this.app.vault.getFolderByPath(templates_folder_path);
+    // console.log("smart-templates folder path: ", templates_folder_path);
+    // console.log("smart-templates folder: ", folder);
+    if(!folder) return templates;
+    folder.children
+      .forEach(file_or_folder => {
+        if(file_or_folder instanceof this.obsidian.TFile) {
+          this.env.smart_templates.add_template(file_or_folder.path);
+          templates.push(file_or_folder);
+        }
+        // handle subfolders
+        else if(file_or_folder instanceof this.obsidian.TFolder) {
+          templates.push(...this.get_templates_from_folder(file_or_folder.path));
+        }
+      })
     ;
-    templates.forEach(template => {
-      this.env.smart_templates.add_template(template.path);
-    });
     return templates;
   }
   async get_var_prompts_settings() {
     this.active_template_vars = [];
-    const templates = this.get_templates_from_folder();
+    const templates = this.get_templates_from_folder(this.settings.templates_folder);
     for(const template of templates) {
       const template_vars = await this.env.smart_templates.get_variables(template.path);
       console.log(template_vars);
@@ -133,15 +149,36 @@ export default class SmartTemplatesPlugin extends Plugin {
     if (!templates_folder) {
       await this.app.vault.createFolder(this.settings.templates_folder);
     }
-    // check if default template exists
-    const default_template = this.app.vault.getFileByPath(`${this.settings.templates_folder}/default.md`);
-    if (!default_template) {
-      await this.app.vault.create(
-        `${this.settings.templates_folder}/default.md`,
-        "\n\n# Default Smart Template\n### Summary\n{{ summary }}\n### Notes\n{{ notes }}\n### Chart\n<%- '```mermaid' %>\n{{ mermaid }}\n<%- '```' %>\n\n",
-      );
-    }
   }
+  async include_default_templates() {
+    // check if default templates folder
+    const default_templates_folder = this.app.vault.getFolderByPath(`${this.settings.templates_folder}/default`);
+    if (!default_templates_folder) {
+      await this.app.vault.createFolder(`${this.settings.templates_folder}/default`);
+    }
+    for (const [name, content] of Object.entries(default_templates)) {
+      const default_template = this.app.vault.getFileByPath(`${this.settings.templates_folder}/default/${name}.md`);
+      if (!default_template) {
+        await this.app.vault.create(
+          `${this.settings.templates_folder}/default/${name}.md`,
+          content
+        );
+      }
+    }
+    // check if var_prompts.json exists
+    const var_prompts_path = `${this.settings.templates_folder}/var_prompts.json`;
+    if (!(await this.app.vault.adapter.exists(var_prompts_path))) {
+      await this.app.vault.adapter.write(var_prompts_path, "{}");
+    }
+    // for each default var prompt, add it to var_prompts.json if it doesn't exist
+    for (const [name, prompt] of Object.entries(default_var_prompts.var_prompts)) {
+      if(!this.settings.var_prompts[name]) {
+        this.settings.var_prompts[name] = prompt;
+      }
+    }
+    await this.save_settings();
+  }
+
   add_commands() {
     this.add_template_commands();
     // update templates commands
@@ -153,7 +190,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     });
   }
   add_template_commands() {
-    const templates = this.get_templates_from_folder();
+    const templates = this.get_templates_from_folder(this.settings.templates_folder);
     for (const template of templates) {
       // exclude json files
       if(template.name.endsWith('.json')) continue;
@@ -220,7 +257,7 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   get tags_as_context() {
-    return `Existing tags in format "tag (tag frequency)": ` + this.all_tags.map(tag => `${tag.name} (${tag.count})`).join(", ");
+    return `Existing tags in format "tag (frequency)":\n` + this.all_tags.map(tag => `${tag.name}${tag.count > 1 ? ` (${tag.count})` : ''}`).join("\n");
   }
 
   strip_frontmatter_context_config(template_content) {
@@ -351,11 +388,6 @@ class SmartTemplatesSettings extends SmartSettings {
     // console.log(setting, value);
     await super.update(setting, value);
     // console.log({updated_settings: this.settings});
-    // save var_prompts to smart templates folder in var_prompts.json
-    await this.main.app.vault.adapter.write(
-      `${this.settings.templates_folder}/var_prompts.json`,
-      JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
-    );
   }
   async remove_var_prompt(setting, value, elm) {
     // console.log(setting, value, elm);
