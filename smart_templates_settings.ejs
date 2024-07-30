@@ -1,5 +1,5 @@
 <div id="smart-templates-settings">
-  <h2>AI model</h2>
+  <h2>AI model settings</h2>
   <div class="smart-templates-model-settings">
     <% if(model_settings) { %>
       <%- model_settings %>
@@ -7,13 +7,13 @@
       Loading model settings...
     <% } %>
   </div>
-  <h2>Smart Templates</h2>
+  <h2>Smart Templates folder</h2>
   <div class="setting-component"
     data-name="Templates Folder"
     data-setting="templates_folder"
     data-type="text"
   ></div>
-  <h2>Variable prompts</h2>
+  <h2>Configure variable prompts</h2>
   <div id="smart-templates-var-prompts">
     <% var_prompts.forEach((var_prompt, i) => { %>
       <% if(i === 0) { %>
