@@ -36,24 +36,16 @@ export default class SmartTemplatesPlugin extends Plugin {
     };
   }
   async initialize() {
-    console.log("Initializing");
     this.obsidian = Obsidian;
-    // console.log(this);
     await this.load_settings();
     await this.ensure_templates_folder();
     await this.include_default_templates();
-    console.log("Loaded settings");
     SmartEnv.create(this, {
       global_ref: window,
     });
-    console.log("Created smart env");
     await this.load_smart_templates();
-    console.log("Loaded smart templates");
     this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
-    console.log("Added setting tab");
     this.add_commands();
-    console.log("Added commands");
-    console.log("Initialized");
   }
   async load_smart_templates() {
     await SmartTemplates.load(this.env, {
@@ -76,7 +68,6 @@ export default class SmartTemplatesPlugin extends Plugin {
       ...this.settings,
       ...(await this.load_var_prompts()),
     };
-    // console.log({loaded_settings: this.settings});
   }
   async load_var_prompts() {
     const var_prompts_path = `${this.settings.templates_folder}/var_prompts.json`;
@@ -99,14 +90,11 @@ export default class SmartTemplatesPlugin extends Plugin {
       `${this.settings.templates_folder}/var_prompts.json`,
       JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
     );
-    // console.log({saved_settings: this.settings});
     await this.load_settings(); // re-load settings into memory
   }
   get_templates_from_folder(templates_folder_path) {
     const templates = [];
     const folder = this.app.vault.getFolderByPath(templates_folder_path);
-    // console.log("smart-templates folder path: ", templates_folder_path);
-    // console.log("smart-templates folder: ", folder);
     if(!folder) return templates;
     folder.children
       .forEach(file_or_folder => {
@@ -127,7 +115,6 @@ export default class SmartTemplatesPlugin extends Plugin {
     const templates = this.get_templates_from_folder(this.settings.templates_folder);
     for(const template of templates) {
       const template_vars = await this.env.smart_templates.get_variables(template.path);
-      console.log(template_vars);
       template_vars
         .filter(({inline}) => !inline)
         .forEach(({name, prompt}) => {
@@ -140,7 +127,6 @@ export default class SmartTemplatesPlugin extends Plugin {
         })
       ;
     }
-    console.log(this.settings.var_prompts);
   }
   // check if templates folder exists
   // if not, create it
@@ -205,9 +191,6 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   async run_smart_template(template_path, editor, ctx) {
-    // console.log(template);
-    // console.log(editor);
-    console.log(ctx);
     // get path of active file
     const file = this.app.workspace.getActiveFile();
     const file_path = file.path;
@@ -219,9 +202,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     const template_tfile = this.app.vault.getFileByPath(template_path);
     // get template frontmatter
     const template_content = await this.app.vault.cachedRead(template_tfile);
-    console.log(template_content);
     const template_frontmatter = parse_frontmatter(template_content);
-    console.log(template_frontmatter);
     if(template_frontmatter?.tags_as_context) {
       context = `${this.tags_as_context}\n${context}`;
     }
@@ -231,15 +212,11 @@ export default class SmartTemplatesPlugin extends Plugin {
     if(template_frontmatter?.system_prompt) {
       opts.system_prompt = template_frontmatter.system_prompt;
     }
-    // const template = "# Summary\n<%- summary %>\n# Notes\n<%- notes %>\n# Mermaid\n```mermaid\n<%- mermaid %>\n```";
     const resp = await this.env.smart_templates.render(this.strip_frontmatter_context_config(template_content), context, opts);
-    console.log(resp);
     // get last line of editor
     const lines = editor.getValue().split("\n");
     const last_line = lines[lines.length - 1];
-    console.log(last_line);
     editor.setValue(editor.getValue() + "\n" + resp);
-    // const curr_pos = editor.getCursor();
     const output_pos = { line: last_line, ch: 0 };
     editor.setCursor(output_pos);
     editor.scrollIntoView({ to: output_pos, from: output_pos }, true);
@@ -291,7 +268,6 @@ class SmartTemplatesSettingsTab extends PluginSettingTab {
         views,
       }
     );
-    console.log("Loading settings");
     return this.smart_settings.render();
   }
 }
@@ -306,10 +282,8 @@ class SmartTemplatesSettings extends SmartSettings {
   async get_view_data(){
     // for each file in templates folder
     await this.env.smart_templates_plugin.get_var_prompts_settings();
-    console.log(this.settings);
     // get chat platforms
     if(!this._model_settings) this.load_model_settings();
-    else console.log("Model settings already loaded");
     const var_prompts = Object.entries(this.settings.var_prompts)
       // map
       .map(([name, prompt]) => ({name, prompt, active: this.env.smart_templates_plugin.active_template_vars.includes(name)}))
@@ -318,7 +292,6 @@ class SmartTemplatesSettings extends SmartSettings {
       // sort by whether prompt is in active template vars
       .sort((a, b) => b.active - a.active)
     ;
-    // console.log(JSON.stringify(var_prompts, null, 2));
     return {
       model_settings: this._model_settings || null,
       settings: this.settings,
@@ -332,23 +305,17 @@ class SmartTemplatesSettings extends SmartSettings {
     const config = JSON.parse(config_file);
     // if has any api_key for SmartChatModel.platforms in smart-connections, but not in settings, return true
     if(config[this.settings.chat_model_platform_key]?.api_key?.length && !this.settings[this.settings.chat_model_platform_key]?.api_key?.length) return true;
-    // console.log(config[this.settings.chat_model_platform_key]?.api_key);
-    // console.log(this.settings[this.settings.chat_model_platform_key]?.api_key);
     return false;
   }
   async load_model_settings() {
     const chat_platforms = SmartChatModel.platforms;
-    console.log(chat_platforms);
-    console.log(this.model_config);
     const smart_chat_model = new SmartChatModel(
       this.env,
       this.settings.chat_model_platform_key || 'openai',
       this.model_config
     );
     smart_chat_model._request_adapter = requestUrl;
-    // console.log(smart_chat_model);
     const platform_chat_models = await smart_chat_model.get_models();
-    // console.log(JSON.stringify(platform_chat_models, null, 2));
     this._model_settings = await this.ejs.render(
       this.views['smart_templates_model_settings'],
       {
@@ -359,7 +326,6 @@ class SmartTemplatesSettings extends SmartSettings {
         can_import_from_smart_connections: await this.can_import_from_smart_connections(),
       }
     );
-    // console.log(JSON.stringify(this._model_settings, null, 2));
     this.render();
   }
 
@@ -374,23 +340,17 @@ class SmartTemplatesSettings extends SmartSettings {
     const config_file = await this.main.app.vault.adapter.read('.obsidian/plugins/smart-connections/data.json');
     if(!config_file) return new Notice("[Smart Templates] No model config found in smart-connections");
     const config = JSON.parse(config_file);
-    console.log(config);
-    console.log(SmartChatModel.platforms);
     const settings = this.settings;
     if(config[this.settings.chat_model_platform_key]) settings[this.settings.chat_model_platform_key] = {...config[this.settings.chat_model_platform_key]};
-    console.log(settings);
     this.settings = settings;
     await this.env.smart_templates_plugin.save_settings();
     this._model_settings = null;
     this.render();
   }
   async update(setting, value) {
-    // console.log(setting, value);
     await super.update(setting, value);
-    // console.log({updated_settings: this.settings});
   }
   async remove_var_prompt(setting, value, elm) {
-    // console.log(setting, value, elm);
     const var_prompt_name = elm.dataset.value;
     delete this.settings.var_prompts[var_prompt_name];
     await this.update('var_prompts', this.settings.var_prompts);
