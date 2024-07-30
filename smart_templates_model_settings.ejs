@@ -1,5 +1,5 @@
   <div class="setting-component"
-    data-name="Model Platform"
+    data-name="Model platform"
     data-setting="chat_model_platform_key"
     data-type="dropdown"
     data-description="Select a model platform to use with Smart Chat."
@@ -9,7 +9,7 @@
   <% if(chat_platform?.fetch_models) { %>
     <% if(settings[settings.chat_model_platform_key]?.api_key) { %>
       <div class="setting-component"
-        data-name="Model Name"
+        data-name="Model name"
         data-type="dropdown"
         data-setting="<%= settings.chat_model_platform_key %>.model_name"
         <%- platform_chat_models.map((model, i) => `data-option-${i}="${model.key}|${model.model_name} (${model.description})"`).join('\n') %>
@@ -17,20 +17,20 @@
     <% } %>
     <% if(!platform_chat_models.length) { %>
       <div class="setting-component"
-        data-name="Refresh Models List"
+        data-name="Refresh models list"
         data-type="button"
         data-callback="changed_smart_chat_platform"
       ></div>
     <% } %>
     <% if(can_import_from_smart_connections) { %>
       <div class="setting-component"
-        data-name="Import Model Config from Smart Connections"
+        data-name="Import model config from Smart Connections"
         data-type="button"
         data-callback="import_model_config_from_smart_connections"
       ></div>
     <% } %>
     <div class="setting-component"
-      data-name="<%= chat_platform.description %> API Key"
+      data-name="<%= chat_platform.description %> API key"
       data-type="password"
       data-setting="<%= settings.chat_model_platform_key %>.api_key"
       <% if(chat_platform.signup_url) { %>
@@ -38,7 +38,7 @@
       <% } else { %>
         data-description="API Key for <%= chat_platform.description %>."
       <% } %>
-      data-placeholder="Enter an API Key"
+      data-placeholder="Enter an API key"
       data-button="Save"
       data-callback="changed_smart_chat_platform"
     ></div>
