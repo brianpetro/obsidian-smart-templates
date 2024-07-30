@@ -169,7 +169,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.add_template_commands();
     // update templates commands
     this.addCommand({
-      id: 'smart-templates-update-commands',
+      id: 'update-commands',
       name: 'Refresh Commands (adds/removes templates from commands)',
       icon: 'pencil_icon',
       editorCallback: this.add_template_commands.bind(this),
@@ -181,7 +181,7 @@ export default class SmartTemplatesPlugin extends Plugin {
       // exclude json files
       if(template.name.endsWith('.json')) continue;
       this.addCommand({
-        id: `smart-template-${format_command_name(template.name)}`,
+        id: `${format_command_name(template.name)}`,
         name: `Generate: ${template.name.split('.md')?.[0] || template.name}`,
         icon: "pencil_icon",
         hotkeys: [],
