@@ -170,7 +170,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     // update templates commands
     this.addCommand({
       id: 'update-commands',
-      name: 'Refresh Commands (adds/removes templates from commands)',
+      name: 'Refresh commands (adds/removes templates from commands)',
       icon: 'pencil_icon',
       editorCallback: this.add_template_commands.bind(this),
     });
