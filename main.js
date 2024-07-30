@@ -299,8 +299,8 @@ class SmartTemplatesSettings extends SmartSettings {
     };
   }
   async can_import_from_smart_connections() {
-    if(!(await this.main.app.vault.adapter.exists('.obsidian/plugins/smart-connections/data.json'))) return false;
-    const config_file = await this.main.app.vault.adapter.read('.obsidian/plugins/smart-connections/data.json');
+    if(!(await this.main.app.vault.adapter.exists(`${this.main.app.vault.configDir}/plugins/smart-connections/data.json`))) return false;
+    const config_file = await this.main.app.vault.adapter.read(`${this.main.app.vault.configDir}/plugins/smart-connections/data.json`);
     if(!config_file) return false;
     const config = JSON.parse(config_file);
     // if has any api_key for SmartChatModel.platforms in smart-connections, but not in settings, return true
@@ -337,7 +337,7 @@ class SmartTemplatesSettings extends SmartSettings {
   }
   // import model config from smart-connections
   async import_model_config_from_smart_connections(){
-    const config_file = await this.main.app.vault.adapter.read('.obsidian/plugins/smart-connections/data.json');
+    const config_file = await this.main.app.vault.adapter.read(`${this.main.app.vault.configDir}/plugins/smart-connections/data.json`);
     if(!config_file) return new Notice("[Smart Templates] No model config found in smart-connections");
     const config = JSON.parse(config_file);
     const settings = this.settings;
