@@ -213,13 +213,19 @@ export default class SmartTemplatesPlugin extends Plugin {
       opts.system_prompt = template_frontmatter.system_prompt;
     }
     const resp = await this.env.smart_templates.render(this.strip_frontmatter_context_config(template_content), context, opts);
-    // get last line of editor
-    const lines = editor.getValue().split("\n");
-    const last_line = lines[lines.length - 1];
-    editor.setValue(editor.getValue() + "\n" + resp);
-    const output_pos = { line: last_line, ch: 0 };
-    editor.setCursor(output_pos);
-    editor.scrollIntoView({ to: output_pos, from: output_pos }, true);
+    // const source_entity = this.env.smart_sources.get(file_path);
+    const source_entity = window.SmartSearch.plugin.env.smart_sources.get(file_path); // TEMP until SC OP using standard SmartEnv
+    if(source_entity?.merge) {
+      await source_entity.merge(resp);
+    }else{
+      // get last line of editor
+      const lines = editor.getValue().split("\n");
+      const last_line = lines[lines.length - 1];
+      editor.setValue(editor.getValue() + "\n" + resp);
+      const output_pos = { line: last_line, ch: 0 };
+      editor.setCursor(output_pos);
+      editor.scrollIntoView({ to: output_pos, from: output_pos }, true);
+    }
   }
   get context_frontmatter_index() {
     return ['tags_as_context', 'system_prompt']
