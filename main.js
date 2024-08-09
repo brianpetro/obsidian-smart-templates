@@ -181,16 +181,23 @@ export default class SmartTemplatesPlugin extends Plugin {
       // exclude json files
       if(template.name.endsWith('.json')) continue;
       this.addCommand({
-        id: `${format_command_name(template.name)}`,
+        id: `${format_command_name(template.name)}-generate`,
         name: `Generate: ${template.name.split('.md')?.[0] || template.name}`,
         icon: "pencil_icon",
         hotkeys: [],
-        editorCallback: this.run_smart_template.bind(this, template.path),
+        editorCallback: this.run_smart_template.bind(this, template.path, {replace: false}),
+      });
+      this.addCommand({
+        id: `${format_command_name(template.name)}-replace`,
+        name: `Replace: ${template.name.split('.md')?.[0] || template.name}`,
+        icon: "pencil_icon",
+        hotkeys: [],
+        editorCallback: this.run_smart_template.bind(this, template.path, {replace: true}),
       });
     }
   }
 
-  async run_smart_template(template_path, editor, ctx) {
+  async run_smart_template(template_path, opts={}, editor, ctx) {
     // get path of active file
     const file = this.app.workspace.getActiveFile();
     const file_path = file.path;
@@ -206,17 +213,20 @@ export default class SmartTemplatesPlugin extends Plugin {
     if(template_frontmatter?.tags_as_context) {
       context = `${this.tags_as_context}\n${context}`;
     }
-    const opts = {
+    const render_opts = {
       file_type: template_tfile.extension,
     };
     if(template_frontmatter?.system_prompt) {
-      opts.system_prompt = template_frontmatter.system_prompt;
+      render_opts.system_prompt = template_frontmatter.system_prompt;
     }
-    const resp = await this.env.smart_templates.render(this.strip_frontmatter_context_config(template_content), context, opts);
+    const resp = await this.env.smart_templates.render(this.strip_frontmatter_context_config(template_content), context, render_opts);
     // const source_entity = this.env.smart_sources.get(file_path);
-    const source_entity = window.SmartSearch.plugin.env.smart_sources.get(file_path); // TEMP until SC OP using standard SmartEnv
+    const sc_env = window.SmartSearch.plugin.env; // TEMP until SC OP using standard SmartEnv
+    const source_entity = sc_env.smart_sources.get(file_path); // TEMP until SC OP using standard SmartEnv
     if(source_entity?.merge) {
-      await source_entity.merge(resp);
+      sc_env.settings.use_change_syntax = true;
+      sc_env.has_obsidian = true;
+      await source_entity.merge(resp, {mode: opts.replace ? 'replace_blocks' : 'append_blocks'});
     }else{
       // get last line of editor
       const lines = editor.getValue().split("\n");
