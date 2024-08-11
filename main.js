@@ -99,7 +99,6 @@ export default class SmartTemplatesPlugin extends Plugin {
     folder.children
       .forEach(file_or_folder => {
         if(file_or_folder instanceof this.obsidian.TFile) {
-          this.env.smart_templates.add_template(file_or_folder.path);
           templates.push(file_or_folder);
         }
         // handle subfolders
@@ -107,6 +106,12 @@ export default class SmartTemplatesPlugin extends Plugin {
           templates.push(...this.get_templates_from_folder(file_or_folder.path));
         }
       })
+    ;
+    return templates;
+  }
+  get_templates_with_extension(extension) {
+    const templates = this.app.vault.getFiles()
+      .filter((file) => (file instanceof this.obsidian.TFile) && (file.path.includes(extension)))
     ;
     return templates;
   }
@@ -176,7 +181,13 @@ export default class SmartTemplatesPlugin extends Plugin {
     });
   }
   add_template_commands() {
-    const templates = this.get_templates_from_folder(this.settings.templates_folder);
+    const templates = [
+      ...this.get_templates_from_folder(this.settings.templates_folder),
+      ...this.get_templates_with_extension('.st'),
+    ].filter((template, index, self) => self.findIndex(t => t.path === template.path) === index); // filter duplicates
+    templates.forEach(template => {
+      this.env.smart_templates.add_template(template.path);
+    });
     for (const template of templates) {
       // exclude json files
       if(template.name.endsWith('.json')) continue;
