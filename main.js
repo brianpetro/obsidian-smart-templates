@@ -83,12 +83,12 @@ export default class SmartTemplatesPlugin extends Plugin {
     }
     return {};
   }
-  async save_settings(rerender=false) {
-    await this.saveData(this.settings); // Obsidian API->saveData
+  async save_settings(settings=this.settings) {
+    await this.saveData(settings); // Obsidian API->saveData
     // save var_prompts to smart templates folder in var_prompts.json
     await this.app.vault.adapter.write(
-      `${this.settings.templates_folder}/var_prompts.json`,
-      JSON.stringify({var_prompts: this.settings.var_prompts}, null, 2),
+      `${settings.templates_folder}/var_prompts.json`,
+      JSON.stringify({var_prompts: settings.var_prompts}, null, 2),
     );
     await this.load_settings(); // re-load settings into memory
   }
