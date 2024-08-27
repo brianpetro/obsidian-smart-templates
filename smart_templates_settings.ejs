@@ -10,7 +10,7 @@
   <h2>Smart Templates folder</h2>
   <div class="setting-component"
     data-name="Templates Folder"
-    data-setting="templates_folder"
+    data-setting="smart_templates.templates_folder"
     data-type="text"
   ></div>
   <h2>Configure variable prompts</h2>
@@ -24,7 +24,7 @@
       <div class="setting-component"
         data-name="<%= var_prompt.name %>"
         data-type="textarea"
-        data-setting="var_prompts.<%= var_prompt.name %>.prompt"
+        data-setting="smart_templates.var_prompts.<%= var_prompt.name %>.prompt"
         data-max-length="300"
       ></div>
       <% // if !var_prompt.active, add a button to remove it %>
@@ -39,3 +39,12 @@
     <% }) %>
   </div>
 </div>
+<hr>
+<h2>Environment</h2>
+<!-- env_data_dir -->
+<div class="setting-component"
+  data-name="Smart Environment Data Folder"
+  data-description="The folder where the Smart Environment stores its data. Should be the same as your Smart Connections data folder."
+  data-setting="smart_templates_plugin.env_data_dir"
+  data-type="text"
+></div>
