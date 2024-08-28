@@ -35,11 +35,13 @@ class SmartPlugin extends Plugin{
   get smart_env_class(){ return SmartEnv }
   get smart_env_opts() {
     return {
+      global_ref: window,
       env_path: '', // scope handled by Obsidian FS methods
       env_data_dir: this.settings.env_data_dir, // used to scope SmartEnvSettings.fs
       smart_env_settings: { // careful: overrides saved settings
         is_obsidian_vault: true,
       },
+      templates: views,
       // smart modules
       smart_collection_adapter_class: MultiFileSmartCollectionDataAdapter,
       smart_fs_class: SmartFs,
@@ -382,7 +384,7 @@ class SmartTemplatesSettings extends SmartSettings {
     this.render();
   }
 
-  get template (){ return this.views[this.template_name]; }
+  get template (){ return this.templates[this.template_name]; }
   async changed_smart_chat_platform(render = true){
     this._model_settings = null;
     if(render) this.render();
