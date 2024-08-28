@@ -97,6 +97,8 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
   }
 
   async initialize() {
+    // wait a second for any other plugins to finish initializing
+    await new Promise(resolve => setTimeout(resolve, 2000));
     this.obsidian = Obsidian;
     await this.load_settings();
     await this.ensure_templates_folder();
