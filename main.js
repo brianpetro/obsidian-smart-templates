@@ -33,7 +33,7 @@ class SmartPlugin extends Plugin{
     };
   }
   get smart_env_class(){ return SmartEnv }
-  get smart_env_opts() {
+  get smart_env_config() {
     return {
       global_ref: window,
       env_path: '', // scope handled by Obsidian FS methods
@@ -103,16 +103,16 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
     await this.load_settings();
     await this.ensure_templates_folder();
     await this.include_default_templates();
-    await this.smart_env_class.create(this, this.smart_env_opts);
+    await this.smart_env_class.create(this, this.smart_env_config);
 
     // await this.load_smart_templates();
     this.addSettingTab(new SmartTemplatesSettingsTab(this.app, this));
     this.add_commands();
   }
 
-  get smart_env_opts() {
+  get smart_env_config() {
     return {
-      ...super.smart_env_opts,
+      ...super.smart_env_config,
       template_adapters: {
         md: MarkdownSmartTemplateAdapter,
         ejs: EjsSmartTemplateAdapter,
@@ -132,7 +132,7 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
   }
 
   // async load_smart_templates() {
-  //   this.env.smart_templates = await SmartTemplates.load(this.env, this.smart_env_opts);
+  //   this.env.smart_templates = await SmartTemplates.load(this.env, this.smart_env_config);
   //   await this.get_var_prompts_settings();
   // }
 
