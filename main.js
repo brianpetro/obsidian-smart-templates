@@ -12,19 +12,13 @@ const {
   TAbstractFile,
   TFile,
 } = Obsidian;
-import { SmartTemplates } from "smart-templates";
-import { SmartTemplate } from "smart-templates/smart_template.js";
-import { MarkdownSmartTemplateAdapter } from "smart-templates/adapters/markdown.js";
-import { EjsSmartTemplateAdapter } from "smart-templates/adapters/ejs.js";
 import { SmartChatModel } from "smart-chat-model";
 import views from "./dist/views.json";
 import default_templates from "./dist/templates.json";
 import default_var_prompts from "./templates/var_prompts.json";
 import { SmartEnv } from "smart-environment/smart_env.js";
-import { SmartFs } from 'smart-file-system/smart_fs.js';
-import { ObsidianSmartFsAdapter } from "smart-file-system/adapters/obsidian.js";
-import { MultiFileSmartCollectionDataAdapter } from "smart-collections/adapters/multi_file.js";
 import { SmartSettings } from "smart-setting";
+import { smart_env_config } from "./smart_env.config.js";
 
 class SmartPlugin extends Plugin{
   static get default_settings() {
@@ -43,9 +37,9 @@ class SmartPlugin extends Plugin{
       },
       templates: views,
       // smart modules
-      smart_collection_adapter_class: MultiFileSmartCollectionDataAdapter,
-      smart_fs_class: SmartFs,
-      smart_fs_adapter_class: ObsidianSmartFsAdapter,
+      smart_collection_adapter_class: smart_env_config.collections.smart_templates.data_adapter,
+      smart_fs_class: smart_env_config.modules.smart_fs.class,
+      smart_fs_adapter_class: smart_env_config.modules.smart_fs.adapter,
     };
   }
   async load_settings() {
@@ -113,18 +107,11 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
   get smart_env_config() {
     return {
       ...super.smart_env_config,
+      ...smart_env_config,
+      // DEPRECATED: BACKWARDS COMPATIBILITY
       template_adapters: {
-        md: MarkdownSmartTemplateAdapter,
-        ejs: EjsSmartTemplateAdapter,
+        ...smart_env_config.collections.smart_templates.template_adapters,
       },
-      collections: {
-        smart_templates: SmartTemplates,
-      },
-      item_types: {
-        SmartTemplate,
-      },
-      // global_ref: {}, // DO: remove this (prevent sharing for now)
-      global_ref: window,
       default_settings: {
         smart_templates: this.constructor.defaults,
       }
