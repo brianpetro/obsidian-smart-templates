@@ -36,10 +36,6 @@ class SmartPlugin extends Plugin{
         is_obsidian_vault: true,
       },
       templates: views,
-      // smart modules
-      smart_collection_adapter_class: smart_env_config.collections.smart_templates.data_adapter,
-      smart_fs_class: smart_env_config.modules.smart_fs.class,
-      smart_fs_adapter_class: smart_env_config.modules.smart_fs.adapter,
     };
   }
   async load_settings() {
