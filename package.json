@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/brianpetro/obsidian-smart-templates#readme",
   "dependencies": {
-    "smart-chat-model": "file:../jsbrains/smart-chat-model",
+    "smart-chat-model": "file:../jsbrains/smart-chat-model-v1",
     "smart-collections": "file:../jsbrains/smart-collections",
     "smart-environment": "file:../jsbrains/smart-environment",
     "smart-file-system": "file:../jsbrains/smart-fs",
