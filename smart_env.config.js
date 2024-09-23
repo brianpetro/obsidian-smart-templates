@@ -8,7 +8,6 @@ import { SmartFsObsidianAdapter } from 'smart-file-system/adapters/obsidian.js';
 export const smart_env_config = {
   global_ref: window,
   env_path: '',
-  env_data_dir: '.smart-env',
   collections: {
     smart_templates: {
       class: SmartTemplates,

@@ -23,7 +23,6 @@ import { smart_env_config } from "./smart_env.config.js";
 class SmartPlugin extends Plugin{
   static get default_settings() {
     return {
-      env_data_dir: '.smart-env',
     };
   }
   get smart_env_class(){ return SmartEnv }
@@ -31,7 +30,6 @@ class SmartPlugin extends Plugin{
     return {
       global_ref: window,
       env_path: '', // scope handled by Obsidian FS methods
-      env_data_dir: this.settings.env_data_dir, // used to scope SmartEnvSettings.fs
       smart_env_settings: { // careful: overrides saved settings
         is_obsidian_vault: true,
       },
