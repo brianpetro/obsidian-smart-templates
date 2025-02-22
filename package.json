@@ -10,11 +10,12 @@
     "release": "node release.js"
   },
   "dependencies": {
-    "smart-environment": "../jsbrains/smart-environment",
-    "obsidian": "latest"
+    "obsidian": "latest",
+    "smart-environment": "../jsbrains/smart-environment"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
+    "ava": "^6.2.0",
     "axios": "^1.7.9",
     "dotenv": "^16.4.5",
     "esbuild": "^0.19.0",
