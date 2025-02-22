@@ -1,0 +1,10 @@
+{
+  "id": "smart-templates",
+  "name": "Smart Templates",
+  "version": "1.0.0",
+  "minAppVersion": "0.12.0",
+  "description": "Smart Templates",
+  "author": "🌴 Brian",
+  "authorUrl": "https://smartconnections.app",
+  "isDesktopOnly": false
+}
