@@ -1,85 +1,92 @@
 /**
  * @module get_dynamic_template
- * @description Retrieves a dynamic template based on the current file's content and folder hierarchy.
+ * @description Retrieves a dynamic template from:
+ * 1) Intra-note heading if `env.smart_templates.settings.template_heading` is set and found in the current file
+ * 2) Searches upward for a file named `{{template_heading}}.md`
+ * 3) (Optional) Also checks for a `+template.md` fallback
+ * 4) If `merge_parent_templates` is true, it concatenates any matching templates from each parent folder
  *
- * This function implements the logic described in the specs:
- * 1) If `env.smart_templates.settings.template_heading` is set, attempts to find an intra-note heading
- *    in the current file's content matching that heading. If found, returns all subsequent content
- *    (excluding the heading line itself).
- * 2) If no intra-note heading is found (or the setting is not set), searches upward for a file named
- *    `{{template_heading}}.md` in the same or any parent folder. If found, returns that file's content.
- * 3) If still not found, optionally checks for a `+template.md` file in the folder (if desired by specs).
- * 4) If none of the above yield a template, return "No matching template."
- *
- * Note: Adjust the search strategy as needed (e.g. for `+template.md` or other fallback logic).
- *
- * @example
- * import { get_dynamic_template } from './get_dynamic_template.js';
- * const content = await get_dynamic_template({
- *   source_item: someSourceItem,
- *   env: yourSmartEnvInstance
- * });
- * console.log(content);
- *
- * @param {Object} opts
- * @param {Object} opts.source_item - A Source CollectionItem (with .path and .collection.fs)
- * @param {Object} opts.env - The environment object (expects env.smart_templates and env.smart_sources)
- * @returns {Promise<string>} Resolves to the template content if found, otherwise "No matching template."
+ * Usage:
+ *   const result = await get_dynamic_template({ source_item });
+ *   // Insert `result` into the editor or do other plugin logic
  */
-export async function get_dynamic_template({ source_item, env }) {
-  if (!source_item || !env) {
-    console.warn('get_dynamic_template: Missing source_item or env. Returning no match.');
+
+export async function get_dynamic_template({ source_item }) {
+  if (!source_item) {
+    console.warn('get_dynamic_template: Missing source_item.');
+    return 'No matching template.';
+  }
+  const env = source_item.env;
+  if (!env) {
+    console.warn('get_dynamic_template: source_item.env not found.');
     return 'No matching template.';
   }
 
-  const fs = source_item.collection.fs; // The smart_fs instance
-  const file_path = source_item.path;
-  const folder_path = get_folder_path(file_path);
+  const settings = env.smart_templates?.settings || {};
+  const template_heading = settings.template_heading;
+  const merge_parents = settings.merge_parent_templates === true;
+  // If you want to re-enable the '+template.md' fallback, set this to true or read from settings
+  const check_plus_template = true; // Or e.g. settings.check_plus_template
 
-  // 1) If a template_heading setting is provided, try to extract from current file content
-  const template_heading = env.smart_templates?.settings?.template_heading;
+  const fs = source_item.collection.fs;
+  const file_path = source_item.path;
+
+  // Step 1) If template_heading is set, read current file for that heading
   if (template_heading) {
-    // Attempt to find the heading in the current file's content
     try {
-      const current_content = await fs.read(file_path, 'utf-8');
-      const heading_content = extract_heading_content(current_content, template_heading);
-      if (heading_content) {
-        // Found the heading and its subsequent content
-        return heading_content;
+      const current_file_content = await fs.read(file_path, 'utf-8');
+      const extracted = extract_heading_content(current_file_content, template_heading);
+      if (extracted) {
+        return extracted;
       }
     } catch (err) {
-      console.warn(`Error reading current file for heading ${template_heading}:`, err);
+      console.warn('Error reading current file for heading:', template_heading, err);
     }
-
-    // 2) If not found in current file, search upward for a file named "{{template_heading}}.md"
-    const upward_content = await find_upward_named_template(fs, folder_path, `${template_heading}.md`);
-    if (upward_content) return upward_content;
   }
 
-  // 3) Optionally search for a "+template.md" in the folder or parent folders (uncomment if needed):
-  // const plus_template_content = await find_upward_named_template(fs, folder_path, '+template.md');
-  // if (plus_template_content) return plus_template_content;
+  // Step 2) If not found, or template_heading not set, attempt searching upward for `{{template_heading}}.md`
+  //         If template_heading is not set, skip this step
+  if (template_heading) {
+    const found_upward = await find_upward_file_content({
+      fs,
+      start_folder: get_folder_path(file_path),
+      file_name: `${template_heading}.md`,
+      merge_parents
+    });
+    if (found_upward) {
+      return found_upward;
+    }
+  }
 
-  // If no match was found
+  // Step 3) Optionally check for "+template.md" if none found
+  if (check_plus_template) {
+    const plus_template_content = await find_upward_file_content({
+      fs,
+      start_folder: get_folder_path(file_path),
+      file_name: '+template.md',
+      merge_parents
+    });
+    if (plus_template_content) {
+      return plus_template_content;
+    }
+  }
+
+  // Step 4) If no matches, return "No matching template."
   return 'No matching template.';
 }
 
 /**
  * @function extract_heading_content
- * @description Looks for a heading in 'fileContent' matching 'headingName' (case-insensitive).
- *              If found, returns all subsequent lines until the next heading or end of file.
+ * @description Looks for a heading in fileContent that matches headingName (case-insensitive),
+ *   returning subsequent lines until the next heading or file end. Omits the heading line itself.
  * @param {string} fileContent
  * @param {string} headingName
- * @returns {string|null} The extracted content or null if not found.
+ * @returns {string|null}
  */
 function extract_heading_content(fileContent, headingName) {
-  // Convert to lines
   const lines = fileContent.split('\n');
-  // A heading might appear as:  "# headingName" or "## headingName" etc.
-  // We do a case-insensitive match for the heading name
   const headingRegex = new RegExp(`^#{1,6}\\s+${escape_regex(headingName)}\\s*$`, 'i');
 
-  // Find the line index of the heading
   let startIndex = -1;
   for (let i = 0; i < lines.length; i++) {
     if (headingRegex.test(lines[i].trim())) {
@@ -89,72 +96,84 @@ function extract_heading_content(fileContent, headingName) {
   }
   if (startIndex < 0) return null;
 
-  // Collect subsequent lines until next heading or end of file
-  let resultLines = [];
+  const resultLines = [];
   for (let j = startIndex + 1; j < lines.length; j++) {
-    // check if next line is another heading
     if (/^#{1,6}\s+/.test(lines[j].trim())) {
       break;
     }
     resultLines.push(lines[j]);
   }
-
   const extracted = resultLines.join('\n').trim();
   return extracted.length ? extracted : null;
 }
 
 /**
- * @function find_upward_named_template
- * @description Searches the current and parent folders for a file named 'templateFileName'.
- *              Returns file content if found, otherwise null.
- * @param {Object} fs - A smart_fs instance
- * @param {string} folder_path - Current folder path
- * @param {string} templateFileName - The file name to look for (e.g. "Meeting.md", "+template.md")
- * @returns {Promise<string|null>}
+ * @function find_upward_file_content
+ * @description Searches the current folder and parents for a file named `file_name`.
+ *   If merge_parents=true, concatenates content from all matching up to root (child folder first).
+ *   Otherwise returns the first match found from bottom up.
+ * @param {Object} opts
+ * @param {Object} opts.fs - a smart_fs instance
+ * @param {string} opts.start_folder - folder path to begin searching
+ * @param {string} opts.file_name - name of the file to look for
+ * @param {boolean} [opts.merge_parents=false] - if true, merges matches
+ * @returns {Promise<string|null>} resolved content or null
  */
-async function find_upward_named_template(fs, folder_path, templateFileName) {
-  let currentFolder = folder_path;
+async function find_upward_file_content({ fs, start_folder, file_name, merge_parents=false }) {
+  let current = start_folder;
+  const found_content = [];
   while (true) {
-    const candidatePath = currentFolder ? `${currentFolder}/${templateFileName}` : templateFileName;
-    if (await fs.exists(candidatePath)) {
-      // Read and return the content
+    if (!current) break;
+    const candidate = current + '/' + file_name;
+    if (await fs.exists(candidate)) {
       try {
-        return await fs.read(candidatePath, 'utf-8');
+        const content = await fs.read(candidate, 'utf-8');
+        if (merge_parents) {
+          // store the content, keep searching upward
+          found_content.push(content);
+        } else {
+          return content;
+        }
       } catch (err) {
-        console.warn(`Error reading ${candidatePath}:`, err);
-        return null;
+        console.warn(`Error reading ${candidate}:`, err);
       }
     }
-    // Move one folder up
-    const parentFolder = parent_of_folder(currentFolder);
-    if (!parentFolder || parentFolder === currentFolder) {
-      break; // Reached top
+    const parent = parent_folder(current);
+    if (!parent || parent === current) {
+      break;
     }
-    currentFolder = parentFolder;
+    current = parent;
+  }
+  if (merge_parents && found_content.length) {
+    // If "closest-to-root first", we might reverse the array. But the spec says:
+    // "includes folder templates from parent folders, concatenates with closest-to-root first"
+    // That means we want the top-most to appear first in the final string
+    // so we reverse the found_content array (lowest first -> top-most last).
+    found_content.reverse();
+    return found_content.join('\n\n');
   }
   return null;
 }
 
 /**
  * @function get_folder_path
- * @description Splits off the last segment of a file path to get the folder portion.
+ * @description Extracts the folder portion from a file path (the part before the last slash).
  * @param {string} filePath
- * @returns {string} The folder path (may be empty string if none).
+ * @returns {string} folder path or empty if none
  */
 function get_folder_path(filePath) {
   if (!filePath.includes('/')) return '';
   const parts = filePath.split('/');
-  parts.pop(); // remove file name
+  parts.pop();
   return parts.join('/');
 }
 
 /**
- * @function parent_of_folder
- * @description Returns the parent folder of 'folderPath'. If already top-level or empty, returns ''.
+ * @function parent_folder
  * @param {string} folderPath
- * @returns {string}
+ * @returns {string} the parent folder or '' if top-level
  */
-function parent_of_folder(folderPath) {
+function parent_folder(folderPath) {
   if (!folderPath.includes('/')) return '';
   const parts = folderPath.split('/');
   parts.pop();
@@ -163,9 +182,8 @@ function parent_of_folder(folderPath) {
 
 /**
  * @function escape_regex
- * @description Escapes special regex characters in a string.
  * @param {string} str
- * @returns {string}
+ * @returns {string} escaped string safe for regex
  */
 function escape_regex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
