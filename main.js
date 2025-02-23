@@ -5,19 +5,31 @@
 
 import { Plugin, Notice } from "obsidian";
 import { get_dynamic_template } from "./actions/get_dynamic_template.js";
+import { parse_template } from "./actions/source_content_parser.js";
+import { SmartEnv } from "smart-environment/obsidian.js";
+import { SmartTemplatesSettingTab } from "./settings_tab.js";
 
 export default class SmartTemplatesPlugin extends Plugin {
-  async onload() { this.app.workspace.onLayoutReady(this.initialize.bind(this)); } // initialize when layout is ready
+  async onload() {
+    this.app.workspace.onLayoutReady(this.initialize.bind(this));
+  }
+
   async initialize() {
+    // Initialize the environment, register commands, then register the settings tab
     await SmartEnv.create(this, {
-      // global_ref: window,
+      // global_prop: window,
       global_prop: 'smart_env',
-      collections: {},
-      item_types: {},
-      modules: {},
-      ...this.smart_env_config,
+      collections: {
+        smart_sources: {
+          content_parsers: [parse_template],
+        },
+      },
     });
+
     this.register_commands();
+    // Register the new Smart Templates settings tab
+    this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
+
     console.log("Smart Templates plugin loaded.");
   }
 
@@ -33,14 +45,10 @@ export default class SmartTemplatesPlugin extends Plugin {
           return;
         }
 
-        // Retrieve the source_item from a hypothetical collection
-        // If you have env.smart_sources or something similar, you might do:
-        // const source_item = env.smart_sources.get(file.path);
-        // Or store it in a local helper.
         const source_item = {
           path: file.path,
-          collection: { fs: this.smart_env.fs },  // adapt if needed
-          env: this.smart_env,  // ensure you have a reference to your environment
+          collection: { fs: this.smart_env.fs },
+          env: this.smart_env,
         };
 
         const templateContent = await get_dynamic_template({ source_item });
@@ -48,7 +56,6 @@ export default class SmartTemplatesPlugin extends Plugin {
           new Notice("No matching template found.");
           return;
         }
-        // Insert content
         const editor = this.get_editor();
         if (!editor) return;
         editor.replaceSelection(templateContent + "\n");
@@ -61,8 +68,6 @@ export default class SmartTemplatesPlugin extends Plugin {
       id: "insert_folder_template_headings",
       name: "Insert folder template (headings only)",
       callback: async () => {
-        // Possibly override env.smart_templates.settings.template_heading = "template" or something
-        // Then do same steps as above. This is just an example:
         const file = this.app.workspace.getActiveFile();
         if (!file) {
           new Notice("No active file.");
@@ -71,11 +76,10 @@ export default class SmartTemplatesPlugin extends Plugin {
         const source_item = {
           path: file.path,
           collection: { fs: this.smart_env.fs },
-          env: { 
+          env: {
             smart_templates: {
               settings: {
-                template_heading: "template", // or user setting
-                // maybe merge_parent_templates: true, etc.
+                template_heading: "template"
               }
             }
           }
@@ -94,7 +98,6 @@ export default class SmartTemplatesPlugin extends Plugin {
     });
 
     // 3) Generate from template
-    //    In a real plugin, you'd open a modal to pick from multiple templates, etc.
     this.addCommand({
       id: "generate_from_template",
       name: "Generate from template",
@@ -105,7 +108,6 @@ export default class SmartTemplatesPlugin extends Plugin {
           return;
         }
 
-        // Possibly show a modal to pick from known templates, but here is a simple example:
         const source_item = {
           path: file.path,
           collection: { fs: this.smart_env.fs },
@@ -116,8 +118,6 @@ export default class SmartTemplatesPlugin extends Plugin {
           new Notice("No matching template found.");
           return;
         }
-        // You could create a new note or insert at cursor, etc.
-        // For demonstration, let's just insert in the current editor:
         const editor = this.get_editor();
         if (editor) {
           editor.replaceSelection(content + "\n");
@@ -128,8 +128,6 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   get_editor() {
-    const leaf = this.app.workspace.getActiveViewOfType(this.app.plugins.getPlugin("editor")?.viewClass);
-    // Or simpler: if you're certain you can do:
     const activeLeaf = this.app.workspace.activeLeaf;
     if (!activeLeaf || !activeLeaf.view || !activeLeaf.view.editor) {
       return null;

@@ -77,15 +77,15 @@ export async function get_dynamic_template({ source_item }) {
 
 /**
  * @function extract_heading_content
- * @description Looks for a heading in fileContent that matches headingName (case-insensitive),
+ * @description Looks for a heading in file_content that matches heading_name (case-insensitive),
  *   returning subsequent lines until the next heading or file end. Omits the heading line itself.
- * @param {string} fileContent
- * @param {string} headingName
+ * @param {string} file_content
+ * @param {string} heading_name
  * @returns {string|null}
  */
-function extract_heading_content(fileContent, headingName) {
-  const lines = fileContent.split('\n');
-  const headingRegex = new RegExp(`^#{1,6}\\s+${escape_regex(headingName)}\\s*$`, 'i');
+function extract_heading_content(file_content, heading_name) {
+  const lines = file_content.split('\n');
+  const headingRegex = new RegExp(`^#{1,6}\\s+${escape_regex(heading_name)}\\s*$`, 'i');
 
   let startIndex = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -158,12 +158,12 @@ async function find_upward_file_content({ fs, start_folder, file_name, merge_par
 /**
  * @function get_folder_path
  * @description Extracts the folder portion from a file path (the part before the last slash).
- * @param {string} filePath
+ * @param {string} file_path
  * @returns {string} folder path or empty if none
  */
-function get_folder_path(filePath) {
-  if (!filePath.includes('/')) return '';
-  const parts = filePath.split('/');
+function get_folder_path(file_path) {
+  if (!file_path.includes('/')) return '';
+  const parts = file_path.split('/');
   parts.pop();
   return parts.join('/');
 }
