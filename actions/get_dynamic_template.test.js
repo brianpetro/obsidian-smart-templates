@@ -11,12 +11,9 @@ function create_smart_sources(items = []) {
   return {
     items,
     filter(arg) {
-      // If 'arg' is a function, run a typical filter.
       if (typeof arg === 'function') {
         return this.items.filter(arg);
       }
-      // If 'arg' is an object with 'key_starts_with' and 'key_ends_with'
-      // then filter for items whose path starts/ends with the given strings.
       const { key_starts_with, key_ends_with } = arg;
       return this.items.filter(i => {
         const startsMatch = key_starts_with ? i.path.startsWith(key_starts_with) : true;
@@ -51,7 +48,7 @@ test('returns null when no templates match', async t => {
     ]),
     smart_templates: {
       settings: {
-        template_name: 'folder_template', // will check for 'folder_template.md'
+        template_name: 'folder_template',
         merge_parent_templates: false
       }
     }
@@ -79,7 +76,7 @@ test('returns content from a single matching template when merge=false', async t
     ]),
     smart_templates: {
       settings: {
-        template_name: 'folder_template', // ends up as 'folder_template.md'
+        template_name: 'folder_template',
         merge_parent_templates: false
       }
     }
@@ -94,9 +91,6 @@ test('returns content from a single matching template when merge=false', async t
 });
 
 test('chooses longest path match first when multiple possible (merge=false)', async t => {
-  // This test ensures that if multiple items match,
-  // the function sorts them by descending path length
-  // and returns the first (longest path match).
   const env = {
     smart_sources: create_smart_sources([
       {
@@ -124,14 +118,11 @@ test('chooses longest path match first when multiple possible (merge=false)', as
     env
   };
 
-  // Since merge=false, it should return the item
-  // with the longest path match (i.e. 'folder/subfolder/deeper/folder_template.md')
   const result = await get_dynamic_template(source_item);
   t.is(result, 'Deeper folder template');
 });
 
 test('merges content from child folder up to root when merge=true', async t => {
-  // We define three templates along the path, which will be merged in ascending order
   const env = {
     smart_sources: create_smart_sources([
       {
@@ -159,20 +150,17 @@ test('merges content from child folder up to root when merge=true', async t => {
     env
   };
 
-  /* 
+  /*
     Merge order with merge_parent_templates=true:
-    - Start folder: 'folder/subfolder'
-    - Next folder: 'folder'
-    - Next folder: ''
-    The content will be concatenated with blank lines in between,
-    but child folder content is appended first.
+    - 'folder/subfolder' match
+    - 'folder' match
+    - root-level match
   */
   const result = await get_dynamic_template(source_item);
   t.true(result.includes('Subfolder template'));
   t.true(result.includes('Folder-level template'));
   t.true(result.includes('Root-level template'));
 });
-
 
 test('returns content from heading if settings.template_heading is set and heading is found', async t => {
   const source_content = `# Intro
@@ -192,7 +180,7 @@ some other section
     smart_sources: create_smart_sources([]),
     smart_templates: {
       settings: {
-        template_heading: 'MyHeading',
+        template_heading: 'MyHeading'
       }
     }
   };
@@ -206,10 +194,10 @@ some other section
   };
 
   const result = await get_dynamic_template(source_item);
-  t.truthy(result, 'Should return non-null');
-  t.true(result.includes('This is my special heading content'), 'Should include heading content');
-  t.false(result.includes('# MyHeading'), 'Should omit the heading line itself');
-  t.false(result.includes('## AnotherHeading'), 'Should stop before next heading');
+  t.truthy(result);
+  t.true(result.includes('This is my special heading content'));
+  t.false(result.includes('# MyHeading'));
+  t.false(result.includes('## AnotherHeading'));
 });
 
 test('falls back to find_template_file logic if template_heading is set but heading not found', async t => {
@@ -232,13 +220,12 @@ test('falls back to find_template_file logic if template_heading is set but head
     path: 'folder/subfolder/file.md',
     env,
     async read() {
-      // no heading
       return '# Different heading\nsome content';
     }
   };
 
   const result = await get_dynamic_template(source_item);
-  t.is(result, 'Subfolder folder_template content', 'Should fall back to folder_template.md content if no heading found');
+  t.is(result, 'Subfolder folder_template content');
 });
 
 test('returns null if no heading found and no file templates present', async t => {
@@ -260,5 +247,52 @@ test('returns null if no heading found and no file templates present', async t =
   };
 
   const result = await get_dynamic_template(source_item);
-  t.is(result, null, 'Should return null if heading is not found and no fallback file template is found');
+  t.is(result, null);
+});
+
+test('if merge_parent_templates=true and heading is found, merges heading content with parent templates', async t => {
+  const file_content = `# Intro
+
+Some text under Intro
+
+## MyHeading
+Heading-based template content line 1
+Heading-based template content line 2
+
+## AnotherHeading
+Not part of MyHeading
+`;
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return 'Subfolder folder template'; }
+      },
+      {
+        path: 'folder/folder_template.md',
+        async read() { return 'Parent folder template'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_heading: 'MyHeading',
+        merge_parent_templates: true,
+        template_name: 'folder_template'
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env,
+    async read() {
+      return file_content;
+    }
+  };
+
+  const result = await get_dynamic_template(source_item);
+  t.truthy(result);
+  t.true(result.includes('Heading-based template content line 1'));
+  t.true(result.includes('Subfolder folder template'));
+  t.true(result.includes('Parent folder template'));
+  t.false(result.includes('## AnotherHeading'));
 });

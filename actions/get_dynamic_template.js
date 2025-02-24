@@ -3,7 +3,13 @@
  * @description Retrieves a dynamic template based on the current file and settings.
  */
 
-export async function get_dynamic_template(source_item, opts={}) {
+/**
+ * @function get_dynamic_template
+ * @param {Object} source_item
+ * @param {Object} [opts={}]
+ * @returns {Promise<string|null>} dynamic template content or null if none
+ */
+export async function get_dynamic_template(source_item, opts = {}) {
   if (!source_item) {
     console.warn('get_dynamic_template: Missing source_item.');
     return 'No matching template.';
@@ -19,10 +25,18 @@ export async function get_dynamic_template(source_item, opts={}) {
   if (settings.template_heading) {
     const heading_content = await extract_intra_note_heading_content(source_item, settings.template_heading);
     if (heading_content !== null) {
-      // Found the heading => return it
+      // If merge_parent_templates is also true, merge heading content with folder template content
+      if (settings.merge_parent_templates === true) {
+        const parent_templates = await find_template_file(source_item);
+        if (parent_templates) {
+          // Combine heading content with merged parent template(s)
+          return heading_content + '\n\n' + parent_templates;
+        }
+      }
+      // If no parent templates or not merging, just return the heading content
       return heading_content;
     }
-    // else fall back to existing approach
+    // If heading is not found, fall back to file-based template approach
   }
 
   // 2) Fallback to file-based approach
@@ -42,7 +56,7 @@ export async function get_dynamic_template(source_item, opts={}) {
  * @param {Object} [opts={}]
  * @returns {Promise<string|null>} resolved content or null
  */
-async function find_template_file(source_item, opts={}) {
+async function find_template_file(source_item, opts = {}) {
   const env = source_item.env;
   const source_path = source_item.path;
   let curr_folder = opts.current_path ?? get_folder_path(source_path);
@@ -51,11 +65,14 @@ async function find_template_file(source_item, opts={}) {
     return 'No matching template.';
   }
   const settings = env.smart_templates?.settings || {};
-  const template_name = (settings.template_name?.endsWith('.md') ? settings.template_name : (settings.template_name || 'folder_template') + '.md');
+  const template_name = (settings.template_name?.endsWith('.md')
+    ? settings.template_name
+    : (settings.template_name || 'folder_template') + '.md'
+  );
   console.log("template_name", template_name);
   const filter = {
     key_starts_with: curr_folder,
-    key_ends_with: template_name,
+    key_ends_with: template_name
   };
   const items = env.smart_sources.filter(filter);
   console.log("items", items);
@@ -63,10 +80,11 @@ async function find_template_file(source_item, opts={}) {
   console.log("merge_parents", merge_parents);
 
   if (merge_parents) {
+    // First, gather templates from the current folder (already in items)
     while (curr_folder !== '') {
+      // Move one level up
       curr_folder = get_folder_path(curr_folder);
       console.log("curr_folder", curr_folder);
-      filter.key_starts_with = curr_folder;
       const path_to_match = curr_folder === '' ? template_name : curr_folder + '/' + template_name;
       const folder_level_items = env.smart_sources.filter(i => {
         return i.path === path_to_match;
@@ -74,7 +92,7 @@ async function find_template_file(source_item, opts={}) {
       items.push(...folder_level_items);
     }
     console.log("items_with_parents", items);
-    // sort by shortest path first
+    // Sort by shortest path first to ensure child folder content is placed first
     items.sort((a, b) => a.path.length - b.path.length);
     let merged_content = '';
     for (const item of items) {
@@ -83,10 +101,10 @@ async function find_template_file(source_item, opts={}) {
       }
       merged_content += await item.read();
     }
-    return merged_content;
+    return merged_content || null;
   } else {
     if (items.length) {
-      // longest path first
+      // For non-merged scenario, pick the item with the longest path
       items.sort((a, b) => b.path.length - a.path.length);
       return await items[0].read();
     }
@@ -121,7 +139,6 @@ async function extract_intra_note_heading_content(source_item, template_heading)
     const content = await source_item.read();
     if (!content) return null;
 
-    // Normal line-based approach
     const lines = content.split('\n');
     let headingLineIndex = -1;
     const headingPattern = new RegExp(`^#{1,6}\\s+${escapeRegExp(template_heading)}\\s*$`);
@@ -140,22 +157,18 @@ async function extract_intra_note_heading_content(source_item, template_heading)
     // 2) gather subsequent lines until next heading or end of file
     let subsequent = [];
     for (let j = headingLineIndex + 1; j < lines.length; j++) {
-      // if next heading => break
       if (/^#{1,6}\s+/.test(lines[j])) {
         break;
       }
       subsequent.push(lines[j]);
     }
 
-    // remove trailing empty lines, but keep structure
     while (subsequent.length && !subsequent[subsequent.length - 1].trim()) {
       subsequent.pop();
     }
 
-    // join them
     const result = subsequent.join('\n').trim();
     if (!result) {
-      // if no content after heading, let's return an empty string or something
       return '';
     }
     return result;
