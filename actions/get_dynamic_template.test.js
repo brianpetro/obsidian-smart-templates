@@ -2,147 +2,180 @@ import test from 'ava';
 import { get_dynamic_template } from './get_dynamic_template.js';
 
 /**
- * Minimal mock FS that we can manipulate.
+ * Helper function that simulates the 'smart_sources' collection.
+ * This in-memory collection implements a 'filter' method
+ * that can handle either an object with 'key_starts_with'
+ * and 'key_ends_with', or a callback function.
  */
-class MockFs {
-  constructor(files = {}) {
-    this.files = files; // { "folder/fileName.md": "content..." }
-  }
-  async exists(path) {
-    return Object.prototype.hasOwnProperty.call(this.files, path);
-  }
-  async read(path) {
-    return this.files[path] || '';
-  }
-}
-
-/**
- * Minimal mock source_item
- */
-function create_source_item(path, fs, env) {
+function create_smart_sources(items = []) {
   return {
-    path,
-    collection: {
-      fs
-    },
-    env
-  };
-}
-
-/**
- * Creates an env object with the given settings (for testing).
- */
-function create_mock_env(settings = {}) {
-  return {
-    smart_templates: {
-      settings
+    items,
+    filter(arg) {
+      // If 'arg' is a function, run a typical filter.
+      if (typeof arg === 'function') {
+        return this.items.filter(arg);
+      }
+      // If 'arg' is an object with 'key_starts_with' and 'key_ends_with'
+      // then filter for items whose path starts/ends with the given strings.
+      const { key_starts_with, key_ends_with } = arg;
+      return this.items.filter(i => {
+        const startsMatch = key_starts_with ? i.path.startsWith(key_starts_with) : true;
+        const endsMatch = key_ends_with ? i.path.endsWith(key_ends_with) : true;
+        return startsMatch && endsMatch;
+      });
     }
   };
 }
 
-test('Returns "No matching template." if no heading found and no fallback files', async t => {
-  const fs = new MockFs({
-    'folder/current.md': '# some heading\nsome text'
-  });
-  const env = create_mock_env({ template_heading: 'missing_heading' });
-  const source_item = create_source_item('folder/current.md', fs, env);
-
-  const result = await get_dynamic_template({ source_item });
+test('returns "No matching template." when source_item is missing', async t => {
+  const result = await get_dynamic_template(null);
   t.is(result, 'No matching template.');
 });
 
-test('Extracts content after the heading if found in current file', async t => {
-  const fs = new MockFs({
-    'folder/current.md': `
-# random
-stuff
-## target_heading
-Line A
-Line B
-## next
-something
-`.trim()
-  });
-  const env = create_mock_env({ template_heading: 'target_heading' });
-  const source_item = create_source_item('folder/current.md', fs, env);
-
-  const result = await get_dynamic_template({ source_item });
-  t.regex(result, /Line A/, 'Should include lines after heading');
-  t.false(result.includes('target_heading'), 'Should omit the heading line itself');
-  t.false(result.includes('## next'), 'Should stop at the next heading');
+test('returns "No matching template." when env is missing', async t => {
+  const source_item = {
+    path: 'folder/subfolder/file.md'
+  };
+  const result = await get_dynamic_template(source_item);
+  t.is(result, 'No matching template.');
 });
 
-test('Searches upward for {{template_heading}}.md if not in the current file', async t => {
-  const fs = new MockFs({
-    'folder/current.md': '# random heading\nsome text',
-    'folder/template_for_me.md': '# external template\nsome lines'
-  });
-  const env = create_mock_env({ template_heading: 'template_for_me' });
-  const source_item = create_source_item('folder/current.md', fs, env);
+test('returns null when no templates match', async t => {
+  const env = {
+    smart_sources: create_smart_sources([
+      // Non-matching template items
+      { 
+        path: 'some/unrelated/file.md',
+        async read() { return 'This is an unrelated file.'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template', // will check for 'folder_template.md'
+        merge_parent_templates: false
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env
+  };
 
-  const result = await get_dynamic_template({ source_item });
-  t.regex(result, /external template/, 'Should find template_for_me.md upward');
+  const result = await get_dynamic_template(source_item);
+  t.is(result, null);
 });
 
-test('Stops if it finds the first parent folder match (no merge_parent_templates)', async t => {
-  // no merges -> it returns the first found
-  const fs = new MockFs({
-    'folder/subfolder/current.md': '# heading\nsome text',
-    'folder/subfolder/template_stuff.md': '# subfolder template\nstuff',
-    'folder/template_stuff.md': '# parent folder template\nstuff'
-  });
-  const env = create_mock_env({ template_heading: 'template_stuff' });
-  const source_item = create_source_item('folder/subfolder/current.md', fs, env);
+test('returns content from a single matching template when merge=false', async t => {
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return 'Subfolder template content'; }
+      },
+      {
+        path: 'other_folder/folder_template.md',
+        async read() { return 'Other folder template'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template', // ends up as 'folder_template.md'
+        merge_parent_templates: false
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env
+  };
 
-  const result = await get_dynamic_template({ source_item });
-  t.regex(result, /subfolder template/, 'Should find subfolder first, ignoring parent folder template');
+  const result = await get_dynamic_template(source_item);
+  t.is(result, 'Subfolder template content');
 });
 
-test('If merge_parent_templates is true, merges content from deeper folder up to root (reverse order)', async t => {
-  const fs = new MockFs({
-    'folder/subfolder/current.md': '# heading\nsome text',
-    'folder/subfolder/template_head.md': '# subfolder template\nstuff subfolder',
-    'folder/template_head.md': '# parent folder template\nstuff parent'
-  });
-  // 'template_head' is the name
-  const env = create_mock_env({
-    template_heading: 'template_head',
-    merge_parent_templates: true
-  });
-  const source_item = create_source_item('folder/subfolder/current.md', fs, env);
+test('chooses longest path match first when multiple possible (merge=false)', async t => {
+  // This test ensures that if multiple items match,
+  // the function sorts them by descending path length
+  // and returns the first (longest path match).
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return 'Subfolder template content'; }
+      },
+      {
+        path: 'folder/folder_template.md',
+        async read() { return 'Folder template content'; }
+      },
+      {
+        path: 'folder/subfolder/deeper/folder_template.md',
+        async read() { return 'Deeper folder template'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: false
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/deeper/file.md',
+    env
+  };
 
-  const result = await get_dynamic_template({ source_item });
+  // Since merge=false, it should return the item
+  // with the longest path match (i.e. 'folder/subfolder/deeper/folder_template.md')
+  const result = await get_dynamic_template(source_item);
+  t.is(result, 'Deeper folder template');
+});
 
-  t.true(result.includes('subfolder template'), 'Should include subfolder content');
-  t.true(result.includes('parent folder template'), 'Should also include parent folder content');
-  t.true(
-    result.indexOf('parent folder template') < result.indexOf('subfolder template'),
-    'Closest to root (parent) should come first in the final output'
+test('merges content from child folder up to root when merge=true', async t => {
+  // We define three templates along the path, which will be merged in ascending order
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return 'Subfolder template'; }
+      },
+      {
+        path: 'folder/folder_template.md',
+        async read() { return 'Folder-level template'; }
+      },
+      {
+        path: 'folder_template.md',
+        async read() { return 'Root-level template'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: true
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env
+  };
+
+  /* 
+    Merge order with merge_parent_templates=true:
+    - Start folder: 'folder/subfolder'
+    - Next folder: 'folder'
+    - Next folder: ''
+    The content will be concatenated with blank lines in between,
+    but child folder content is appended first.
+  */
+  const result = await get_dynamic_template(source_item);
+  t.is(
+    result,
+    [
+      'Subfolder template',
+      '',
+      'Folder-level template',
+      '',
+      'Root-level template'
+    ].join('\n\n')
   );
-});
-
-test('Checks +template.md fallback if no heading or named file found', async t => {
-  const fs = new MockFs({
-    'folder/subfolder/current.md': '# heading\nsome text',
-    'folder/subfolder/+template.md': '# subfolder fallback template\nstuff subfolder fallback'
-  });
-  const env = create_mock_env({ template_heading: 'nonExistentHeading' });
-  const source_item = create_source_item('folder/subfolder/current.md', fs, env);
-
-  const result = await get_dynamic_template({ source_item });
-  t.regex(result, /subfolder fallback template/, 'Should retrieve from +template.md as fallback');
-});
-
-test('If everything fails, returns "No matching template."', async t => {
-  const fs = new MockFs({
-    'folder/current.md': '# random\nstuff'
-  });
-  const env = create_mock_env({
-    template_heading: 'someHeading'
-    // no merges, no fallback
-  });
-  const source_item = create_source_item('folder/current.md', fs, env);
-
-  const result = await get_dynamic_template({ source_item });
-  t.is(result, 'No matching template.');
 });

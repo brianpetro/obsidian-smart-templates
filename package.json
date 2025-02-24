@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "obsidian": "latest",
-    "smart-environment": "../jsbrains/smart-environment"
+    "smart-completions": "../advanced-env/collections/smart-completions",
+    "smart-environment": "../jsbrains/smart-environment",
+    "smart-templates": "../advanced-env/collections/smart-templates"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
@@ -19,6 +21,8 @@
     "axios": "^1.7.9",
     "dotenv": "^16.4.5",
     "esbuild": "^0.19.0",
-    "readline": "^1.3.0"
+    "readline": "^1.3.0",
+    "smart-file-system": "../jsbrains/smart-fs",
+    "smart-sources": "../jsbrains/smart-sources"
   }
 }

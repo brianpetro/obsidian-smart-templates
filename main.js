@@ -5,9 +5,12 @@
 
 import { Plugin, Notice } from "obsidian";
 import { get_dynamic_template } from "./actions/get_dynamic_template.js";
-import { parse_template } from "./actions/source_content_parser.js";
+import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
 import { SmartEnv } from "smart-environment/obsidian.js";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
+import { smart_completions } from "smart-completions";
+import { smart_templates } from "smart-templates";
+import { SmartTemplate } from "smart-templates";
 
 export default class SmartTemplatesPlugin extends Plugin {
   async onload() {
@@ -23,6 +26,11 @@ export default class SmartTemplatesPlugin extends Plugin {
         smart_sources: {
           content_parsers: [parse_template],
         },
+        smart_completions,
+        smart_templates
+      },
+      item_types: {
+        SmartTemplate,
       },
     });
 
@@ -30,7 +38,6 @@ export default class SmartTemplatesPlugin extends Plugin {
     // Register the new Smart Templates settings tab
     this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
 
-    console.log("Smart Templates plugin loaded.");
   }
 
   register_commands() {
@@ -45,14 +52,10 @@ export default class SmartTemplatesPlugin extends Plugin {
           return;
         }
 
-        const source_item = {
-          path: file.path,
-          collection: { fs: this.smart_env.fs },
-          env: this.smart_env,
-        };
+        const source_item = this.env.smart_sources.get(file.path);
 
-        const templateContent = await get_dynamic_template({ source_item });
-        if (templateContent === "No matching template.") {
+        const templateContent = await get_dynamic_template(source_item);
+        if (templateContent === null) {
           new Notice("No matching template found.");
           return;
         }
@@ -63,68 +66,53 @@ export default class SmartTemplatesPlugin extends Plugin {
       },
     });
 
-    // 2) Insert folder template (headings only)
-    this.addCommand({
-      id: "insert_folder_template_headings",
-      name: "Insert folder template (headings only)",
-      callback: async () => {
-        const file = this.app.workspace.getActiveFile();
-        if (!file) {
-          new Notice("No active file.");
-          return;
-        }
-        const source_item = {
-          path: file.path,
-          collection: { fs: this.smart_env.fs },
-          env: {
-            smart_templates: {
-              settings: {
-                template_heading: "template"
-              }
-            }
-          }
-        };
-        const content = await get_dynamic_template({ source_item });
-        if (content === "No matching template.") {
-          new Notice("No matching heading-only template found.");
-          return;
-        }
-        const editor = this.get_editor();
-        if (editor) {
-          editor.replaceSelection(content + "\n");
-          new Notice("Inserted headings-only template.");
-        }
-      },
-    });
+    // // 2) Insert folder template (headings only)
+    // this.addCommand({
+    //   id: "insert_folder_template_headings",
+    //   name: "Insert folder template (headings only)",
+    //   callback: async () => {
+    //     const file = this.app.workspace.getActiveFile();
+    //     if (!file) {
+    //       new Notice("No active file.");
+    //       return;
+    //     }
+    //     const source_item = this.env.smart_sources.get(file.path);
+    //     const content = await get_dynamic_template(source_item);
+    //     if (content === null) {
+    //       new Notice("No matching heading-only template found.");
+    //       return;
+    //     }
+    //     const editor = this.get_editor();
+    //     if (editor) {
+    //       editor.replaceSelection(content + "\n");
+    //       new Notice("Inserted headings-only template.");
+    //     }
+    //   },
+    // });
 
-    // 3) Generate from template
-    this.addCommand({
-      id: "generate_from_template",
-      name: "Generate from template",
-      callback: async () => {
-        const file = this.app.workspace.getActiveFile();
-        if (!file) {
-          new Notice("No active file open.");
-          return;
-        }
-
-        const source_item = {
-          path: file.path,
-          collection: { fs: this.smart_env.fs },
-          env: this.smart_env
-        };
-        const content = await get_dynamic_template({ source_item });
-        if (content === 'No matching template.') {
-          new Notice("No matching template found.");
-          return;
-        }
-        const editor = this.get_editor();
-        if (editor) {
-          editor.replaceSelection(content + "\n");
-          new Notice("Generated from template.");
-        }
-      }
-    });
+    // // 3) Generate from template
+    // this.addCommand({
+    //   id: "generate_from_template",
+    //   name: "Generate from template",
+    //   callback: async () => {
+    //     const file = this.app.workspace.getActiveFile();
+    //     if (!file) {
+    //       new Notice("No active file open.");
+    //       return;
+    //     }
+    //     const source_item = this.env.smart_sources.get(file.path);
+    //     const content = await get_dynamic_template(source_item);
+    //     if (content === null) {
+    //       new Notice("No matching template found.");
+    //       return;
+    //     }
+    //     const editor = this.get_editor();
+    //     if (editor) {
+    //       editor.replaceSelection(content + "\n");
+    //       new Notice("Generated from template.");
+    //     }
+    //   }
+    // });
   }
 
   get_editor() {

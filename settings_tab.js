@@ -18,45 +18,47 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
     super(app, plugin);
     /** @type {import('./main.js').default} */
     this.plugin = plugin;
+    // sets this.env
+    this.plugin.env.create_env_getter(this);
   }
 
   /**
    * Called by Obsidian to render the settings page.
    */
   display() {
-    const { containerEl } = this;
-    containerEl.empty();
-
+    this.containerEl.empty();
+    this.render_settings();
+  }
+  async render_settings() {
     // Access the environment and config
-    const env = this.plugin.smart_env;
-    if (!env) {
-      containerEl.createEl('p', {
+    if (!this.env) {
+      this.containerEl.createEl('p', {
         text: 'Smart Templates environment not yet initialized.'
       });
       return;
     }
-
-    const settings_config = env.smart_templates?.settings_config;
+  
+    const settings_config = this.env.smart_templates?.settings_config;
     if (!settings_config) {
-      containerEl.createEl('p', {
+      this.containerEl.createEl('p', {
         text: 'No settings_config found in env.smart_templates.'
       });
-      return;
+      while (!this.env?.smart_templates?.settings_config) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
-
+  
     // Use env.smart_view to render. We can call its methods as needed:
     //  - render_settings_html(settings_config, options)
     //  - create_doc_fragment(html)
     //  - render_setting_components(container, { scope })
-
-    const settings_html = env.smart_view.render_settings_html(settings_config);
-    const settings_fragment = env.smart_view.create_doc_fragment(settings_html);
-
-    containerEl.appendChild(settings_fragment);
-
-    // Attach interactive behaviors like toggles, text fields, etc.
-    env.smart_view.render_setting_components(containerEl, {
-      scope: env.smart_templates
+    console.log('render_settings', this.env);
+    console.log('smart_view', this.env.smart_view);
+  
+    const settings_frag = await this.env.smart_view.render_settings(settings_config, {
+      scope: this.env.smart_templates
     });
+  
+    this.containerEl.appendChild(settings_frag);
   }
 }
