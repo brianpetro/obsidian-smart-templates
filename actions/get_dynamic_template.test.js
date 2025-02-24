@@ -172,3 +172,93 @@ test('merges content from child folder up to root when merge=true', async t => {
   t.true(result.includes('Folder-level template'));
   t.true(result.includes('Root-level template'));
 });
+
+
+test('returns content from heading if settings.template_heading is set and heading is found', async t => {
+  const source_content = `# Intro
+
+Some introduction text.
+
+## MyHeading
+
+This is my special heading content
+continues on next line
+
+## AnotherHeading
+some other section
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([]),
+    smart_templates: {
+      settings: {
+        template_heading: 'MyHeading',
+      }
+    }
+  };
+
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env,
+    async read() {
+      return source_content;
+    }
+  };
+
+  const result = await get_dynamic_template(source_item);
+  t.truthy(result, 'Should return non-null');
+  t.true(result.includes('This is my special heading content'), 'Should include heading content');
+  t.false(result.includes('# MyHeading'), 'Should omit the heading line itself');
+  t.false(result.includes('## AnotherHeading'), 'Should stop before next heading');
+});
+
+test('falls back to find_template_file logic if template_heading is set but heading not found', async t => {
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return 'Subfolder folder_template content'; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_heading: 'NotPresentHeading',
+        template_name: 'folder_template',
+        merge_parent_templates: false
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env,
+    async read() {
+      // no heading
+      return '# Different heading\nsome content';
+    }
+  };
+
+  const result = await get_dynamic_template(source_item);
+  t.is(result, 'Subfolder folder_template content', 'Should fall back to folder_template.md content if no heading found');
+});
+
+test('returns null if no heading found and no file templates present', async t => {
+  const env = {
+    smart_sources: create_smart_sources([]),
+    smart_templates: {
+      settings: {
+        template_heading: 'NonExistentHeading',
+        template_name: 'folder_template'
+      }
+    }
+  };
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env,
+    async read() {
+      return '# AnotherHeading\nsome content here.';
+    }
+  };
+
+  const result = await get_dynamic_template(source_item);
+  t.is(result, null, 'Should return null if heading is not found and no fallback file template is found');
+});
