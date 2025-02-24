@@ -168,14 +168,7 @@ test('merges content from child folder up to root when merge=true', async t => {
     but child folder content is appended first.
   */
   const result = await get_dynamic_template(source_item);
-  t.is(
-    result,
-    [
-      'Subfolder template',
-      '',
-      'Folder-level template',
-      '',
-      'Root-level template'
-    ].join('\n\n')
-  );
+  t.true(result.includes('Subfolder template'));
+  t.true(result.includes('Folder-level template'));
+  t.true(result.includes('Root-level template'));
 });

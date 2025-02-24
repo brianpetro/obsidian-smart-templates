@@ -69,10 +69,13 @@ async function find_template_file(source_item, opts={}) {
     }
     return merged_content;
   }else{
-    // longest path first
-    items.sort((a, b) => b.path.length - a.path.length);
-    return await items[0].read();
+    if(items.length) {
+      // longest path first
+      items.sort((a, b) => b.path.length - a.path.length);
+      return await items[0].read();
+    }
   }
+  return null;
 }
 
 /**
