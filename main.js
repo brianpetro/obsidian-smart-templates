@@ -11,7 +11,8 @@ import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions } from "smart-completions";
 import { smart_templates } from "smart-templates";
 import { SmartTemplate } from "smart-templates";
-
+import { TemplateSelectionModal } from "./template_selection_modal.js";
+import { BuildContextModal } from "./build_context_modal.js";
 export default class SmartTemplatesPlugin extends Plugin {
   async onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
@@ -90,31 +91,28 @@ export default class SmartTemplatesPlugin extends Plugin {
     //   },
     // });
 
-    // // 3) Generate from template
-    // this.addCommand({
-    //   id: "generate_from_template",
-    //   name: "Generate from template",
-    //   callback: async () => {
-    //     const file = this.app.workspace.getActiveFile();
-    //     if (!file) {
-    //       new Notice("No active file open.");
-    //       return;
-    //     }
-    //     const source_item = this.env.smart_sources.get(file.path);
-    //     const content = await get_dynamic_template(source_item);
-    //     if (content === null) {
-    //       new Notice("No matching template found.");
-    //       return;
-    //     }
-    //     const editor = this.get_editor();
-    //     if (editor) {
-    //       editor.replaceSelection(content + "\n");
-    //       new Notice("Generated from template.");
-    //     }
-    //   }
-    // });
+    // 3) Generate from template
+    this.addCommand({
+      id: "generate_from_template",
+      name: "Generate from template",
+      callback: async () => {
+        this.open_template_selection_modal();
+      }
+    });
+  }
+  open_template_selection_modal() {
+    if(!this.template_selection_modal) {
+      this.template_selection_modal = new TemplateSelectionModal(this.app, this);
+    }
+    this.template_selection_modal.open();
   }
 
+  open_build_context_modal(template_item) {
+    if(!this.build_context_modal) {
+      this.build_context_modal = new BuildContextModal(this.app, this);
+    }
+    this.build_context_modal.open([template_item]);
+  }
   get_editor() {
     const activeLeaf = this.app.workspace.activeLeaf;
     if (!activeLeaf || !activeLeaf.view || !activeLeaf.view.editor) {

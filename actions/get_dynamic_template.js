@@ -21,45 +21,76 @@ export async function get_dynamic_template(source_item, opts = {}) {
   }
   const settings = env.smart_templates?.settings || {};
 
-  // If template_heading is defined
+  // 1) Possibly extract from an intra-note heading if template_heading is defined
+  let heading_content = null;
   if (settings.template_heading) {
-    const heading_content = await extract_intra_note_heading_content(
+    heading_content = await extract_intra_note_heading_content(
       source_item,
       settings.template_heading
     );
+  }
 
-    // If merge_parent_templates is true, gather folder templates (child → root), each may parse out heading
-    if (settings.merge_parent_templates === true) {
-      const parent_templates = await find_template_file(source_item);
-      if (parent_templates) {
-        // If heading is found in the current note, it goes last
-        if (heading_content !== null) {
-          return parent_templates + '\n\n' + heading_content;
-        }
-        // No heading found in the note => just return parent templates
-        return parent_templates;
-      }
-      // If no parent templates found, but heading_content is present => return heading alone
+  // 2) If merge_parent_templates => gather folder templates
+  let parent_templates = null;
+  if (settings.merge_parent_templates === true) {
+    parent_templates = await find_template_file(source_item);
+  }
+
+  // 3) Merge logic
+  //    a) If merge_parent_templates=true => parent_templates come first
+  //    b) Then if heading_content from the current note is found => appended last
+  //    c) If merge=false but we have heading_content, that alone is returned
+  //    d) Else fallback to file-based approach, or possibly the entire note
+  let finalContent = null;
+
+  if (settings.merge_parent_templates === true) {
+    // Merge parent templates + heading_content
+    if (parent_templates) {
+      finalContent = parent_templates;
       if (heading_content !== null) {
-        return heading_content;
+        finalContent += '\n\n' + heading_content;
       }
-      // Otherwise => null
-      return null;
+    } else {
+      // If no parent templates found, just use heading_content if it exists
+      if (heading_content !== null) {
+        finalContent = heading_content;
+      }
     }
-
-    // If merge_parent_templates is false, but heading_content is present => return it
+  } else {
+    // If merge_parent_templates=false
     if (heading_content !== null) {
-      return heading_content;
+      // Use heading_content directly
+      finalContent = heading_content;
+    } else {
+      // fallback to file-based approach
+      finalContent = await find_template_file(source_item);
+      // If that was empty and we DO have a template_heading set,
+      // return null (to match the test that expects null when heading not found).
+      // Otherwise (no template_heading, or we specifically allow fallback),
+      // read the entire note.
+      if (!finalContent) {
+        if (settings.template_heading) {
+          // Return null if the user explicitly set a template heading,
+          // but we can't find it in either the note or any folder file.
+          return null;
+        }
+        // Otherwise fallback to entire note content
+        finalContent = await read_source_file(source_item);
+      }
     }
-    // If heading not found => fallback to file-based approach
   }
 
-  // Otherwise fallback to file-based approach
-  const file_template_content = await find_template_file(source_item);
-  if (file_template_content) {
-    return file_template_content;
+  // If there's still nothing => null
+  if (!finalContent) {
+    return null;
   }
-  return null;
+
+  // 4) If system_prompt_heading is set, remove that block entirely
+  if (settings.system_prompt_heading) {
+    finalContent = remove_heading_block(finalContent, settings.system_prompt_heading);
+  }
+
+  return finalContent || null;
 }
 
 /**
@@ -84,19 +115,19 @@ async function find_template_file(source_item, opts = {}) {
   const settings = env.smart_templates?.settings || {};
   const merge_parents = settings.merge_parent_templates === true;
 
-  // Build the actual template filename
+  // Build template filename
   const template_name = settings.template_name?.endsWith('.md')
     ? settings.template_name
     : (settings.template_name || 'folder_template') + '.md';
 
-  // Start with the current folder's matching template(s)
+  // Start with current folder's match
   const filter = {
     key_starts_with: curr_folder,
     key_ends_with: template_name
   };
   let items = env.smart_sources.filter(filter);
 
-  // If merging, keep going up the folder path
+  // If merging => keep going up the folder path
   if (merge_parents) {
     while (curr_folder !== '') {
       curr_folder = get_folder_path(curr_folder);
@@ -104,14 +135,13 @@ async function find_template_file(source_item, opts = {}) {
       const folder_level_items = env.smart_sources.filter(i => i.path === path_to_match);
       items.push(...folder_level_items);
     }
-    // Sort so deeper items come first
+    // sort deeper paths first
     items.sort((a, b) => b.path.length - a.path.length);
   } else {
-    // Not merging => keep only 'items' from current folder
-    // Then pick the single best (longest path) below
+    // Not merging => keep items from current folder
   }
 
-  // If no items found, return null
+  // If no items found => null
   if (!items.length) return null;
 
   // If not merging => pick the single best match
@@ -120,25 +150,23 @@ async function find_template_file(source_item, opts = {}) {
     items = [items[0]];
   }
 
-  // For each file, read & possibly extract heading content
-  let merged = '';
+  // read each file, possibly extract heading
+  const results = [];
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const fileContent = await item.read();
-    // If the template file itself has the heading, only use that portion
     let portion = null;
     if (settings.template_heading) {
       portion = extract_heading_from_string(fileContent, settings.template_heading);
     }
     if (portion === null) {
-      portion = fileContent; // fallback: entire file
+      portion = fileContent; // fallback to entire file
     }
-    if (merged) {
-      merged += '\n\n';
-    }
-    merged += portion;
+    results.push(portion);
   }
 
+  // Merge with double newlines
+  const merged = results.join('\n\n');
   return merged || null;
 }
 
@@ -184,22 +212,9 @@ function extract_heading_from_string(fileContent, headingName) {
 }
 
 /**
- * @function get_folder_path
- * @description Extracts the folder portion from a file path (the part before the last slash).
- * @param {string} file_path
- * @returns {string} folder path or empty if none
- */
-function get_folder_path(file_path) {
-  if (!file_path.includes('/')) return '';
-  const parts = file_path.split('/');
-  parts.pop();
-  return parts.join('/');
-}
-
-/**
  * @function extract_intra_note_heading_content
  * @description Reads the current file's content. Searches for a heading that matches the given heading name.
- *   If found, returns the subsequent lines up to the next heading (or end of file). Omits the heading line itself.
+ *   If found, returns the subsequent lines up to the next heading (or EOF). Omits the heading line itself.
  * @param {Object} source_item
  * @param {string} template_heading
  * @returns {Promise<string|null>}
@@ -216,8 +231,69 @@ async function extract_intra_note_heading_content(source_item, template_heading)
 }
 
 /**
+ * @function remove_heading_block
+ * @description Removes all occurrences of the specified heading and its subsequent text
+ *   until the next heading or end-of-file.
+ * @param {string} content
+ * @param {string} headingName
+ * @returns {string} content with that heading block removed
+ */
+function remove_heading_block(content, headingName) {
+  if (!content) return '';
+  const lines = content.split('\n');
+  const headingPattern = new RegExp(`^#{1,6}\\s+${escapeRegExp(headingName)}\\s*$`);
+
+  let result = [];
+  let skipMode = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (headingPattern.test(line)) {
+      skipMode = true;
+      continue;
+    }
+    // If we see a new heading while skipping, stop skipping
+    if (skipMode && /^#{1,6}\s+/.test(line)) {
+      skipMode = false;
+    }
+    if (!skipMode) {
+      result.push(line);
+    }
+  }
+  return result.join('\n').trim();
+}
+
+/**
+ * @function get_folder_path
+ * @description Extracts the folder portion from a file path (the part before the last slash).
+ * @param {string} file_path
+ * @returns {string} folder path or empty if none
+ */
+function get_folder_path(file_path) {
+  if (!file_path.includes('/')) return '';
+  const parts = file_path.split('/');
+  parts.pop();
+  return parts.join('/');
+}
+
+/**
+ * @function read_source_file
+ * @description Safely reads the source_item content. Returns string or null on error.
+ * @param {Object} source_item
+ * @returns {Promise<string|null>}
+ */
+async function read_source_file(source_item) {
+  try {
+    return await source_item.read();
+  } catch (err) {
+    console.warn('Error reading source_item:', err);
+    return null;
+  }
+}
+
+/**
  * @function escapeRegExp
- * @description Simple utility for safely creating a heading match pattern
+ * @description Utility for safely creating a heading match pattern
  * @param {string} str
  * @returns {string}
  */

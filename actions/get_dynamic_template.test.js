@@ -135,7 +135,7 @@ test('chooses longest path match first when multiple possible (merge=false)', as
     env
   };
 
-  // Should return 'folder/subfolder/deeper/folder_template.md' since that's the longest path
+  // Should return 'folder/subfolder/deeper/folder_template.md' since it's the longest path match
   const result = await get_dynamic_template(source_item);
   t.is(result, 'Deeper folder template');
 });
@@ -169,12 +169,10 @@ test('merges content from child folder up to root when merge=true', async t => {
   };
 
   /*
-    Merge order with merge_parent_templates=true (child → parent → root):
+    Merge order with merge_parent_templates=true (child -> parent -> root):
       1) folder/subfolder/folder_template.md
       2) folder/folder_template.md
       3) folder_template.md
-
-    The final output should show subfolder text, then folder text, then root text.
   */
   const result = await get_dynamic_template(source_item);
   t.true(result.includes('Subfolder template'));
@@ -329,7 +327,6 @@ Heading-based template content line 2
   t.true(parentIndex < headingIndex);
 });
 
-
 test('if template file has a heading matching settings.template_heading, only that portion is used', async t => {
   const folderTemplate = `# SomeHeading
 Ignore me
@@ -387,7 +384,7 @@ Some content
       settings: {
         template_name: 'folder_template',
         merge_parent_templates: false,
-        template_heading: 'ActualTemplate'  // Not found in the file
+        template_heading: 'ActualTemplate'  // Not found
       }
     }
   };
@@ -447,7 +444,7 @@ Root entire file used if no heading "MyHeading"?
   const source_item = make_source_item(
     'folder/subfolder/file.md',
     env,
-    '# Irrelevant\nFile content not used here since we only want parent templates'
+    '# Irrelevant\nFile content not used here'
   );
 
   /*
@@ -500,12 +497,53 @@ Current note portion line 2
   const result = await get_dynamic_template(source_item);
   t.truthy(result);
 
-  // The parent's heading portion or entire file is first
   t.true(result.includes('Folder-level portion'));
-  // The current note's heading portion is last
   t.true(result.includes('Current note portion line 1'));
 
   const folderIndex = result.indexOf('Folder-level portion');
   const noteIndex = result.indexOf('Current note portion line 1');
   t.true(folderIndex < noteIndex);
+});
+
+/**
+ * New test that verifies if 'system_prompt_heading' is set, the heading and
+ * its sub-block are removed from the final content.
+ */
+test('removes system_prompt_heading block from final content if system_prompt_heading is set', async t => {
+  const fileContent = `# Intro
+
+## SystemPrompt
+This should be removed
+It might include multiple lines
+
+## MainContent
+Keep this around
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([]),
+    smart_templates: {
+      settings: {
+        system_prompt_heading: 'SystemPrompt',
+        merge_parent_templates: false,
+        template_name: 'some_template'
+      }
+    }
+  };
+
+  const source_item = make_source_item(
+    'folder/subfolder/file.md',
+    env,
+    fileContent
+  );
+
+  // No actual template file needed, so fallback -> returns the file content
+  // Then 'system_prompt_heading' is removed from final output
+  const result = await get_dynamic_template(source_item);
+  t.truthy(result);
+
+  // Confirm the entire "## SystemPrompt" section is gone
+  t.false(result.includes('This should be removed'));
+  t.true(result.includes('## MainContent'));
+  t.true(result.includes('Keep this around'));
 });
