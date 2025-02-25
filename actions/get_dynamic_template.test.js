@@ -28,6 +28,19 @@ function create_smart_sources(items = []) {
   };
 }
 
+/**
+ * Utility: Make a source_item with given env, path, and read content.
+ */
+function make_source_item(path, env, content) {
+  return {
+    path,
+    env,
+    async read() {
+      return content;
+    }
+  };
+}
+
 test('returns "No matching template." when source_item is missing', async t => {
   const result = await get_dynamic_template(null);
   t.is(result, 'No matching template.');
@@ -314,4 +327,185 @@ Heading-based template content line 2
 
   t.true(subIndex < parentIndex);
   t.true(parentIndex < headingIndex);
+});
+
+
+test('if template file has a heading matching settings.template_heading, only that portion is used', async t => {
+  const folderTemplate = `# SomeHeading
+Ignore me
+
+## ActualTemplate
+This is the important content
+Still inside the heading
+
+## AnotherHeading
+Ignore me
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return folderTemplate; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: false,
+        template_heading: 'ActualTemplate'
+      }
+    }
+  };
+
+  const source_item = make_source_item(
+    'folder/subfolder/file.md',
+    env,
+    '# UnrelatedFileHeading\nFile content'
+  );
+  const result = await get_dynamic_template(source_item);
+
+  t.truthy(result);
+  t.true(result.includes('This is the important content'));
+  t.false(result.includes('# SomeHeading'));
+  t.false(result.includes('Ignore me'));
+});
+
+test('if template file has no matching heading, entire file is used', async t => {
+  const folderTemplate = `# SomeHeading
+Some content
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return folderTemplate; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: false,
+        template_heading: 'ActualTemplate'  // Not found in the file
+      }
+    }
+  };
+
+  const source_item = make_source_item(
+    'folder/subfolder/file.md',
+    env,
+    '# FileHeading\nFile content'
+  );
+  const result = await get_dynamic_template(source_item);
+
+  t.truthy(result);
+  t.true(result.includes('# SomeHeading'));
+  t.true(result.includes('Some content'));
+});
+
+test('merge_parent_templates=true merges each file, using only heading portion if it exists', async t => {
+  const subfolderTemplate = `## MyHeading
+Subfolder portion
+extra lines
+`;
+  const parentTemplate = `# Something
+Not relevant
+
+## MyHeading
+Parent portion
+still parent portion
+`;
+  const rootTemplate = `# NoMatchingHeading
+Root entire file used if no heading "MyHeading"?
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return subfolderTemplate; }
+      },
+      {
+        path: 'folder/folder_template.md',
+        async read() { return parentTemplate; }
+      },
+      {
+        path: 'folder_template.md',
+        async read() { return rootTemplate; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: true,
+        template_heading: 'MyHeading'
+      }
+    }
+  };
+
+  const source_item = make_source_item(
+    'folder/subfolder/file.md',
+    env,
+    '# Irrelevant\nFile content not used here since we only want parent templates'
+  );
+
+  /*
+    Merge order: subfolder => folder => root
+    subfolder -> has "## MyHeading" => "Subfolder portion..."
+    folder -> has "## MyHeading" => "Parent portion..."
+    root -> does NOT have "## MyHeading" => entire file used
+  */
+  const result = await get_dynamic_template(source_item);
+  t.truthy(result);
+
+  t.true(result.indexOf('Subfolder portion') < result.indexOf('Parent portion'));
+  t.true(result.includes('Root entire file used if no heading "MyHeading"?'));
+});
+
+test('template_heading in current note is appended last if found and merge_parent_templates=true', async t => {
+  const folderTemplate = `## MyHeading
+Folder-level portion
+`;
+
+  const env = {
+    smart_sources: create_smart_sources([
+      {
+        path: 'folder/subfolder/folder_template.md',
+        async read() { return folderTemplate; }
+      }
+    ]),
+    smart_templates: {
+      settings: {
+        template_name: 'folder_template',
+        merge_parent_templates: true,
+        template_heading: 'MyHeading'
+      }
+    }
+  };
+
+  const source_item = {
+    path: 'folder/subfolder/file.md',
+    env,
+    async read() {
+      return `# Intro
+
+## MyHeading
+Current note portion line 1
+Current note portion line 2
+`;
+    }
+  };
+
+  const result = await get_dynamic_template(source_item);
+  t.truthy(result);
+
+  // The parent's heading portion or entire file is first
+  t.true(result.includes('Folder-level portion'));
+  // The current note's heading portion is last
+  t.true(result.includes('Current note portion line 1'));
+
+  const folderIndex = result.indexOf('Folder-level portion');
+  const noteIndex = result.indexOf('Current note portion line 1');
+  t.true(folderIndex < noteIndex);
 });
