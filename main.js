@@ -4,7 +4,8 @@
  */
 
 import { Plugin, Notice } from "obsidian";
-import { get_dynamic_template } from "./actions/get_dynamic_template.js";
+import { get_dynamic_templates } from "smart-templates/actions/get_dynamic_templates.js";
+import { merge_templates } from "smart-templates/actions/merge_templates.js";
 import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
 import { SmartEnv } from "smart-environment/obsidian.js";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
@@ -58,11 +59,14 @@ export default class SmartTemplatesPlugin extends Plugin {
 
         const source_item = this.env.smart_sources.get(file.path);
 
-        const templateContent = await get_dynamic_template(source_item);
-        if (templateContent === null) {
+        const templates = await get_dynamic_templates(source_item);
+        if (templates.length === 0) {
           new Notice("No matching template found.");
           return;
         }
+        console.log('templates', templates);
+        const templateContent = await merge_templates(templates);
+        console.log('templateContent', templateContent);
         const editor = this.get_editor();
         if (!editor) return;
         editor.replaceSelection(templateContent + "\n");
