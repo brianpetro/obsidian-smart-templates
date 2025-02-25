@@ -34,6 +34,9 @@ export default class SmartTemplatesPlugin extends Plugin {
         SmartTemplate,
       },
     });
+    await SmartEnv.wait_for({loaded: true});
+    this.notices = new this.env.config.modules.smart_notices.class(this);
+    this.env.smart_sources.process_source_import_queue({process_embed_queue: false, import_all: true});
 
     this.register_commands();
     // Register the new Smart Templates settings tab
@@ -111,7 +114,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     if(!this.build_context_modal) {
       this.build_context_modal = new BuildContextModal(this.app, this);
     }
-    this.build_context_modal.open([template_item]);
+    this.build_context_modal.open(template_item);
   }
   get_editor() {
     const activeLeaf = this.app.workspace.activeLeaf;

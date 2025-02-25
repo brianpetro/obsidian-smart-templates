@@ -36,8 +36,8 @@ export class BuildContextModal extends FuzzySuggestModal {
     this.plugin.env.create_env_getter(this); // sets this.env
   }
 
-  open(template_items) {
-    this.template_items = template_items;
+  open(template_item) {
+    this.template_item = template_item;
     super.open();
   }
 
@@ -61,7 +61,9 @@ export class BuildContextModal extends FuzzySuggestModal {
    * FuzzySuggestModal uses this array for suggestions.
    */
   getItems() {
-    const context_items = Object.values(this.env.smart_sources.items);
+    const context_items = Object.values(this.env.smart_sources.items)
+      .filter(i => this.selected_items.length === 0 || !this.selected_items.some(x => x.file.path === i.path));
+    ;
     context_items.unshift(...this.depth_items);
     return context_items;
   }
@@ -169,15 +171,28 @@ export class BuildContextModal extends FuzzySuggestModal {
    */
   async submit() {
     // Just gather final file paths
-    const selectedPaths = this.selected_items.map(x => x.file.path);
-    if (!selectedPaths.length) {
+    const selected_keys = this.selected_items.map(x => x.key);
+    if (!selected_keys.length) {
       new Notice('No files selected.');
       return;
     }
     // Here, you might proceed with the next step, e.g. calling:
     //    this.plugin.handleContextSelectionForTemplate(selectedPaths);
     // or you might copy them to clipboard. For now, we'll do a simple notice.
-    new Notice(`Selected ${selectedPaths.length} file(s). Proceeding with template generation...`);
+    new Notice(`Selected ${selected_keys.length} file(s). Proceeding with template generation...`);
+
+    const context = await this.env.smart_contexts.create_or_update({
+      context_item: selected_keys.reduce((acc, key) => {
+        acc[key] = true;
+        return acc;
+      }, {})
+    });
+
+    this.env.smart_completions.create_or_update({
+      context_key: context.key,
+      template_key: this.template_item.key,
+      new_note: true
+    });
 
     // Example: just close modal
     this.close();
