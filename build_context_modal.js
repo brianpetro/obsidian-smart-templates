@@ -36,9 +36,8 @@ export class BuildContextModal extends FuzzySuggestModal {
     this.plugin.env.create_env_getter(this); // sets this.env
   }
 
-  open(template_item) {
-    this.template_item = template_item;
-    super.open();
+  get template_item() {
+    return this.plugin.template_item;
   }
 
   /**
@@ -62,7 +61,7 @@ export class BuildContextModal extends FuzzySuggestModal {
    */
   getItems() {
     const context_items = Object.values(this.env.smart_sources.items)
-      .filter(i => this.selected_items.length === 0 || !this.selected_items.some(x => x.file.path === i.path));
+      .filter(i => this.selected_items.length === 0 || !this.selected_items.some(x => x.path === i.path));
     ;
     context_items.unshift(...this.depth_items);
     return context_items;
@@ -70,11 +69,10 @@ export class BuildContextModal extends FuzzySuggestModal {
 
   /**
    * The text displayed in each suggestion row.
-   * @param {import('obsidian').TFile} file
    * @returns {string}
    */
-  getItemText(file) {
-    return file.path;
+  getItemText(item) {
+    return item.path;
   }
   depth_items = [
     {
@@ -98,14 +96,13 @@ export class BuildContextModal extends FuzzySuggestModal {
   /**
    * Called when the user selects an item from the suggestions.
    * We do not close the modal. Instead, we store the selection and re-render.
-   * @param {import('obsidian').TFile} context_item
    */
   onChooseItem(context_item) {
     if (context_item.depth) {
       this.insert_items_up_to_depth(context_item.depth);
     }
     this.current_input = this.inputEl.value;
-    this.selected_items.push({ context_item });
+    this.selected_items.push(context_item);
     this.render_pills();
     // remain open for further picks
     this.open();
@@ -143,7 +140,7 @@ export class BuildContextModal extends FuzzySuggestModal {
     // Create each pill
     for (const sel of this.selected_items) {
       const pill = this.selected_container_el.createDiv('st-build-context-pill');
-      pill.createSpan({ text: sel.context_item.path });
+      pill.createSpan({ text: sel.path });
       const remove_el = pill.createSpan({ text: '  ✕', cls: 'st-build-context-pill-remove' });
       remove_el.addEventListener('click', () => {
         this.selected_items = this.selected_items.filter(x => x !== sel);
@@ -182,17 +179,21 @@ export class BuildContextModal extends FuzzySuggestModal {
     new Notice(`Selected ${selected_keys.length} file(s). Proceeding with template generation...`);
 
     const context = await this.env.smart_contexts.create_or_update({
-      context_item: selected_keys.reduce((acc, key) => {
+      context_items: selected_keys.reduce((acc, key) => {
         acc[key] = true;
         return acc;
       }, {})
     });
+    console.log('this.template_item', this.template_item);
 
-    this.env.smart_completions.create_or_update({
-      context_key: context.key,
-      template_key: this.template_item.key,
-      new_note: true
-    });
+    const template_output = await this.template_item.generate_template_output(context.key);
+
+    // create a new note with the template output
+    const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);
+
+    // open the new note in new split
+    const new_split = this.app.workspace.getLeaf('split', 'vertical');
+    new_split.openFile(new_note);
 
     // Example: just close modal
     this.close();

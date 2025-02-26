@@ -50,10 +50,10 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
   /**
    * Called when the user selects an item from the suggestions.
    * We do not close the modal. Instead, we store the selection and re-render.
-   * @param {import('obsidian').TFile} context_item
    */
-  onChooseItem(context_item) {
-    this.plugin.open_build_context_modal(context_item);
+  onChooseItem(template_item) {
+    console.log('onChooseItem', template_item);
+    this.plugin.open_build_context_modal(template_item);
   }
 
   /**

@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "obsidian": "latest",
+    "smart-chat-model": "../jsbrains/smart-chat-model",
     "smart-completions": "../advanced-env/collections/smart-completions",
+    "smart-contexts": "../jsbrains/smart-contexts",
     "smart-environment": "../jsbrains/smart-environment",
+    "smart-http-request": "../jsbrains/smart-http-request",
     "smart-templates": "../advanced-env/collections/smart-templates"
   },
   "devDependencies": {

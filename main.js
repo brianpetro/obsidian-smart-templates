@@ -9,11 +9,29 @@ import { merge_templates } from "smart-templates/actions/merge_templates.js";
 import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
 import { SmartEnv } from "smart-environment/obsidian.js";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
-import { smart_completions } from "smart-completions";
+import { smart_completions, SmartCompletion } from "smart-completions";
 import { smart_templates } from "smart-templates";
 import { SmartTemplate } from "smart-templates";
 import { TemplateSelectionModal } from "./template_selection_modal.js";
 import { BuildContextModal } from "./build_context_modal.js";
+import { smart_contexts } from "smart-contexts";
+// chat model
+import { SmartChatModel } from "smart-chat-model";
+import {
+  SmartChatModelAnthropicAdapter,
+  SmartChatModelAzureAdapter,
+  // SmartChatModelCohereAdapter,
+  SmartChatModelCustomAdapter,
+  SmartChatModelGeminiAdapter,
+  SmartChatModelGroqAdapter,
+  SmartChatModelLmStudioAdapter,
+  SmartChatModelOllamaAdapter,
+  SmartChatModelOpenaiAdapter,
+  SmartChatModelOpenRouterAdapter,
+} from "smart-chat-model/adapters.js";
+import { SmartHttpRequest, SmartHttpObsidianRequestAdapter } from "smart-http-request";
+import { requestUrl } from "obsidian";
+
 export default class SmartTemplatesPlugin extends Plugin {
   async onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
@@ -29,10 +47,40 @@ export default class SmartTemplatesPlugin extends Plugin {
           content_parsers: [parse_template],
         },
         smart_completions,
+        smart_contexts,
         smart_templates
       },
       item_types: {
         SmartTemplate,
+        SmartCompletion,
+      },
+      modules: {
+        smart_chat_model: {
+          class: SmartChatModel,
+          // DEPRECATED FORMAT: will be changed (requires SmartModel adapters getters update)
+          adapters: {
+            anthropic: SmartChatModelAnthropicAdapter,
+            azure: SmartChatModelAzureAdapter,
+            custom: SmartChatModelCustomAdapter,
+            gemini: SmartChatModelGeminiAdapter,
+            groq: SmartChatModelGroqAdapter,
+            lm_studio: SmartChatModelLmStudioAdapter,
+            ollama: SmartChatModelOllamaAdapter,
+            open_router: SmartChatModelOpenRouterAdapter,
+            openai: SmartChatModelOpenaiAdapter,
+          },
+          http_adapter: new SmartHttpRequest({
+            adapter: SmartHttpObsidianRequestAdapter,
+            obsidian_request_url: requestUrl,
+          }),
+        },
+      },
+      default_settings: {
+        smart_completions: {
+          chat_model: {
+            platform_key: "openai",
+          },
+        },
       },
     });
     await SmartEnv.wait_for({loaded: true});
@@ -115,6 +163,7 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   open_build_context_modal(template_item) {
+    this.template_item = template_item;
     if(!this.build_context_modal) {
       this.build_context_modal = new BuildContextModal(this.app, this);
     }

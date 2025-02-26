@@ -37,16 +37,13 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
       });
       return;
     }
-  
-    const settings_config = this.env.smart_templates?.settings_config;
-    if (!settings_config) {
-      this.containerEl.createEl('p', {
-        text: 'No settings_config found in env.smart_templates.'
-      });
-      while (!this.env?.smart_templates?.settings_config) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+    this.env.smart_completions.re_render_settings = () => {
+      this.containerEl.empty();
+      this.render_settings();
     }
+  
+    const smart_templates_settings_config = this.env.smart_templates?.settings_config;
+    const smart_chat_model_settings_config = this.env.smart_completions?.chat_model?.settings_config;
   
     // Use env.smart_view to render. We can call its methods as needed:
     //  - render_settings_html(settings_config, options)
@@ -55,10 +52,14 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
     console.log('render_settings', this.env);
     console.log('smart_view', this.env.smart_view);
   
-    const settings_frag = await this.env.smart_view.render_settings(settings_config, {
+    const settings_frag = await this.env.smart_view.render_settings(smart_templates_settings_config, {
       scope: this.env.smart_templates
+    });
+    const chat_model_frag = await this.env.smart_view.render_settings(smart_chat_model_settings_config, {
+      scope: this.env.smart_completions?.chat_model
     });
   
     this.containerEl.appendChild(settings_frag);
+    this.containerEl.appendChild(chat_model_frag);
   }
 }
