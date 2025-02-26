@@ -48,6 +48,13 @@ export class BuildContextModal extends FuzzySuggestModal {
     if (this.current_input) {
       this.inputEl.value = this.current_input;
     }
+    const file = this.app.workspace.getActiveFile();
+    const source_item = this.plugin.env.smart_sources.get(file.path);
+    if(source_item) {
+      if(!this.selected_items.some(x => x.path === source_item.path)) {
+        this.selected_items.push(source_item);
+      }
+    }
     this.render_pills();
     // Keep focus on the input
     this.inputEl.addEventListener('blur', () => {
@@ -103,7 +110,7 @@ export class BuildContextModal extends FuzzySuggestModal {
     }
     this.current_input = this.inputEl.value;
     this.selected_items.push(context_item);
-    this.render_pills();
+    // this.render_pills();
     // remain open for further picks
     this.open();
   }
@@ -184,18 +191,12 @@ export class BuildContextModal extends FuzzySuggestModal {
         return acc;
       }, {})
     });
-    console.log('this.template_item', this.template_item);
 
-    const template_output = await this.template_item.generate_template_output(context.key);
+    this.plugin.context_item = context;
 
-    // create a new note with the template output
-    const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);
+    if(this.should_generate_template) this.plugin.generate_template();
 
-    // open the new note in new split
-    const new_split = this.app.workspace.getLeaf('split', 'vertical');
-    new_split.openFile(new_note);
-
-    // Example: just close modal
+    this.plugin.open_user_message_modal();
     this.close();
   }
 }

@@ -12,8 +12,9 @@ import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
 import { smart_templates } from "smart-templates";
 import { SmartTemplate } from "smart-templates";
-import { TemplateSelectionModal } from "./template_selection_modal.js";
-import { BuildContextModal } from "./build_context_modal.js";
+import { TemplateSelectionModal } from "./modals/template_selection_modal.js";
+import { BuildContextModal } from "./modals/build_context_modal.js";
+import { UserMessageModal } from "./modals/user_message_modal.js";
 import { smart_contexts } from "smart-contexts";
 // chat model
 import { SmartChatModel } from "smart-chat-model";
@@ -162,12 +163,17 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.template_selection_modal.open();
   }
 
-  open_build_context_modal(template_item) {
-    this.template_item = template_item;
+  open_build_context_modal() {
     if(!this.build_context_modal) {
       this.build_context_modal = new BuildContextModal(this.app, this);
     }
-    this.build_context_modal.open(template_item);
+    this.build_context_modal.open();
+  }
+  open_user_message_modal() {
+    if(!this.user_message_modal) {
+      this.user_message_modal = new UserMessageModal(this.app, this);
+    }
+    this.user_message_modal.open();
   }
   get_editor() {
     const activeLeaf = this.app.workspace.activeLeaf;
@@ -175,5 +181,15 @@ export default class SmartTemplatesPlugin extends Plugin {
       return null;
     }
     return activeLeaf.view.editor;
+  }
+  async generate_template() {
+    const template_output = await this.template_item.generate_template_output(this.context_item.key);
+
+    // create a new note with the template output
+    const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);
+
+    // open the new note in new split
+    const new_split = this.app.workspace.getLeaf('split', 'vertical');
+    new_split.openFile(new_note);
   }
 }

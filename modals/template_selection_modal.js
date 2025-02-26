@@ -53,7 +53,9 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
    */
   onChooseItem(template_item) {
     console.log('onChooseItem', template_item);
-    this.plugin.open_build_context_modal(template_item);
+    this.plugin.template_item = template_item;
+    this.plugin.open_build_context_modal();
+    this.close();
   }
 
   /**
@@ -106,27 +108,5 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
   async insert_items_up_to_depth(depth) {
     // TODO
     console.log(`Inserting items up to depth=${depth}`);
-  }
-
-
-  /**
-   * Final submission:
-   *   - Gather the selected items
-   *   - Pass them to the plugin's generation flow
-   */
-  async submit() {
-    // Just gather final file paths
-    const selectedPaths = this.selected_items.map(x => x.file.path);
-    if (!selectedPaths.length) {
-      new Notice('No files selected.');
-      return;
-    }
-    // Here, you might proceed with the next step, e.g. calling:
-    //    this.plugin.handleContextSelectionForTemplate(selectedPaths);
-    // or you might copy them to clipboard. For now, we'll do a simple notice.
-    new Notice(`Selected ${selectedPaths.length} file(s). Proceeding with template generation...`);
-
-    // Example: just close modal
-    this.close();
   }
 }
