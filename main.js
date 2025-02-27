@@ -82,6 +82,23 @@ export default class SmartTemplatesPlugin extends Plugin {
             platform_key: "openai",
           },
         },
+        smart_contexts: {
+          smart_templates_plugin: {
+            templates: {
+              '-1': {
+                before: '{{FILE_TREE}}'
+              },
+              '0': {
+                before: '{{ITEM_PATH}}\n```{{ITEM_EXT}}',
+                after: '```'
+              },
+              '1': {
+                before: 'LINK: {{ITEM_NAME}}\n```{{ITEM_EXT}}',
+                after: '```'
+              },
+            },
+          },
+        },
       },
     });
     await SmartEnv.wait_for({loaded: true});
@@ -183,7 +200,10 @@ export default class SmartTemplatesPlugin extends Plugin {
     return activeLeaf.view.editor;
   }
   async generate_template() {
-    const template_output = await this.template_item.generate_template_output(this.context_item.key);
+    const template_output = await this.template_item.generate_template_output(this.context_item.key, {
+      user_message: this.user_message,
+      context_opts: this.env.smart_contexts.settings.smart_templates_plugin ?? {}
+    });
 
     // create a new note with the template output
     const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);

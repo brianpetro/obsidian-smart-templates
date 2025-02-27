@@ -54,6 +54,7 @@ export class UserMessageModal extends Modal {
    * Submits the user message to smart_completions with the current template_key and context_key.
    */
   async submit_user_message() {
+    this.plugin.user_message = this.user_message;
     await this.plugin.generate_template();
     this.close();
   }

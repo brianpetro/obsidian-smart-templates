@@ -52,7 +52,7 @@ export class BuildContextModal extends FuzzySuggestModal {
     const source_item = this.plugin.env.smart_sources.get(file.path);
     if(source_item) {
       if(!this.selected_items.some(x => x.path === source_item.path)) {
-        this.selected_items.push(source_item);
+        this.selected_items = [source_item];
       }
     }
     this.render_pills();
@@ -84,19 +84,7 @@ export class BuildContextModal extends FuzzySuggestModal {
   depth_items = [
     {
       depth: 1,
-      path: "Insert items up to depth=1",
-    },
-    {
-      depth: 2,
-      path: "Insert items up to depth=2",
-    },
-    {
-      depth: 3,
-      path: "Insert items up to depth=3",
-    },
-    {
-      depth: 4,
-      path: "Insert items up to depth=4",
+      path: "Insert items linked to current selection",
     },
   ];
 
@@ -107,12 +95,11 @@ export class BuildContextModal extends FuzzySuggestModal {
   onChooseItem(context_item) {
     if (context_item.depth) {
       this.insert_items_up_to_depth(context_item.depth);
+    } else {
+      this.current_input = this.inputEl.value;
+      this.selected_items.push(context_item);
     }
-    this.current_input = this.inputEl.value;
-    this.selected_items.push(context_item);
-    // this.render_pills();
-    // remain open for further picks
-    this.open();
+    this.open(); // always remain open for further picks
   }
 
   /**
@@ -148,9 +135,12 @@ export class BuildContextModal extends FuzzySuggestModal {
     for (const sel of this.selected_items) {
       const pill = this.selected_container_el.createDiv('st-build-context-pill');
       pill.createSpan({ text: sel.path });
-      const remove_el = pill.createSpan({ text: '  ✕', cls: 'st-build-context-pill-remove' });
-      remove_el.addEventListener('click', () => {
-        this.selected_items = this.selected_items.filter(x => x !== sel);
+      const remove_el = pill.createSpan({ text: '  ✕', cls: 'st-build-context-pill-remove'});
+      remove_el.dataset.path = sel.path;
+      remove_el.addEventListener('click', (e) => {
+        const path = e.target.dataset.path;
+        console.log('should remove', path);
+        this.selected_items = this.selected_items.filter(x => x.path !== path);
         this.render_pills();
       });
       setIcon(pill.createSpan({ cls: 'st-build-context-pill-icon' }), 'document');
@@ -163,8 +153,29 @@ export class BuildContextModal extends FuzzySuggestModal {
    * @param {number} depth
    */
   async insert_items_up_to_depth(depth) {
-    // TODO
-    console.log(`Inserting items up to depth=${depth}`);
+    for(let i = 0; i < depth; i++) {
+      this.selected_items = this.selected_items.reduce((acc, item) => {
+        item.outlinks.forEach(outlink => {
+          if(!acc.some(x => x.path === outlink)) {
+            const link = this.env.smart_sources.get(outlink);
+            if(link) {
+              acc.push(link);
+            }
+          }
+        });
+        if(this.env.smart_contexts.settings.smart_templates_plugin?.inlinks) {
+          item.inlinks.forEach(inlink => {
+            if(!acc.some(x => x.path === inlink)) {
+              const link = this.env.smart_sources.get(inlink);
+              if(link) {
+                acc.push(link);
+              }
+            }
+          });
+        }
+        return acc;
+      }, this.selected_items);
+    }
   }
 
 

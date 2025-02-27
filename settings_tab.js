@@ -44,6 +44,7 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
   
     const smart_templates_settings_config = this.env.smart_templates?.settings_config;
     const smart_chat_model_settings_config = this.env.smart_completions?.chat_model?.settings_config;
+    const smart_contexts_settings_config = this.env.smart_contexts?.settings_config;
   
     // Use env.smart_view to render. We can call its methods as needed:
     //  - render_settings_html(settings_config, options)
@@ -55,11 +56,15 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
     const settings_frag = await this.env.smart_view.render_settings(smart_templates_settings_config, {
       scope: this.env.smart_templates
     });
+    this.containerEl.appendChild(settings_frag);
     const chat_model_frag = await this.env.smart_view.render_settings(smart_chat_model_settings_config, {
       scope: this.env.smart_completions?.chat_model
     });
-  
-    this.containerEl.appendChild(settings_frag);
     this.containerEl.appendChild(chat_model_frag);
+    const contexts_frag = await this.env.smart_view.render_settings(smart_contexts_settings_config, {
+      scope: this.env.smart_contexts,
+      settings_scope: 'smart_templates_plugin'
+    });
+    this.containerEl.appendChild(contexts_frag);
   }
 }
