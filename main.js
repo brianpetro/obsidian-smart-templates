@@ -102,7 +102,7 @@ export default class SmartTemplatesPlugin extends Plugin {
       },
     });
     await SmartEnv.wait_for({loaded: true});
-    this.notices = new this.env.config.modules.smart_notices.class(this);
+    this.notices = new this.env.config.modules.smart_notices.class(this.env);
     this.env.smart_sources.process_source_import_queue({process_embed_queue: false, import_all: true});
 
     this.register_commands();
