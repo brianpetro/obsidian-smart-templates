@@ -34,19 +34,16 @@ import { SmartHttpRequest, SmartHttpObsidianRequestAdapter } from "smart-http-re
 import { requestUrl } from "obsidian";
 
 export default class SmartTemplatesPlugin extends Plugin {
-  async onload() {
-    this.app.workspace.onLayoutReady(this.initialize.bind(this));
-  }
-
-  async initialize() {
+  onload() {
     // Initialize the environment, register commands, then register the settings tab
-    await SmartEnv.create(this, {
+    SmartEnv.create(this, {
       // global_prop: window,
       global_prop: 'smart_env',
       collections: {
         smart_sources: {
           content_parsers: [parse_template],
         },
+        // not is base obsidian smart-env
         smart_completions,
         smart_contexts,
         smart_templates
@@ -101,9 +98,18 @@ export default class SmartTemplatesPlugin extends Plugin {
         },
       },
     });
+    this.app.workspace.onLayoutReady(this.initialize.bind(this));
+  }
+
+  /**
+   * @deprecated use env.smart_notices instead
+   */
+  get notices() {
+    return this.env.notices;
+  }
+
+  async initialize() {
     await SmartEnv.wait_for({loaded: true});
-    this.notices = new this.env.config.modules.smart_notices.class(this.env);
-    this.env.smart_sources.process_source_import_queue({process_embed_queue: false, import_all: true});
 
     this.register_commands();
     // Register the new Smart Templates settings tab
