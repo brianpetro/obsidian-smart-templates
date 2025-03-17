@@ -74,9 +74,11 @@ export default class SmartTemplatesPlugin extends Plugin {
         },
       },
       default_settings: {
-        smart_completions: {
-          chat_model: {
-            platform_key: "openai",
+        smart_templates_plugin: {
+          smart_completions: {
+            chat_model: {
+              platform_key: "openai",
+            },
           },
         },
         smart_contexts: {
@@ -178,24 +180,47 @@ export default class SmartTemplatesPlugin extends Plugin {
         this.open_template_selection_modal();
       }
     });
+    this.addCommand({
+      id: "create_draft",
+      name: "Create Draft",
+      callback: async () => {
+        this.create_draft();
+      }
+    });
   }
-  open_template_selection_modal() {
-    if(!this.template_selection_modal) {
-      this.template_selection_modal = new TemplateSelectionModal(this.app, this);
-    }
-    this.template_selection_modal.open();
-  }
-
-  open_build_context_modal() {
-    if(!this.build_context_modal) {
-      this.build_context_modal = new BuildContextModal(this.app, this);
-    }
+  create_draft() {
+    const file = this.app.workspace.getActiveFile();
+    const source_item = this.env.smart_sources.get(file.path);
+    this.template_item = source_item;
     this.build_context_modal.open();
   }
-  open_user_message_modal() {
-    if(!this.user_message_modal) {
-      this.user_message_modal = new UserMessageModal(this.app, this);
+
+
+  get template_selection_modal() {
+    if(!this._template_selection_modal) {
+      this._template_selection_modal = new TemplateSelectionModal(this.app, this);
     }
+    return this._template_selection_modal;
+  }
+  open_template_selection_modal() {
+    this.template_selection_modal.open();
+  }
+  get build_context_modal() {
+    if(!this._build_context_modal) {
+      this._build_context_modal = new BuildContextModal(this.app, this);
+    }
+    return this._build_context_modal;
+  }
+  open_build_context_modal() {
+    this.build_context_modal.open();
+  }
+  get user_message_modal() {
+    if(!this._user_message_modal) {
+      this._user_message_modal = new UserMessageModal(this.app, this);
+    }
+    return this._user_message_modal;
+  }
+  open_user_message_modal() {
     this.user_message_modal.open();
   }
   get_editor() {
@@ -205,11 +230,44 @@ export default class SmartTemplatesPlugin extends Plugin {
     }
     return activeLeaf.view.editor;
   }
+  get chat_model() {
+    if (!this._chat_model) {
+      this._chat_model = this.env.init_module('smart_chat_model', {
+        model_config: {},
+        settings: this.env.settings.smart_templates_plugin.smart_completions.chat_model,  // each platform's config
+        env: this.env,
+        reload_model: this.reload_chat_model.bind(this),
+        re_render_settings: this.re_render_settings?.bind(this) ?? (() => { this.app.setting.openTabById('smart-templates'); }),
+      });
+    }
+    return this._chat_model;
+  }
+  reload_chat_model() {
+    console.log('reload_chat_model', this.env.settings.smart_templates_plugin.smart_completions.chat_model);
+    if (this._chat_model?.unload) {
+      this._chat_model.unload();
+    }
+    this._chat_model = null;
+  }
   async generate_template() {
-    const template_output = await this.template_item.generate_template_output(this.context_item.key, {
+    if(!this.env.smart_completions) {
+      console.warn('SmartTemplate: smart_completions not found in environment');
+      return null;
+    }
+    
+    const completion_opts = {
+      context_key: this.context_item.key,
+      template_key: this.template_item.key,
       user_message: this.user_message,
-      context_opts: this.env.smart_contexts.settings.smart_templates_plugin ?? {}
-    });
+    };
+    
+    // Create a completion with the template and context
+    const completion = new this.env.smart_completions.item_type(this.env, completion_opts);
+    this.env.smart_completions.set(completion);
+    completion.chat_model = this.chat_model;
+    await completion.init();
+    
+    const template_output = completion.response_text;
 
     // create a new note with the template output
     const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);
