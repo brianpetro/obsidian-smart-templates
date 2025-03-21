@@ -7,7 +7,7 @@ import { Plugin, Notice } from "obsidian";
 import { get_dynamic_templates } from "smart-templates/actions/get_dynamic_templates.js";
 import { merge_templates } from "smart-templates/actions/merge_templates.js";
 import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
-import { SmartEnv } from "smart-environment/obsidian.js";
+import { SmartEnv } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
 import { smart_templates } from "smart-templates";

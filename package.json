@@ -1,7 +1,7 @@
 {
   "name": "smart-templates",
   "version": "1.0.0",
-  "description": "A minimal ESM Obsidian plugin scaffold using smart-environment.",
+  "description": "A minimal ESM Obsidian plugin scaffold using obsidian-smart-env.",
   "author": "🌴 Brian",
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,7 @@
     "smart-chat-model": "../jsbrains/smart-chat-model",
     "smart-completions": "../advanced-env/collections/smart-completions",
     "smart-contexts": "../jsbrains/smart-contexts",
-    "smart-environment": "../jsbrains/smart-environment",
+    "obsidian-smart-env": "../jsbrains/obsidian-smart-env",
     "smart-http-request": "../jsbrains/smart-http-request",
     "smart-templates": "../advanced-env/collections/smart-templates"
   },
