@@ -1,6 +1,6 @@
 {
   "name": "smart-templates",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A minimal ESM Obsidian plugin scaffold using obsidian-smart-env.",
   "author": "🌴 Brian",
   "license": "MIT",
