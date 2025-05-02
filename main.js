@@ -5,7 +5,7 @@
 
 import { Plugin, Notice } from "obsidian";
 import { get_dynamic_templates } from "smart-templates/actions/get_dynamic_templates.js";
-import { merge_templates } from "smart-templates/actions/merge_templates.js";
+import { concat_templates } from "smart-templates/actions/concat_templates.js";
 import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
 import { SmartEnv } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
@@ -139,7 +139,7 @@ export default class SmartTemplatesPlugin extends Plugin {
           return;
         }
         console.log('templates', templates);
-        const templateContent = await merge_templates(templates);
+        const templateContent = await concat_templates(templates);
         console.log('templateContent', templateContent);
         const editor = this.get_editor();
         if (!editor) return;
