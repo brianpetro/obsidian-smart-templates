@@ -12,7 +12,7 @@
   "dependencies": {
     "obsidian": "latest",
     "smart-chat-model": "file:../jsbrains/smart-chat-model",
-    "smart-completions": "file:../advanced-env/collections/smart-completions",
+    "smart-completions": "file:../jsbrains/smart-completions",
     "smart-contexts": "file:../jsbrains/smart-contexts",
     "obsidian-smart-env": "file:../obsidian-smart-env",
     "smart-http-request": "file:../jsbrains/smart-http-request",
