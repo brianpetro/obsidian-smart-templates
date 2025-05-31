@@ -196,11 +196,8 @@ export class BuildContextModal extends FuzzySuggestModal {
     // or you might copy them to clipboard. For now, we'll do a simple notice.
     new Notice(`Selected ${selected_keys.length} file(s). Proceeding with template generation...`);
 
-    const context = await this.env.smart_contexts.create_or_update({
-      context_items: selected_keys.reduce((acc, key) => {
-        acc[key] = true;
-        return acc;
-      }, {})
+    const context = await this.env.smart_contexts.new_context({}, {
+      add_items: selected_keys
     });
 
     this.plugin.context_item = context;
