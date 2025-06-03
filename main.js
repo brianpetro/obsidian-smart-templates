@@ -77,7 +77,7 @@ export default class SmartTemplatesPlugin extends Plugin {
         smart_templates_plugin: {
           smart_completions: {
             chat_model: {
-              platform_key: "openai",
+              adapter: "ollama",
             },
           },
         },
