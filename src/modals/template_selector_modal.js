@@ -4,6 +4,7 @@
  */
 
 import { FuzzySuggestModal } from 'obsidian';
+import { TemplateCompletionModal } from './template_completion_modal.js';
 
 /**
  * @typedef {Object} SelectedItem
@@ -11,17 +12,31 @@ import { FuzzySuggestModal } from 'obsidian';
  */
 
 /**
- * TemplateSelectionModal
+ * TemplateSelectorModal
  * Allows the user to select a template.
  */
-export class TemplateSelectionModal extends FuzzySuggestModal {
+export class TemplateSelectorModal extends FuzzySuggestModal {
+  static open(env, opts) {
+    const plugin =
+      env.smart_contexts_plugin ||
+      env.smart_chat_plugin ||
+      env.smart_connections_plugin ||
+      env.plugin
+    ;
+    if (!env.template_selector_modal) {
+      env.template_selector_modal = new this(plugin, opts);
+    }
+    env.template_selector_modal.open(opts);
+    return env.template_selector_modal;
+  }
   /**
    * @param {import('obsidian').App} app - The Obsidian app
    * @param {Object} plugin - The main Smart Templates plugin
    */
-  constructor(app, plugin, ) {
-    super(app);
+  constructor(plugin, opts = {}) {
+    super(plugin.app);
     this.plugin = plugin;
+    this.opts = opts;
     this.setInstructions([
       { command: 'Enter', purpose: 'Select Template' },
       { command: 'Esc', purpose: 'Close' }
@@ -50,12 +65,14 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
    * Called when the user selects an item from the suggestions.
    * We do not close the modal. Instead, we store the selection and re-render.
    */
-  onChooseItem(template_item) {
-    console.log('onChooseItem', template_item);
-    this.plugin.template_item = template_item;
-    this.plugin.open_template_completion_modal();
+  onChooseItem(selection, evt) {
+    TemplateCompletionModal.open(
+      this.env,
+      {
+        template: selection,
+      }
+    );
     this.close();
   }
 
-  // no pills rendering – context builder used instead
 }

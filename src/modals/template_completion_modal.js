@@ -1,0 +1,131 @@
+/**
+ * @file template_completion_modal.js
+ * @description
+ * Combines a context‑tree preview, free‑form “user message” input
+ * and **Insert / Create** actions into one UI.  Re‑uses the
+ * Smart Context builder component so users can refine context before
+ * generating a completion.
+ */
+
+import { Modal, Notice } from 'obsidian';
+import { ContextSelectorModal } from 'smart-context-obsidian/src/views/context_selector_modal.js';
+
+export class TemplateCompletionModal extends Modal {
+  /**
+   * @param {import('obsidian').App}     app
+   * @param {import('../../main.js').default} plugin
+   */
+  constructor(plugin, opts = {}) {
+    super(plugin.app);
+    this.plugin = plugin;
+    this.opts = opts;
+    /** inject env getter */
+    this.plugin.env.create_env_getter(this);
+    this.user_message = '';
+    this.context = opts.ctx || null;
+  }
+  static open(env, opts) {
+    const plugin =
+      env.smart_contexts_plugin ||
+      env.smart_chat_plugin ||
+      env.smart_connections_plugin ||
+      env.plugin
+    ;
+    if (!env.template_completion_modal) {
+      env.template_completion_modal = new this(plugin, opts);
+    }
+    env.template_completion_modal.open(opts);
+    return env.template_completion_modal;
+  }
+
+  /* ─────────────────────────── Modal lifecycle ────────────────────────── */
+
+  onOpen() {
+    this.render();
+    console.log('TemplateCompletionModal opened with opts:', this, this.opts);
+    this.setTitle('Template: ' + (this.opts?.template?.key || 'MISSING TEMPLATE'));
+  }
+  async render() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.classList.add('st-template-completion-modal');
+
+    /* ── 1. ensure we have a SmartContext to preview ───────────────────── */
+    if (!this.context) {
+      const active_file = this.app.workspace.getActiveFile();
+      const add_items   = active_file ? [active_file.path] : [];
+      this.context = this.env.smart_contexts.new_context({}, { add_items });
+    }
+    const ctx = this.context;
+
+    /* ── 2. Context builder (max‑height 50 %) ──────────────────────────── */
+    const ctx_container = await this.env.render_component(
+      'context_builder',
+      ctx,
+      {
+        update_callback : (_ctx) => { this.context = _ctx; },
+      }
+    );
+    ctx_container.style.maxHeight = '50vh';
+    ctx_container.style.overflowY = 'auto';
+    contentEl.appendChild(ctx_container);
+
+    /* Add explicit “Edit context” button (opens ContextSelectorModal) */
+    const header_actions = ctx_container.querySelector('.sc-context-actions');
+    const edit_btn       = document.createElement('button');
+    edit_btn.textContent = 'Edit';
+    edit_btn.addEventListener('click', () =>
+      ContextSelectorModal.open(this.env, {
+        ctx,
+        update_callback : (_ctx) => {
+          console.log('Template modal context updated:', _ctx);
+          this.context = _ctx;
+          this.render(); // re-render to reflect context changes
+          
+        },
+      })
+    );
+    header_actions.appendChild(edit_btn);
+
+    /* ── 3. User‑message textarea ─────────────────────────────────────── */
+    this.textarea_el = contentEl.createEl('textarea', {
+      cls  : 'st-user-message-input',
+      attr : {
+        rows : '6',
+        placeholder : 'Optional message to merge with template…',
+        style : 'width: 100%;',
+      },
+    });
+    if(this.user_message) {
+      this.textarea_el.value = this.user_message;
+    }
+    this.textarea_el.addEventListener('input', (e) => {
+      this.user_message = e.target.value;
+    });
+
+    /* ── 4. Action buttons ─────────────────────────────────────────────── */
+    const actions_el = contentEl.createDiv({ cls : 'st-actions' });
+
+    /* a) Insert – paste into current file at cursor */
+    const insert_btn = actions_el.createEl('button', { text : 'Insert' });
+    insert_btn.addEventListener('click', async () => {
+      this.complete();
+      this.close();
+    });
+
+    /* b) Create – open output in a new file */
+    const create_btn = actions_el.createEl('button', { text : 'Create' });
+    create_btn.classList.add('mod-cta');
+    create_btn.addEventListener('click', async () => {
+      this.complete({ create_new_file : true });
+      this.close();
+    });
+  }
+
+  onClose() { this.contentEl.empty(); }
+
+  async complete(opts = {}) {
+    // TODO
+  }
+
+}
