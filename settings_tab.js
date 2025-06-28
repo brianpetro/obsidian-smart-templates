@@ -37,10 +37,6 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
       });
       return;
     }
-    // env settings container
-    this.containerEl.createEl('div', {
-      cls: 'smart-chat-env-settings-container',
-    });
     this.env.smart_completions.re_render_settings = () => {
       this.containerEl.empty();
       this.render_settings();
@@ -65,12 +61,16 @@ export class SmartTemplatesSettingTab extends PluginSettingTab {
       scope: this.plugin.chat_model,
     });
     this.containerEl.appendChild(chat_model_frag);
-    const contexts_frag = await this.env.smart_view.render_settings(smart_contexts_settings_config, {
-      scope: this.env.smart_contexts,
-      settings_scope: 'smart_templates_plugin'
-    });
-    this.containerEl.appendChild(contexts_frag);
+    // const contexts_frag = await this.env.smart_view.render_settings(smart_contexts_settings_config, {
+    //   scope: this.env.smart_contexts,
+    //   settings_scope: 'smart_templates_plugin'
+    // });
+    // this.containerEl.appendChild(contexts_frag);
+
     // env settings container
+    this.containerEl.createEl('div', {
+      cls: 'smart-chat-env-settings-container',
+    });
     this.env.render_component('env_settings', this.env).then(frag => {
       const settings_container = this.containerEl.querySelector('.smart-chat-env-settings-container');
       settings_container.empty();

@@ -28,6 +28,7 @@ function makeMockEnv(readFileFunc = null, settings = {}) {
       }
     }
   };
+  env.create_env_getter = (obj) => { obj.env = env; };
 
   // Add a helper to register a 'source_item'
   // Each item must implement a 'read()' method

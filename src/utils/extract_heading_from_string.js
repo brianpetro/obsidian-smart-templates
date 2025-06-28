@@ -14,7 +14,7 @@ import { escape_reg_exp } from "./escape_reg_exp.js";
 
 export function extract_heading_from_string(fileContent, headingName) {
   if (!fileContent) return null;
-  if (!fileContent.includes(headingName)) return fileContent;
+  if (!fileContent.includes(headingName)) return null;
   const lines = fileContent.split('\n');
   let headingLineIndex = -1;
   const headingPattern = new RegExp(`^#{1,6}\\s+${escape_reg_exp(headingName)}\\s*$`);

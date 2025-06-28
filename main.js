@@ -83,13 +83,6 @@ export default class SmartTemplatesPlugin extends Plugin {
         this.open_template_selection_modal();
       }
     });
-    this.addCommand({
-      id: "create_draft",
-      name: "Create Draft",
-      callback: async () => {
-        this.create_draft();
-      }
-    });
   }
   create_draft() {
     const file = this.app.workspace.getActiveFile();

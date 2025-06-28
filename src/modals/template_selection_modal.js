@@ -3,7 +3,7 @@
  * @description A modal for Smart Templates that allows the user to select a template.
  */
 
-import { FuzzySuggestModal, Notice, setIcon } from 'obsidian';
+import { FuzzySuggestModal } from 'obsidian';
 
 /**
  * @typedef {Object} SelectedItem
@@ -34,8 +34,7 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
    * FuzzySuggestModal uses this array for suggestions.
    */
   getItems() {
-    const context_items = Object.values(this.env.smart_templates.items);
-    return context_items;
+    return Object.values(this.env.smart_templates.items);
   }
 
   /**
@@ -54,59 +53,9 @@ export class TemplateSelectionModal extends FuzzySuggestModal {
   onChooseItem(template_item) {
     console.log('onChooseItem', template_item);
     this.plugin.template_item = template_item;
-    this.plugin.open_build_context_modal();
+    this.plugin.open_template_completion_modal();
     this.close();
   }
 
-  /**
-   * Renders the 'pill' elements at the top of the modal for each selected file,
-   * along with our action buttons.
-   */
-  render_pills() {
-    // Remove the old button if any
-    if (this.submit_btn) {
-      this.submit_btn.remove();
-    }
-    // Build 'Build Context' submit button
-    this.submit_btn = this.containerEl.createEl('button', { text: this.submit_btn_text });
-    this.submit_btn.addEventListener('click', () => {
-      this.submit();
-    });
-
-    // Insert them at top
-    if (this.modalEl && this.submit_btn) {
-      this.modalEl.prepend(this.submit_btn);
-    }
-
-    // Remove old container if any
-    if (this.selected_container_el) {
-      this.selected_container_el.remove();
-    }
-    this.selected_container_el = this.containerEl.createDiv('st-build-context-selected-container');
-    if (this.modalEl && this.selected_container_el) {
-      this.modalEl.prepend(this.selected_container_el);
-    }
-
-    // Create each pill
-    for (const sel of this.selected_items) {
-      const pill = this.selected_container_el.createDiv('st-build-context-pill');
-      pill.createSpan({ text: sel.context_item.path });
-      const remove_el = pill.createSpan({ text: '  ✕', cls: 'st-build-context-pill-remove' });
-      remove_el.addEventListener('click', () => {
-        this.selected_items = this.selected_items.filter(x => x !== sel);
-        this.render_pills();
-      });
-      setIcon(pill.createSpan({ cls: 'st-build-context-pill-icon' }), 'document');
-    }
-  }
-
-  /**
-   * Insert linked files up to a certain depth from the current selection.
-   * We'll do a BFS across the Obsidian metadataCache.
-   * @param {number} depth
-   */
-  async insert_items_up_to_depth(depth) {
-    // TODO
-    console.log(`Inserting items up to depth=${depth}`);
-  }
+  // no pills rendering – context builder used instead
 }

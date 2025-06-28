@@ -67,9 +67,7 @@ export class SmartTemplate extends CollectionItem {
     // If we have a template_heading, keep only that portion
     if (settings.template_heading) {
       const contained_template = extract_heading_from_string(content, settings.template_heading);
-      if(contained_template){
-        content = contained_template;
-      }
+      content = contained_template ?? '';
     }
 
     // If we have a system_prompt_heading, remove that portion

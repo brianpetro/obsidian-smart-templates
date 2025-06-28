@@ -16,8 +16,26 @@ import { SmartTemplate } from "../items/smart_template.js";
  * @extends Collection
  */
 export class SmartTemplates extends Collection {
+
   get settings_config() {
     return {
+      template_folder: {
+        name: "Templates folder",
+        description: "The folder where templates are stored. If empty, uses the current folder.",
+        type: "folder", // folder selection
+      },
+      template_name: {
+        name: "Naming convention",
+        description: "Specifies the name of the template. You can use {{folder_name}}.",
+        type: "text", // text input
+        default: "",
+      },
+      template_heading: {
+        name: "Heading convention",
+        description: "If set, searches the current file for a heading with this name.",
+        type: "text",
+        default: "",
+      },
       system_prompt_heading: {
         name: "System Prompt Heading",
         description: "If set, searches the template file for a heading with this name and uses it in \"Generate\" commands.",
@@ -26,6 +44,7 @@ export class SmartTemplates extends Collection {
       }
     };
   }
+
 
 }
 
