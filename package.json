@@ -15,8 +15,7 @@
     "smart-completions": "file:../jsbrains/smart-completions",
     "smart-contexts": "file:../jsbrains/smart-contexts",
     "obsidian-smart-env": "file:../obsidian-smart-env",
-    "smart-http-request": "file:../jsbrains/smart-http-request",
-    "smart-templates": "file:../advanced-env/collections/smart-templates"
+    "smart-http-request": "file:../jsbrains/smart-http-request"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
@@ -30,6 +29,7 @@
   },
   "workspaces": [
     "../advanced-env/collections/*",
-    "../jsbrains/*"
+    "../jsbrains/*",
+    "../obsidian-smart-env"
   ]
 }

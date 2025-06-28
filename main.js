@@ -1,20 +1,15 @@
-/**
- * @file main.js
- * @description Example plugin entry with commands that call get_dynamic_template.
- */
-
 import { Plugin, Notice } from "obsidian";
-import { get_dynamic_templates } from "smart-templates/actions/get_dynamic_templates.js";
-import { concat_templates } from "smart-templates/actions/concat_templates.js";
-import { parse_template } from "smart-templates/content_parsers/parse_templates.js";
+import { get_dynamic_templates } from "./src/utils/get_dynamic_templates.js";
+import { concat_templates } from "./src/utils/concat_templates.js";
+import { parse_template } from "./src/content_parsers/parse_templates.js";
 import { SmartEnv } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
 import { smart_templates } from "smart-templates";
 import { SmartTemplate } from "smart-templates";
-import { TemplateSelectionModal } from "./modals/template_selection_modal.js";
-import { BuildContextModal } from "./modals/build_context_modal.js";
-import { UserMessageModal } from "./modals/user_message_modal.js";
+import { TemplateSelectionModal } from "./src/modals/template_selection_modal.js";
+import { BuildContextModal } from "./src/modals/build_context_modal.js";
+import { UserMessageModal } from "./src/modals/user_message_modal.js";
 import { smart_contexts } from "smart-contexts";
 // chat model
 import { SmartChatModel } from "smart-chat-model";
