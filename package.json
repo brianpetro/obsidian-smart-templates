@@ -29,8 +29,8 @@
     "smart-sources": "file:../jsbrains/smart-sources"
   },
   "workspaces": [
-    "../advanced-env/collections/*",
     "../jsbrains/*",
-    "../obsidian-smart-env"
+    "../obsidian-smart-env",
+    "../smart-context-obsidian"
   ]
 }
