@@ -9,6 +9,7 @@
 
 import { Modal, Notice } from 'obsidian';
 import { ContextSelectorModal } from 'smart-context-obsidian/src/views/context_selector_modal.js';
+import { TemplateReviewModal } from './template_review_modal.js';
 
 export class TemplateCompletionModal extends Modal {
   /**
@@ -73,15 +74,16 @@ export class TemplateCompletionModal extends Modal {
     /* Add explicit “Edit context” button (opens ContextSelectorModal) */
     const header_actions = ctx_container.querySelector('.sc-context-actions');
     const edit_btn       = document.createElement('button');
-    edit_btn.textContent = 'Edit';
+    edit_btn.textContent = 'Edit context';
+    // plugin.ContextSelectorModal is early-release if available
+    const ContextSelectorModalClass = this.env.smart_context_plugin?.ContextSelectorModal || ContextSelectorModal;
     edit_btn.addEventListener('click', () =>
-      ContextSelectorModal.open(this.env, {
+      ContextSelectorModalClass.open(this.env, {
         ctx,
         update_callback : (_ctx) => {
           console.log('Template modal context updated:', _ctx);
           this.context = _ctx;
           this.render(); // re-render to reflect context changes
-          
         },
       })
     );
@@ -106,26 +108,34 @@ export class TemplateCompletionModal extends Modal {
     /* ── 4. Action buttons ─────────────────────────────────────────────── */
     const actions_el = contentEl.createDiv({ cls : 'st-actions' });
 
-    /* a) Insert – paste into current file at cursor */
-    const insert_btn = actions_el.createEl('button', { text : 'Insert' });
-    insert_btn.addEventListener('click', async () => {
-      this.complete();
-      this.close();
-    });
+    // /* a) Insert – paste into current file at cursor */
+    // const insert_btn = actions_el.createEl('button', { text : 'Insert' });
+    // insert_btn.addEventListener('click', async () => {
+    //   this.complete();
+    //   this.close();
+    // });
 
+    // /* b) Create – open output in a new file */
+    // const create_btn = actions_el.createEl('button', { text : 'Create' });
+    // create_btn.classList.add('mod-cta');
+    // create_btn.addEventListener('click', async () => {
+    //   this.complete({ create_new_file : true });
+    //   this.close();
+    // });
     /* b) Create – open output in a new file */
-    const create_btn = actions_el.createEl('button', { text : 'Create' });
-    create_btn.classList.add('mod-cta');
-    create_btn.addEventListener('click', async () => {
-      this.complete({ create_new_file : true });
+    const complete_btn = actions_el.createEl('button', { text : 'Create' });
+    complete_btn.classList.add('mod-cta');
+    complete_btn.addEventListener('click', async () => {
+      TemplateReviewModal.open(this.env, {
+        ctx : this.context,
+        user_message : this.user_message,
+        template : this.opts.template,
+      });
       this.close();
     });
   }
 
   onClose() { this.contentEl.empty(); }
 
-  async complete(opts = {}) {
-    // TODO
-  }
 
 }
