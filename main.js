@@ -5,96 +5,100 @@ import { parse_template } from "./src/content_parsers/parse_templates.js";
 import { SmartEnv } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
-import { smart_templates } from "smart-templates";
-import { SmartTemplate } from "smart-templates";
+// import { smart_templates } from "smart-templates";
+// import { SmartTemplate } from "smart-templates";
 import { TemplateSelectionModal } from "./src/modals/template_selection_modal.js";
 import { BuildContextModal } from "./src/modals/build_context_modal.js";
 import { UserMessageModal } from "./src/modals/user_message_modal.js";
 import { smart_contexts } from "smart-contexts";
-// chat model
-import { SmartChatModel } from "smart-chat-model";
-import {
-  SmartChatModelAnthropicAdapter,
-  SmartChatModelAzureAdapter,
-  // SmartChatModelCohereAdapter,
-  SmartChatModelCustomAdapter,
-  SmartChatModelGeminiAdapter,
-  SmartChatModelGroqAdapter,
-  SmartChatModelLmStudioAdapter,
-  SmartChatModelOllamaAdapter,
-  SmartChatModelOpenaiAdapter,
-  SmartChatModelOpenRouterAdapter,
-} from "smart-chat-model/adapters.js";
-import { SmartHttpRequest, SmartHttpObsidianRequestAdapter } from "smart-http-request";
-import { requestUrl } from "obsidian";
+// // chat model
+// import { SmartChatModel } from "smart-chat-model";
+// import {
+//   SmartChatModelAnthropicAdapter,
+//   SmartChatModelAzureAdapter,
+//   // SmartChatModelCohereAdapter,
+//   SmartChatModelCustomAdapter,
+//   SmartChatModelGeminiAdapter,
+//   SmartChatModelGroqAdapter,
+//   SmartChatModelLmStudioAdapter,
+//   SmartChatModelOllamaAdapter,
+//   SmartChatModelOpenaiAdapter,
+//   SmartChatModelOpenRouterAdapter,
+// } from "smart-chat-model/adapters.js";
+// import { SmartHttpRequest, SmartHttpObsidianRequestAdapter } from "smart-http-request";
+// import { requestUrl } from "obsidian";
+import { smart_env_config } from './smart_env.config.js';
 
 export default class SmartTemplatesPlugin extends Plugin {
-  onload() {
-    // Initialize the environment, register commands, then register the settings tab
-    SmartEnv.create(this, {
-      // global_prop: window,
-      global_prop: 'smart_env',
-      collections: {
-        smart_sources: {
-          content_parsers: [parse_template],
-        },
-        // not is base obsidian smart-env
-        smart_completions,
-        smart_contexts,
-        smart_templates
+  compiled_smart_env_config = smart_env_config;
+  smart_env_config = {
+    // global_prop: window,
+    // global_prop: 'smart_env',
+    collections: {
+      smart_sources: {
+        content_parsers: [parse_template],
       },
-      item_types: {
-        SmartTemplate,
-        SmartCompletion,
-      },
-      modules: {
-        smart_chat_model: {
-          class: SmartChatModel,
-          // DEPRECATED FORMAT: will be changed (requires SmartModel adapters getters update)
-          adapters: {
-            anthropic: SmartChatModelAnthropicAdapter,
-            azure: SmartChatModelAzureAdapter,
-            custom: SmartChatModelCustomAdapter,
-            gemini: SmartChatModelGeminiAdapter,
-            groq: SmartChatModelGroqAdapter,
-            lm_studio: SmartChatModelLmStudioAdapter,
-            ollama: SmartChatModelOllamaAdapter,
-            open_router: SmartChatModelOpenRouterAdapter,
-            openai: SmartChatModelOpenaiAdapter,
+      // not is base obsidian smart-env
+      smart_completions,
+      smart_contexts,
+      // smart_templates
+    },
+    item_types: {
+      // SmartTemplate,
+      SmartCompletion,
+    },
+    modules: {
+      // smart_chat_model: {
+      //   class: SmartChatModel,
+      //   // DEPRECATED FORMAT: will be changed (requires SmartModel adapters getters update)
+      //   adapters: {
+      //     anthropic: SmartChatModelAnthropicAdapter,
+      //     azure: SmartChatModelAzureAdapter,
+      //     custom: SmartChatModelCustomAdapter,
+      //     gemini: SmartChatModelGeminiAdapter,
+      //     groq: SmartChatModelGroqAdapter,
+      //     lm_studio: SmartChatModelLmStudioAdapter,
+      //     ollama: SmartChatModelOllamaAdapter,
+      //     open_router: SmartChatModelOpenRouterAdapter,
+      //     openai: SmartChatModelOpenaiAdapter,
+      //   },
+      //   http_adapter: new SmartHttpRequest({
+      //     adapter: SmartHttpObsidianRequestAdapter,
+      //     obsidian_request_url: requestUrl,
+      //   }),
+      // },
+    },
+    default_settings: {
+      smart_templates_plugin: {
+        smart_completions: {
+          chat_model: {
+            adapter: "ollama",
           },
-          http_adapter: new SmartHttpRequest({
-            adapter: SmartHttpObsidianRequestAdapter,
-            obsidian_request_url: requestUrl,
-          }),
         },
       },
-      default_settings: {
+      smart_contexts: {
         smart_templates_plugin: {
-          smart_completions: {
-            chat_model: {
-              adapter: "ollama",
+          templates: {
+            '-1': {
+              before: `<context>\n<file_tree>\n{{FILE_TREE}}\n</file_tree>`,
+              after: `</context>`
             },
-          },
-        },
-        smart_contexts: {
-          smart_templates_plugin: {
-            templates: {
-              '-1': {
-                before: '{{FILE_TREE}}'
-              },
-              '0': {
-                before: '{{ITEM_PATH}}\n```{{ITEM_EXT}}',
-                after: '```'
-              },
-              '1': {
-                before: 'LINK: {{ITEM_NAME}}\n```{{ITEM_EXT}}',
-                after: '```'
-              },
+            '0': {
+              before: `<context_primary path="{{ITEM_PATH}}" mtime="{{ITEM_TIME_AGO}}">`,
+              after: `</context_primary>`
+            },
+            '1': {
+              before: `<context_linked path="{{ITEM_PATH}}" mtime="{{ITEM_TIME_AGO}}">`,
+              after: `</context_linked>`
             },
           },
         },
       },
-    });
+    },
+  };
+  onload() {
+    const merged_config = merge_env_config(this.compiled_smart_env_config, this.smart_env_config);
+    SmartEnv.create(this, merged_config);
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
   }
 
