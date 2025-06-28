@@ -1,39 +1,17 @@
-import { Plugin, Notice } from "obsidian";
-import { get_dynamic_templates } from "./src/utils/get_dynamic_templates.js";
-import { concat_templates } from "./src/utils/concat_templates.js";
+import { Plugin } from "obsidian";
 import { parse_template } from "./src/content_parsers/parse_templates.js";
-import { SmartEnv } from "obsidian-smart-env";
+import { SmartEnv, merge_env_config } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
-// import { smart_templates } from "smart-templates";
-// import { SmartTemplate } from "smart-templates";
 import { TemplateSelectionModal } from "./src/modals/template_selection_modal.js";
 import { BuildContextModal } from "./src/modals/build_context_modal.js";
 import { UserMessageModal } from "./src/modals/user_message_modal.js";
 import { smart_contexts } from "smart-contexts";
-// // chat model
-// import { SmartChatModel } from "smart-chat-model";
-// import {
-//   SmartChatModelAnthropicAdapter,
-//   SmartChatModelAzureAdapter,
-//   // SmartChatModelCohereAdapter,
-//   SmartChatModelCustomAdapter,
-//   SmartChatModelGeminiAdapter,
-//   SmartChatModelGroqAdapter,
-//   SmartChatModelLmStudioAdapter,
-//   SmartChatModelOllamaAdapter,
-//   SmartChatModelOpenaiAdapter,
-//   SmartChatModelOpenRouterAdapter,
-// } from "smart-chat-model/adapters.js";
-// import { SmartHttpRequest, SmartHttpObsidianRequestAdapter } from "smart-http-request";
-// import { requestUrl } from "obsidian";
 import { smart_env_config } from './smart_env.config.js';
 
 export default class SmartTemplatesPlugin extends Plugin {
   compiled_smart_env_config = smart_env_config;
   smart_env_config = {
-    // global_prop: window,
-    // global_prop: 'smart_env',
     collections: {
       smart_sources: {
         content_parsers: [parse_template],
@@ -46,27 +24,6 @@ export default class SmartTemplatesPlugin extends Plugin {
     item_types: {
       // SmartTemplate,
       SmartCompletion,
-    },
-    modules: {
-      // smart_chat_model: {
-      //   class: SmartChatModel,
-      //   // DEPRECATED FORMAT: will be changed (requires SmartModel adapters getters update)
-      //   adapters: {
-      //     anthropic: SmartChatModelAnthropicAdapter,
-      //     azure: SmartChatModelAzureAdapter,
-      //     custom: SmartChatModelCustomAdapter,
-      //     gemini: SmartChatModelGeminiAdapter,
-      //     groq: SmartChatModelGroqAdapter,
-      //     lm_studio: SmartChatModelLmStudioAdapter,
-      //     ollama: SmartChatModelOllamaAdapter,
-      //     open_router: SmartChatModelOpenRouterAdapter,
-      //     openai: SmartChatModelOpenaiAdapter,
-      //   },
-      //   http_adapter: new SmartHttpRequest({
-      //     adapter: SmartHttpObsidianRequestAdapter,
-      //     obsidian_request_url: requestUrl,
-      //   }),
-      // },
     },
     default_settings: {
       smart_templates_plugin: {
@@ -119,59 +76,6 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   register_commands() {
-    // 1) Insert folder template
-    this.addCommand({
-      id: "insert_folder_template",
-      name: "Insert folder template",
-      callback: async () => {
-        const file = this.app.workspace.getActiveFile();
-        if (!file) {
-          new Notice("No active file.");
-          return;
-        }
-
-        const source_item = this.env.smart_sources.get(file.path);
-
-        const templates = await get_dynamic_templates(source_item);
-        if (templates.length === 0) {
-          new Notice("No matching template found.");
-          return;
-        }
-        console.log('templates', templates);
-        const templateContent = await concat_templates(templates);
-        console.log('templateContent', templateContent);
-        const editor = this.get_editor();
-        if (!editor) return;
-        editor.replaceSelection(templateContent + "\n");
-        new Notice("Inserted folder template.");
-      },
-    });
-
-    // // 2) Insert folder template (headings only)
-    // this.addCommand({
-    //   id: "insert_folder_template_headings",
-    //   name: "Insert folder template (headings only)",
-    //   callback: async () => {
-    //     const file = this.app.workspace.getActiveFile();
-    //     if (!file) {
-    //       new Notice("No active file.");
-    //       return;
-    //     }
-    //     const source_item = this.env.smart_sources.get(file.path);
-    //     const content = await get_dynamic_template(source_item);
-    //     if (content === null) {
-    //       new Notice("No matching heading-only template found.");
-    //       return;
-    //     }
-    //     const editor = this.get_editor();
-    //     if (editor) {
-    //       editor.replaceSelection(content + "\n");
-    //       new Notice("Inserted headings-only template.");
-    //     }
-    //   },
-    // });
-
-    // 3) Generate from template
     this.addCommand({
       id: "generate_from_template",
       name: "Generate from template",

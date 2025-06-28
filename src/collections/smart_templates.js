@@ -18,24 +18,6 @@ import { SmartTemplate } from "../items/smart_template.js";
 export class SmartTemplates extends Collection {
   get settings_config() {
     return {
-      template_name: {
-        name: "Template Name",
-        description: "Specifies the name of the template. You can use {{folder_name}}.",
-        type: "text", // text input
-        default: "",
-      },
-      template_heading: {
-        name: "Template Heading",
-        description: "If set, searches the current file for a heading with this name.",
-        type: "text",
-        default: "",
-      },
-      merge_parent_templates: {
-        name: "Merge Parent Templates",
-        description: "Whether to include (concatenate) parent-folder templates from each ancestor folder.",
-        type: "toggle",
-        default: false,
-      },
       system_prompt_heading: {
         name: "System Prompt Heading",
         description: "If set, searches the template file for a heading with this name and uses it in \"Generate\" commands.",
