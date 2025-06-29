@@ -4,3 +4,7 @@
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+.st-template-output {
+  white-space: pre-wrap;
+}
