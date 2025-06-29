@@ -50,10 +50,9 @@ export class SmartTemplates extends Collection {
     });
 
     // clean-up old (no-longer matching filter) templates
-    // note: useful when starting to persist templates
     Object.values(this.items).forEach(template => {
       if (!template_filter_fn(template.template_source)) {
-        this.remove(template);
+        delete this.items[template.key];
       }
     });
   }
@@ -64,12 +63,14 @@ export class SmartTemplates extends Collection {
         name: "Templates folder",
         description: "The folder where templates are stored.",
         type: "folder", // folder selection
+        callback: "load_templates", // reload templates when changed
       },
       template_name: {
         name: "Naming convention",
         description: "Specifies the name of the template.",
         type: "text", // text input
         default: "",
+        callback: "load_templates", // reload templates when changed
       },
     };
   }
