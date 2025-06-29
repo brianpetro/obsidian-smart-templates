@@ -1,0 +1,1 @@
+DEPRECATED REPO: Moved to `obsidian-smart-templates`
