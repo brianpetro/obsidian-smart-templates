@@ -1,12 +1,3 @@
-/**
- * @file template_completion_modal.js
- * @description
- * Combines a context‑tree preview, free‑form “user message” input
- * and **Insert / Create** actions into one UI.  Re‑uses the
- * Smart Context builder component so users can refine context before
- * generating a completion.
- */
-
 import { Modal, Notice } from 'obsidian';
 import { ContextSelectorModal } from 'smart-context-obsidian/src/views/context_selector_modal.js';
 import { TemplateReviewModal } from './template_review_modal.js';
@@ -42,7 +33,6 @@ export class TemplateCompletionModal extends Modal {
     return env.template_completion_modal;
   }
 
-  /* ─────────────────────────── Modal lifecycle ────────────────────────── */
 
   onOpen() {
     this.render();
@@ -54,7 +44,6 @@ export class TemplateCompletionModal extends Modal {
     contentEl.empty();
     contentEl.classList.add('st-template-completion-modal');
 
-    /* ── 1. ensure we have a SmartContext to preview ───────────────────── */
     if (!this.context) {
       const active_file = this.app.workspace.getActiveFile();
       const add_items   = active_file ? [active_file.path] : [];
@@ -62,7 +51,6 @@ export class TemplateCompletionModal extends Modal {
     }
     const ctx = this.context;
 
-    /* ── 2. Context builder (max‑height 50 %) ──────────────────────────── */
     const ctx_container = await this.env.render_component(
       'context_builder',
       ctx,
@@ -74,7 +62,6 @@ export class TemplateCompletionModal extends Modal {
     ctx_container.style.overflowY = 'auto';
     contentEl.appendChild(ctx_container);
 
-    /* Add explicit “Edit context” button (opens ContextSelectorModal) */
     const header_actions = ctx_container.querySelector('.sc-context-actions');
     const edit_btn       = document.createElement('button');
     edit_btn.textContent = 'Edit context';
@@ -92,7 +79,6 @@ export class TemplateCompletionModal extends Modal {
     );
     header_actions.appendChild(edit_btn);
 
-    /* ── 3. User‑message textarea ─────────────────────────────────────── */
     this.textarea_el = contentEl.createEl('textarea', {
       cls  : 'st-user-message-input',
       attr : {
@@ -106,29 +92,14 @@ export class TemplateCompletionModal extends Modal {
     }else if (this.template.metadata?.prompt) {
       // pre-fill with template prompt if available
       this.textarea_el.value = this.template.metadata.prompt;
+      this.user_message = this.textarea_el.value;
     }
     this.textarea_el.addEventListener('input', (e) => {
       this.user_message = e.target.value;
     });
 
-    /* ── 4. Action buttons ─────────────────────────────────────────────── */
     const actions_el = contentEl.createDiv({ cls : 'st-actions' });
 
-    // /* a) Insert – paste into current file at cursor */
-    // const insert_btn = actions_el.createEl('button', { text : 'Insert' });
-    // insert_btn.addEventListener('click', async () => {
-    //   this.complete();
-    //   this.close();
-    // });
-
-    // /* b) Create – open output in a new file */
-    // const create_btn = actions_el.createEl('button', { text : 'Create' });
-    // create_btn.classList.add('mod-cta');
-    // create_btn.addEventListener('click', async () => {
-    //   this.complete({ create_new_file : true });
-    //   this.close();
-    // });
-    /* b) Create – open output in a new file */
     const complete_btn = actions_el.createEl('button', { text : 'Complete' });
     complete_btn.classList.add('mod-cta');
     complete_btn.addEventListener('click', async () => {

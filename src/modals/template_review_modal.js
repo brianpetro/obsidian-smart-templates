@@ -1,16 +1,7 @@
-/**
- * TemplateReviewModal
- *
- * Streams a SmartCompletion into a live preview then lets the user
- * insert it at the current cursor, create a new note, **or copy it
- * straight to the clipboard**.
- *
- * @module TemplateReviewModal
- */
-
 import { Modal, Notice } from 'obsidian';
 import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
 import { insert_output } from '../utils/insert_output.js';
+import { replace_vault_tags_var } from 'smart-context-obsidian/src/utils/replace_vault_tags_var.js';
 
 /**
  * @typedef {import('smart-contexts').SmartContext} SmartContext
@@ -120,8 +111,15 @@ export class TemplateReviewModal extends Modal {
     this.copy_btn.addEventListener('click', this._copy_output_clipboard);
   }
 
+  get user_message() {
+    let user_message = this.opts.user_message || '';
+    if (user_message.includes("{{vault_tags}}")) {
+      user_message = replace_vault_tags_var(user_message);
+    }
+    return user_message;
+  }
   async _generate_output() {
-    const { ctx, template, user_message = '' } = this.opts;
+    const { ctx, template } = this.opts;
     if (!ctx || !template) {
       throw new Error('ctx and template are required.');
     }
@@ -131,7 +129,7 @@ export class TemplateReviewModal extends Modal {
       key          : `${Date.now()}-${template.key}`,
       context_key  : ctx.key,
       template_key : template.key,
-      user_message
+      user_message: this.user_message,
     };
     const Completion = this.env.smart_completions.item_type;
     this.completion  = new Completion(this.env, completion_opts);
