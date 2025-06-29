@@ -71,18 +71,35 @@ export default class SmartTemplatesPlugin extends Plugin {
   async initialize() {
     await SmartEnv.wait_for({loaded: true});
 
-    // import smart_templates
-    const template_sources = this.env.smart_sources.filter(i => {
-      if(i.metadata?.['smart template']) return true;
-    })
-    template_sources.forEach(source => {
-      this.env.smart_templates.create_or_update({source_key: source.key});
-    });
+    this.load_templates();
 
     this.register_commands();
     // Register the new Smart Templates settings tab
     this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
 
+  }
+
+  load_templates() {
+    const settings = this.env.settings.smart_templates_plugin;
+    const folder = settings?.template_folder
+      || this.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
+    let name;
+    if (settings?.template_name) {
+      name = settings.template_name;
+      if (!name.endsWith('.md')) {
+        name += '.md';
+      }
+    }
+
+    // import smart_templates
+    const template_sources = this.env.smart_sources.filter(i => {
+      if (folder && i.key.startsWith(folder)) return true;
+      if (name && i.key.endsWith(name)) return true;
+      if (i.metadata?.['smart template']) return true;
+    });
+    template_sources.forEach(source => {
+      this.env.smart_templates.create_or_update({ source_key: source.key });
+    });
   }
 
   register_commands() {
@@ -94,32 +111,7 @@ export default class SmartTemplatesPlugin extends Plugin {
       }
     });
   }
-  // create_draft() {
-  //   const file = this.app.workspace.getActiveFile();
-  //   const source_item = this.env.smart_sources.get(file.path);
-  //   this.template_item = source_item;
-  //   this.build_context_modal.open();
-  // }
 
-
-  // get build_context_modal() {
-  //   if(!this._build_context_modal) {
-  //     this._build_context_modal = new BuildContextModal(this.app, this);
-  //   }
-  //   return this._build_context_modal;
-  // }
-  // open_build_context_modal() {
-  //   this.build_context_modal.open();
-  // }
-  // get user_message_modal() {
-  //   if(!this._user_message_modal) {
-  //     this._user_message_modal = new UserMessageModal(this.app, this);
-  //   }
-  //   return this._user_message_modal;
-  // }
-  // open_user_message_modal() {
-  //   this.user_message_modal.open();
-  // }
   get_editor() {
     const activeLeaf = this.app.workspace.activeLeaf;
     if (!activeLeaf || !activeLeaf.view || !activeLeaf.view.editor) {
@@ -145,32 +137,5 @@ export default class SmartTemplatesPlugin extends Plugin {
       this._chat_model.unload();
     }
     this._chat_model = null;
-  }
-  async generate_template() {
-    if(!this.env.smart_completions) {
-      console.warn('SmartTemplate: smart_completions not found in environment');
-      return null;
-    }
-    
-    const completion_opts = {
-      context_key: this.context_item.key,
-      template_key: this.template_item.key,
-      user_message: this.user_message,
-    };
-    
-    // Create a completion with the template and context
-    const completion = new this.env.smart_completions.item_type(this.env, completion_opts);
-    this.env.smart_completions.set(completion);
-    completion.chat_model = this.chat_model;
-    await completion.init();
-    
-    const template_output = completion.response_text;
-
-    // create a new note with the template output
-    const new_note = await this.app.vault.create(`${this.template_item.name}-${Date.now()}.md`, template_output);
-
-    // open the new note in new split
-    const new_split = this.app.workspace.getLeaf('split', 'vertical');
-    new_split.openFile(new_note);
   }
 }

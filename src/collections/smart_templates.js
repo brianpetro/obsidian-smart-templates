@@ -30,12 +30,6 @@ export class SmartTemplates extends Collection {
         type: "text", // text input
         default: "",
       },
-      template_heading: {
-        name: "Heading convention",
-        description: "If set, searches the current file for a heading with this name.",
-        type: "text",
-        default: "",
-      },
     };
   }
 
