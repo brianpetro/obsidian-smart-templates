@@ -36,12 +36,6 @@ export class SmartTemplates extends Collection {
         type: "text",
         default: "",
       },
-      system_prompt_heading: {
-        name: "System Prompt Heading",
-        description: "If set, searches the template file for a heading with this name and uses it in \"Generate\" commands.",
-        type: "text",
-        default: "",
-      }
     };
   }
 

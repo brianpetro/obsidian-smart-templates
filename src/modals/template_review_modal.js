@@ -84,6 +84,7 @@ export class TemplateReviewModal extends Modal {
   }
 
   _render_modal() {
+    this.setTitle('Smart Templates');
     const el = this.contentEl;
     el.empty();
     el.classList.add('st-template-review-modal');
@@ -115,7 +116,7 @@ export class TemplateReviewModal extends Modal {
 
     /* build a SmartCompletion */
     const completion_opts = {
-      key          : `tmpl-${Date.now()}`,
+      key          : `${Date.now()}-${template.key}`,
       context_key  : ctx.key,
       template_key : template.key,
       user_message,

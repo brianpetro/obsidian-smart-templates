@@ -1,6 +1,7 @@
 import { CollectionItem } from "smart-collections";
 import { extract_heading_from_string } from "../utils/extract_heading_from_string.js";
 import { remove_heading_block } from "../utils/remove_heading_block.js";
+import { clean_frontmatter } from "../utils/clean_frontmatter.js";
 
 /**
  * @class SmartTemplate
@@ -59,7 +60,6 @@ export class SmartTemplate extends CollectionItem {
       console.warn(`SmartTemplate: Error reading template_source_item: ${this.data.source_key}`, err);
       return null;
     }
-    console.log('content', content);
     if (!content) return null;
 
     const settings = this.env.smart_templates?.settings || {};
@@ -74,6 +74,10 @@ export class SmartTemplate extends CollectionItem {
     if (settings.system_prompt_heading) {
       content = remove_heading_block(content, settings.system_prompt_heading);
     }
+
+    // Refactored: clean frontmatter, removing 'smart template' key
+    content = clean_frontmatter(content, ['smart template']);
+
     console.log('content after extraction', content);
 
     return content.trim();
