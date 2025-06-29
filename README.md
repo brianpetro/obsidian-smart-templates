@@ -46,7 +46,7 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 ### Prepare context and add instructions
 ![Template completion](./assets/Smart-Templates-v1-OP-template-complete-modal-2025-06-29.png)
 
-- **<span style="color:cyan;">Blue</span>**: Shows the currently selected context and **Edit context** button to open the <a href="http://obsidian.md/plugins?id=smart-context" target="_external">Smart Context</a> selector.
+- **<span style="color:cyan;">Blue</span>**: Shows the currently selected context and **Edit context** button to open the [Smart Context](http://obsidian.md/plugins?id=smart-context) selector.
 - **<span style="color:magenta;">Pink</span>**: Free-form **Additional instructions** area.
 - **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output.
 
