@@ -7,15 +7,15 @@
  * Also merges the chat_model's settings_config if present, so that UI can handle them together.
  */
 
-import { SmartTemplates as BaseSmartTemplates } from "smart-templates-obsidian/src/collections/smart_templates.js";
+import { Collection } from "smart-collections";
 import { AjsonSingleFileCollectionDataAdapter } from "smart-collections/adapters/ajson_single_file.js";
-import { SmartTemplate } from "smart-templates-obsidian/src/items/smart_template.js";
+import { SmartTemplate } from "../items/smart_template.js";
 
 /**
  * @class SmartTemplates
- * @extends BaseSmartTemplates
+ * @extends Collection
  */
-export class SmartTemplates extends BaseSmartTemplates {
+export class SmartTemplates extends Collection {
 
   get settings_config() {
     return {
