@@ -80,7 +80,7 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   load_templates() {
-    const settings = this.env.settings.smart_templates_plugin;
+    const settings = this.env.settings.smart_templates;
     const folder = settings?.template_folder
       || this.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
     let name;
@@ -91,14 +91,23 @@ export default class SmartTemplatesPlugin extends Plugin {
       }
     }
 
-    // import smart_templates
-    const template_sources = this.env.smart_sources.filter(i => {
+    const template_filter_fn = i => {
       if (folder && i.key.startsWith(folder)) return true;
       if (name && i.key.endsWith(name)) return true;
       if (i.metadata?.['smart template']) return true;
-    });
+    };
+    // import smart_templates
+    const template_sources = this.env.smart_sources.filter(template_filter_fn);
     template_sources.forEach(source => {
       this.env.smart_templates.create_or_update({ source_key: source.key });
+    });
+
+    // clean-up old (no-longer matching filter) templates
+    // note: useful when starting to persist templates
+    Object.values(this.env.smart_templates.items).forEach(template => {
+      if (!template_filter_fn(template.template_source)) {
+        this.env.smart_templates.remove(template);
+      }
     });
   }
 

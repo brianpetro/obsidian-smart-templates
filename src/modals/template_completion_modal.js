@@ -25,7 +25,7 @@ export class TemplateCompletionModal extends Modal {
     this.user_message = '';
     this.context = opts.ctx || null;
   }
-  static open(env, opts) {
+  static open(env, opts = {}) {
     const plugin =
       env.smart_contexts_plugin ||
       env.smart_chat_plugin ||
@@ -35,7 +35,8 @@ export class TemplateCompletionModal extends Modal {
     if (!env.template_completion_modal) {
       env.template_completion_modal = new this(plugin, opts);
     }
-    env.template_completion_modal.open(opts);
+    env.template_completion_modal.opts = opts;
+    env.template_completion_modal.open();
     return env.template_completion_modal;
   }
 
@@ -94,7 +95,7 @@ export class TemplateCompletionModal extends Modal {
       cls  : 'st-user-message-input',
       attr : {
         rows : '6',
-        placeholder : 'Optional message to merge with template…',
+        placeholder : 'Additional instructions (optional)',
         style : 'width: 100%;',
       },
     });
@@ -123,7 +124,7 @@ export class TemplateCompletionModal extends Modal {
     //   this.close();
     // });
     /* b) Create – open output in a new file */
-    const complete_btn = actions_el.createEl('button', { text : 'Create' });
+    const complete_btn = actions_el.createEl('button', { text : 'Complete' });
     complete_btn.classList.add('mod-cta');
     complete_btn.addEventListener('click', async () => {
       TemplateReviewModal.open(this.env, {

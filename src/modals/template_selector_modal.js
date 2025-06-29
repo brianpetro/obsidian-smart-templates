@@ -16,7 +16,7 @@ import { TemplateCompletionModal } from './template_completion_modal.js';
  * Allows the user to select a template.
  */
 export class TemplateSelectorModal extends FuzzySuggestModal {
-  static open(env, opts) {
+  static open(env, opts = {}) {
     const plugin =
       env.smart_contexts_plugin ||
       env.smart_chat_plugin ||
@@ -26,7 +26,8 @@ export class TemplateSelectorModal extends FuzzySuggestModal {
     if (!env.template_selector_modal) {
       env.template_selector_modal = new this(plugin, opts);
     }
-    env.template_selector_modal.open(opts);
+    env.template_selector_modal.opts = opts;
+    env.template_selector_modal.open();
     return env.template_selector_modal;
   }
   /**

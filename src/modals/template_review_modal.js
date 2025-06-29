@@ -2,12 +2,14 @@
  * TemplateReviewModal
  *
  * Streams a SmartCompletion into a live preview then lets the user
- * insert it at the current cursor or create a new note.
+ * insert it at the current cursor, create a new note, **or copy it
+ * straight to the clipboard**.
  *
  * @module TemplateReviewModal
  */
 
 import { Modal, Notice } from 'obsidian';
+import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
 
 /**
  * @typedef {import('smart-contexts').SmartContext} SmartContext
@@ -26,19 +28,22 @@ export class TemplateReviewModal extends Modal {
     super(plugin.app);
     this.plugin = plugin;
     this.opts = opts;
+
     /** injected by Smart‑Env */
     this.plugin.env.create_env_getter(this);
 
-    /** @type {string} */
+    /** @type {string} – holds streamed completion */
     this._output_text = '';
+
     /** @type {import('smart-completions').SmartCompletion} */
     this.completion = null;
 
-    /* bind instance methods */
-    this._generate_output = this._generate_output.bind(this);
-    this._update_output   = this._update_output.bind(this);
-    this._insert_output   = this._insert_output.bind(this);
-    this._create_file     = this._create_file.bind(this);
+    // /* bind instance methods */
+    // this._generate_output      = this._generate_output.bind(this);
+    // this._update_output        = this._update_output.bind(this);
+    // this._insert_output        = this._insert_output.bind(this);
+    // this._create_file          = this._create_file.bind(this);
+    // this._copy_output_clipboard = this._copy_output_clipboard.bind(this);
   }
 
   /**
@@ -50,14 +55,15 @@ export class TemplateReviewModal extends Modal {
    */
   static open(env, opts = {}) {
     const plugin =
-      env.smart_contexts_plugin ||
-      env.smart_chat_plugin      ||
-      env.smart_connections_plugin ||
+      env.smart_contexts_plugin   ||
+      env.smart_chat_plugin       ||
+      env.smart_connections_plugin||
       env.plugin;
     if (!env.template_review_modal) {
       env.template_review_modal = new this(plugin, opts);
     }
-    env.template_review_modal.open(opts);
+    env.template_review_modal.opts = opts;
+    env.template_review_modal.open();
     return env.template_review_modal;
   }
 
@@ -71,6 +77,7 @@ export class TemplateReviewModal extends Modal {
     super.open();
   }
 
+  /* ─────────────────────────── Modal lifecycle ───────────────────────── */
   onOpen() {
     this._render_modal();
     this._generate_output().catch(err => {
@@ -79,12 +86,12 @@ export class TemplateReviewModal extends Modal {
     });
   }
 
-  onClose() {
-    this.contentEl.empty();
-  }
+  onClose() { this.contentEl.empty(); }
 
+  /* ───────────────────────────── Rendering ───────────────────────────── */
   _render_modal() {
     this.setTitle('Smart Templates');
+
     const el = this.contentEl;
     el.empty();
     el.classList.add('st-template-review-modal');
@@ -92,22 +99,29 @@ export class TemplateReviewModal extends Modal {
     /* live preview */
     this.output_el = el.createEl('pre', {
       cls  : 'st-template-output',
-      text : '⏳ Generating template…',
+      text : '⏳ Generating template…'
     });
 
     /* actions */
     const actions_el = el.createDiv({ cls: 'st-actions' });
 
+    /** Insert into current editor */
     this.insert_btn = actions_el.createEl('button', { text: 'Insert' });
+    /** Create new file */
     this.create_btn = actions_el.createEl('button', { text: 'Create' });
+    /** NEW: copy to clipboard */
+    this.copy_btn = actions_el.createEl('button', { text: 'Copy' });
 
     this.insert_btn.disabled = true;
     this.create_btn.disabled = true;
+    this.copy_btn.disabled   = true;
 
     this.insert_btn.addEventListener('click', this._insert_output);
     this.create_btn.addEventListener('click', this._create_file);
+    this.copy_btn.addEventListener('click', this._copy_output_clipboard);
   }
 
+  /* ───────────────────────── Output generation ───────────────────────── */
   async _generate_output() {
     const { ctx, template, user_message = '' } = this.opts;
     if (!ctx || !template) {
@@ -119,7 +133,7 @@ export class TemplateReviewModal extends Modal {
       key          : `${Date.now()}-${template.key}`,
       context_key  : ctx.key,
       template_key : template.key,
-      user_message,
+      user_message
     };
     const Completion = this.env.smart_completions.item_type;
     this.completion  = new Completion(this.env, completion_opts);
@@ -132,21 +146,21 @@ export class TemplateReviewModal extends Modal {
       null;
 
     await this.completion.init({
-      stream          : true,
+      stream : true,
       stream_handlers : {
-        chunk : (c) => {
+        chunk : c => {
           this._output_text = c.response_text;
           this._update_output(false);
         },
-        done  : (c) => {
+        done  : c => {
           this._output_text = c.response_text;
           this._update_output(true);
         },
-        error : (err) => {
+        error : err => {
           console.error('stream error', err);
           new Notice('Streaming error – see console.');
-        },
-      },
+        }
+      }
     });
   }
 
@@ -160,9 +174,11 @@ export class TemplateReviewModal extends Modal {
     if (finalised) {
       this.insert_btn.disabled = false;
       this.create_btn.disabled = false;
+      this.copy_btn.disabled   = false;
     }
   }
 
+  /* ─────────────────────────── Action handlers ───────────────────────── */
   /** Insert into current editor then close modal. */
   _insert_output() {
     const editor = this.plugin.get_editor?.();
@@ -187,5 +203,12 @@ export class TemplateReviewModal extends Modal {
     } finally {
       this.close();
     }
+  }
+
+  /** Copy the generated output to system clipboard. */
+  async _copy_output_clipboard() {
+    if (!this._output_text) return;
+    await copy_to_clipboard(this._output_text);
+    new Notice('Template copied to clipboard!');
   }
 }

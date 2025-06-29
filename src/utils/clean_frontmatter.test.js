@@ -95,3 +95,8 @@ test('handles non-string input gracefully', t => {
 	t.is(clean_frontmatter(42, ['foo']), '');
 	t.is(clean_frontmatter({}, ['foo']), '');
 });
+
+test('should return exact content if no frontmatter', t => {
+	const content = 'Just some text without frontmatter.';
+	t.is(clean_frontmatter(content, ['foo']), content);
+});

@@ -61,11 +61,12 @@ export class SmartTemplate extends CollectionItem {
       return null;
     }
     if (!content) return null;
+    console.log('content before extraction', content);
 
     const settings = this.env.smart_templates?.settings || {};
     
     // If we have a template_heading, keep only that portion
-    if (settings.template_heading) {
+    if (settings.template_heading && content.includes(settings.template_heading)) {
       const contained_template = extract_heading_from_string(content, settings.template_heading);
       content = contained_template ?? '';
     }
@@ -82,27 +83,6 @@ export class SmartTemplate extends CollectionItem {
 
     return content.trim();
   }
-  // async generate_template_output(context_key, opts = {}) {
-  //   if(!this.env.smart_completions) {
-  //     console.warn('SmartTemplate: smart_completions not found in environment');
-  //     return null;
-  //   }
-    
-  //   const context = this.env.smart_contexts.get(context_key);
-  //   if (!context) {
-  //     console.warn(`SmartTemplate: Context item not found for key: ${context_key}`);
-  //     return null;
-  //   }
-    
-  //   // Create a completion with the template and context
-  //   const template_completion = await this.env.smart_completions.create_or_update({
-  //     context_key,
-  //     template_key: this.key,
-  //     ...opts,
-  //   });
-    
-  //   return template_completion.response_text;
-  // }
 
   get name() {
     return this.data.name || this.key.replace('.md', '');
