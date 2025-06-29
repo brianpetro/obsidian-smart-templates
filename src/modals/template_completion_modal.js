@@ -24,6 +24,7 @@ export class TemplateCompletionModal extends Modal {
     this.plugin.env.create_env_getter(this);
     this.user_message = '';
     this.context = opts.ctx || null;
+    this.template = opts.template || null;
   }
   static open(env, opts = {}) {
     const plugin =
@@ -36,6 +37,7 @@ export class TemplateCompletionModal extends Modal {
       env.template_completion_modal = new this(plugin, opts);
     }
     env.template_completion_modal.opts = opts;
+    env.template_completion_modal.user_message = opts.user_message || '';
     env.template_completion_modal.open();
     return env.template_completion_modal;
   }
@@ -101,6 +103,9 @@ export class TemplateCompletionModal extends Modal {
     });
     if(this.user_message) {
       this.textarea_el.value = this.user_message;
+    }else if (this.template.metadata?.prompt) {
+      // pre-fill with template prompt if available
+      this.textarea_el.value = this.template.metadata.prompt;
     }
     this.textarea_el.addEventListener('input', (e) => {
       this.user_message = e.target.value;

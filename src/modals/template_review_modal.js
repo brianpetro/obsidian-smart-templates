@@ -10,6 +10,7 @@
 
 import { Modal, Notice } from 'obsidian';
 import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
+import { insert_output } from '../utils/insert_output.js';
 
 /**
  * @typedef {import('smart-contexts').SmartContext} SmartContext
@@ -38,12 +39,12 @@ export class TemplateReviewModal extends Modal {
     /** @type {import('smart-completions').SmartCompletion} */
     this.completion = null;
 
-    // /* bind instance methods */
-    // this._generate_output      = this._generate_output.bind(this);
-    // this._update_output        = this._update_output.bind(this);
-    // this._insert_output        = this._insert_output.bind(this);
-    // this._create_file          = this._create_file.bind(this);
-    // this._copy_output_clipboard = this._copy_output_clipboard.bind(this);
+    /* bind instance methods */
+    this._generate_output      = this._generate_output.bind(this);
+    this._update_output        = this._update_output.bind(this);
+    this._insert_output        = this._insert_output.bind(this);
+    this._create_file          = this._create_file.bind(this);
+    this._copy_output_clipboard = this._copy_output_clipboard.bind(this);
   }
 
   /**
@@ -77,7 +78,6 @@ export class TemplateReviewModal extends Modal {
     super.open();
   }
 
-  /* ─────────────────────────── Modal lifecycle ───────────────────────── */
   onOpen() {
     this._render_modal();
     this._generate_output().catch(err => {
@@ -88,7 +88,6 @@ export class TemplateReviewModal extends Modal {
 
   onClose() { this.contentEl.empty(); }
 
-  /* ───────────────────────────── Rendering ───────────────────────────── */
   _render_modal() {
     this.setTitle('Smart Templates');
 
@@ -121,7 +120,6 @@ export class TemplateReviewModal extends Modal {
     this.copy_btn.addEventListener('click', this._copy_output_clipboard);
   }
 
-  /* ───────────────────────── Output generation ───────────────────────── */
   async _generate_output() {
     const { ctx, template, user_message = '' } = this.opts;
     if (!ctx || !template) {
@@ -178,7 +176,6 @@ export class TemplateReviewModal extends Modal {
     }
   }
 
-  /* ─────────────────────────── Action handlers ───────────────────────── */
   /** Insert into current editor then close modal. */
   _insert_output() {
     const editor = this.plugin.get_editor?.();
@@ -186,14 +183,25 @@ export class TemplateReviewModal extends Modal {
       new Notice('No active editor.');
       return;
     }
-    editor.replaceSelection(this._output_text);
+
+    const doc_text    = editor.getValue();
+    const cursor_pos  = editor.getCursor();
+    const updated_doc = insert_output(
+      doc_text,
+      cursor_pos.line,
+      this._output_text.trim()
+    );
+
+    editor.setValue(updated_doc);
     this.close();
   }
 
   /** Create new note with content then open it in a vertical split. */
   async _create_file() {
     try {
-      const name = `${this.opts.template.name}-${Date.now()}.md`;
+      const current_file = this.app.workspace.getActiveFile();
+      const curr_file_name = current_file ? current_file.basename : 'Template Output';
+      const name = `${curr_file_name}-${Date.now()}.md`;
       const file = await this.app.vault.create(name, this._output_text);
       const leaf = this.app.workspace.getLeaf('split', 'vertical');
       await leaf.openFile(file);

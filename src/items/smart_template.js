@@ -2,6 +2,7 @@ import { CollectionItem } from "smart-collections";
 import { extract_heading_from_string } from "../utils/extract_heading_from_string.js";
 import { remove_heading_block } from "../utils/remove_heading_block.js";
 import { clean_frontmatter } from "../utils/clean_frontmatter.js";
+import { parse_frontmatter } from "smart-sources/utils/parse_frontmatter.js";
 
 /**
  * @class SmartTemplate
@@ -33,11 +34,16 @@ export class SmartTemplate extends CollectionItem {
     return this.data.key || this.data.source_key || super.get_key();
   }
 
-  get template_source(){
+  get source(){
+    if(!this.data.source_key) return null;
     return this.data.source_key.includes('#')
       ? this.env.smart_blocks.get(this.data.source_key)
       : this.env.smart_sources.get(this.data.source_key)
     ;
+  }
+  async read () {
+    if (this.data.content) return this.data.content;
+    return await this.source?.read() || null;
   }
 
   /**
@@ -48,20 +54,20 @@ export class SmartTemplate extends CollectionItem {
    * @returns {Promise<string|null>}
    */
   async get_template() {
-    if (!this.template_source) {
+    if (!this.source && !this.data.content) {
       console.warn(`SmartTemplate: Source item not found for key: ${this.data.source_key}`);
       return null;
     }
 
     let content;
     try {
-      content = await this.template_source.read();
+      content = await this.read();
     } catch (err) {
       console.warn(`SmartTemplate: Error reading template_source_item: ${this.data.source_key}`, err);
       return null;
     }
     if (!content) return null;
-    console.log('content before extraction', content);
+    // console.log('content before extraction', content);
 
     const settings = this.env.smart_templates?.settings || {};
     
@@ -77,14 +83,16 @@ export class SmartTemplate extends CollectionItem {
     }
 
     // Refactored: clean frontmatter, removing 'smart template' key
-    content = clean_frontmatter(content, ['smart template']);
+    content = clean_frontmatter(content, ['smart template', 'prompt']);
 
-    console.log('content after extraction', content);
+    // console.log('content after extraction', content);
 
     return content.trim();
   }
 
-  get name() {
-    return this.data.name || this.key.replace('.md', '');
+  get metadata() {
+    if(this.source) return this.source.metadata;
+    const {frontmatter} = parse_frontmatter(this.data.content);
+    return frontmatter || {};
   }
 }

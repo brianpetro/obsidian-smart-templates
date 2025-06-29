@@ -10,6 +10,7 @@
 import { Collection } from "smart-collections";
 import { AjsonSingleFileCollectionDataAdapter } from "smart-collections/adapters/ajson_single_file.js";
 import { SmartTemplate } from "../items/smart_template.js";
+import default_template_tags from "../defaults/tags.md" with {type: "markdown"};
 
 /**
  * @class SmartTemplates
@@ -17,6 +18,7 @@ import { SmartTemplate } from "../items/smart_template.js";
  */
 export class SmartTemplates extends Collection {
   init() {
+    this.add_default_templates();
     const try_load_templates = () => {
       if (this.env.collections?.smart_sources === 'loaded') {
         clearInterval(this._load_templates_interval);
@@ -25,6 +27,12 @@ export class SmartTemplates extends Collection {
     };
     this._load_templates_interval = setInterval(try_load_templates, 300);
     try_load_templates();
+  }
+  add_default_templates() {
+    this.create_or_update({
+      key: "Add tags",
+      content: default_template_tags,
+    });
   }
   load_templates() {
     const settings = this.env.settings.smart_templates;
@@ -51,7 +59,7 @@ export class SmartTemplates extends Collection {
 
     // clean-up old (no-longer matching filter) templates
     Object.values(this.items).forEach(template => {
-      if (!template_filter_fn(template.template_source)) {
+      if (template.source && !template_filter_fn(template.source)) {
         delete this.items[template.key];
       }
     });

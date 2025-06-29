@@ -1,11 +1,8 @@
 import { Plugin } from "obsidian";
-import { parse_template } from "./src/content_parsers/parse_templates.js";
 import { SmartEnv, merge_env_config } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_completions, SmartCompletion } from "smart-completions";
 import { TemplateSelectorModal } from "./src/modals/template_selector_modal.js";
-// import { BuildContextModal } from "./src/modals/build_context_modal.js";
-// import { UserMessageModal } from "./src/modals/user_message_modal.js";
 import { smart_contexts } from "smart-contexts";
 import { smart_env_config } from './smart_env.config.js';
 import { smart_env_config as smart_context_env_config } from "smart-context-obsidian/smart_env.config.js";
@@ -14,16 +11,10 @@ export default class SmartTemplatesPlugin extends Plugin {
   compiled_smart_env_config = smart_env_config;
   smart_env_config = {
     collections: {
-      // smart_sources: {
-      //   content_parsers: [parse_template],
-      // },
-      // not is base obsidian smart-env
       smart_completions,
       smart_contexts,
-      // smart_templates
     },
     item_types: {
-      // SmartTemplate,
       SmartCompletion,
     },
     default_settings: {
