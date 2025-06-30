@@ -38,6 +38,7 @@ export const run = () => {
     .split('\n')
     .filter(Boolean);
   // Skip if only the log_path was changed
+  console.log(`Changed files in last commit: ${changed_files.join(', ')}`);
   if (changed_files.length === 1 && changed_files[0] === log_path) return;
 
   // Check if '## next patch' already present in log file
