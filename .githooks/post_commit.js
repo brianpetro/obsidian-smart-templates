@@ -1,23 +1,61 @@
-import { execSync } from 'node:child_process';
-import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+/**
+ * Append the latest commit message to COMMIT_LOG.md
+ * Implemented as functional, dependency‑free ESM.
+ * @module post_commit
+ */
 
-const repoRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf8' }).trim();
-const logPath  = join(repoRoot, 'releases', '1.1.0.md')
-                 .replaceAll(sep, '/');           // "C:\..." -> "C:/..."
+import {execSync} from 'node:child_process';
+import {appendFileSync, existsSync, writeFileSync, readFileSync} from 'node:fs';
+import path from 'node:path';
 
+/** Return the full message body of the most recent commit. */
+export const get_last_commit_message = () =>
+  execSync('git log -1 --pretty=%B', {encoding: 'utf8'}).trim();
+
+/** Wrap the message with an ISO‑8601 timestamp header. */
+export const format_record = msg =>
+  `## ${new Date().toISOString()}\n${msg}\n\n`;
+
+
+/** Append the record and stage the file for the next commit. */
+export const append_and_stage = (log_path, record, add_next_patch) => {
+  // Always append a newline before the message
+  let msg = '\n';
+  if (add_next_patch) {
+    msg += '\n## next patch\n';
+  }
+  msg += record;
+  console.log(`Appending to ${log_path}:\n${msg}`);
+  appendFileSync(log_path, msg);
+};
+
+/** Entry point for the hook. */
 export const run = () => {
   console.log('Running post-commit hook…');
+  const log_path = path.join(process.cwd(), 'releases', '1.1.0.md');
+  // Get the list of files changed in the last commit
+  const changed_files = execSync('git diff-tree --no-commit-id --name-only -r HEAD', {encoding: 'utf8'})
+    .split('\n')
+    .filter(Boolean);
+  // Skip if only the log_path was changed
+  if (changed_files.length === 1 && changed_files[0] === log_path) return;
 
-  // Skip if the commit only touched the log itself
-  const changed = execSync('git diff-tree --no-commit-id --name-only -r HEAD', { encoding: 'utf8' })
-                    .trim().split('\n')
-                    .filter(Boolean)
-                    .map(p => p.replaceAll('\\', '/'));     // normalise
+  // Check if '## next patch' already present in log file
+  let already_present = false;
+  if (existsSync(log_path)) {
+    const log_content = readFileSync(log_path, {encoding: 'utf8'});
+    if (log_content.includes('## next patch')) {
+      already_present = true;
+    }
+  }
 
-  if (changed.length === 1 && changed[0] === relative(repoRoot, logPath)) return;
-
-  if (!existsSync(logPath)) writeFileSync(logPath, '# Release log\n\n');
-  appendFileSync(logPath, `## ${new Date().toISOString()}\n${getCommitMsg()}\n\n`);
-  execSync(`git add "${logPath}"`);
+  const out = get_last_commit_message();
+  if (already_present) {
+    console.log('## next patch already present, skipping append.');
+    return;
+  }
+  console.log(`Appending commit message to ${log_path}:\n${out}`);
+  append_and_stage(log_path, out, true);
 };
+
+run();
