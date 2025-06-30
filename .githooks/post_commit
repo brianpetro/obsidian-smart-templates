@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# Makes Node script portable; exits on first failure
+set -e
+node .githooks/post_commit.js
