@@ -18,6 +18,7 @@ import default_template_summary from "../defaults/summary.md" with {type: "markd
  * @extends Collection
  */
 export class SmartTemplates extends Collection {
+  static version = 1;
   init() {
     this.add_default_templates();
     const try_load_templates = () => {
