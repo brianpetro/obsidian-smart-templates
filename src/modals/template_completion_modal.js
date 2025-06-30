@@ -48,7 +48,7 @@ export class TemplateCompletionModal extends Modal {
     /* ensure context */
     const ctx_container = await this.env.render_component('context_builder', this.context, {
       update_callback: (_ctx) => {
-        this.context = _ctx;
+        this.opts.context = _ctx;
       },
     });
     ctx_container.style.maxHeight = '50vh';
@@ -65,7 +65,7 @@ export class TemplateCompletionModal extends Modal {
       ContextSelectorModalClass.open(this.env, {
         ctx: this.context,
         update_callback: (_ctx) => {
-          this.context = _ctx;
+          this.opts.context = _ctx;
           this.render();
         },
       }),
