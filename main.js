@@ -72,10 +72,27 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.addCommand({
       id: "generate_from_template",
       name: "Generate from template",
-      callback: async () => {
+      editorCallback: async (editor) => {
+        // get highlighted text or active file
+        const add_items = [];
+        const selection = editor.getSelection();
+        const active_file = this.app.workspace.getActiveFile();
+        if(this.has_context_early && selection) {
+          add_items.push({ key: `selection:${active_file.path}`, content: selection });
+        }else{
+          if (active_file) {
+            add_items.push(active_file.path);
+          }
+        }
+        this.env.smart_templates.current_context = this.env.smart_contexts.new_context({}, { add_items });
         TemplateSelectorModal.open(this.env);
       }
     });
+  }
+  // used to determine if the early-release smart-context plugin is installed
+  // prevents attempting to use features that require early context features (ex. text as context item)
+  get has_context_early() {
+    return (this.env.smart_context_plugin?.manifest?.name?.toLowerCase() || '').includes('early')
   }
 
   get_editor() {

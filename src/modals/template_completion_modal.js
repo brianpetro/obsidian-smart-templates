@@ -12,7 +12,6 @@ export class TemplateCompletionModal extends Modal {
     this.plugin.env.create_env_getter(this);
 
     this.user_message = '';
-    this.context = opts.ctx || null;
 
     /* bind for listeners */
     this._copy_prompt_clipboard = this._copy_prompt_clipboard.bind(this);
@@ -38,6 +37,7 @@ export class TemplateCompletionModal extends Modal {
     this.render();
     this.setTitle('Template: ' + (this.opts?.template?.key || 'MISSING TEMPLATE'));
   }
+  get context() { return this.opts.ctx || this.env.smart_templates.current_context; }
   get template() { return this.opts.template; }
 
   async render() {
@@ -46,11 +46,6 @@ export class TemplateCompletionModal extends Modal {
     contentEl.classList.add('st-template-completion-modal');
 
     /* ensure context */
-    if (!this.context) {
-      const active_file = this.app.workspace.getActiveFile();
-      const add_items = active_file ? [active_file.path] : [];
-      this.context = this.env.smart_contexts.new_context({}, { add_items });
-    }
     const ctx_container = await this.env.render_component('context_builder', this.context, {
       update_callback: (_ctx) => {
         this.context = _ctx;
@@ -127,5 +122,6 @@ export class TemplateCompletionModal extends Modal {
   onClose() {
     this.contentEl.empty();
     this.user_message = '';
+    this.env.smart_templates.current_context = null;
   }
 }
