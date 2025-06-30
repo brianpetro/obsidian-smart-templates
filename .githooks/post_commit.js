@@ -24,6 +24,7 @@ export const append_and_stage = (path, record) => {
 
 /** Entry point for the hook. */
 export const run = () => {
+  console.log('Running post-commit hook…');
   const log_path = 'releases/1.1.0.md';
   // Get the list of files changed in the last commit
   const changed_files = execSync('git diff-tree --no-commit-id --name-only -r HEAD', {encoding: 'utf8'})
