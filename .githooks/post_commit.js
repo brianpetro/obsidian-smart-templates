@@ -6,6 +6,7 @@
 
 import {execSync} from 'node:child_process';
 import {appendFileSync, existsSync, writeFileSync} from 'node:fs';
+import path from 'node:path';
 
 /** Return the full message body of the most recent commit. */
 export const get_last_commit_message = () =>
