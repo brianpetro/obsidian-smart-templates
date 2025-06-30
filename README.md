@@ -48,7 +48,8 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 
 - **<span style="color:cyan;">Blue</span>**: Shows the currently selected context and **Edit context** button to open the [Smart Context](http://obsidian.md/plugins?id=smart-context) selector.
 - **<span style="color:magenta;">Pink</span>**: Free-form **Additional instructions** area.
-- **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output.
+- **<span style="color:yellow;">Yellow</span>**: **Copy as prompt** button copies the context and template so they can be pasted into ChatGPT or other AI conversational interface.
+- **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output configured chat model.
 
 ### Watch, insert, or copy
 ![Template review](./assets/Smart-Templates-v1-OP-template-review-modal-2025-06-29.png)
