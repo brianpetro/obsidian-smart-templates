@@ -1,9 +1,0 @@
-#!/usr/bin/env sh
-# 1. If we're on Windows and powershell/cmd is our parent, re-exec with Git-Bash.
-if [ -n "$OS" ] && [ "$OS" = "Windows_NT" ] && [ -z "$MSYSTEM" ]; then
-  exec "$(git --exec-path)/../usr/bin/sh" "$0" "$@"
-fi
-# 2. Normal POSIX path – run the Node script.
-set -e
-echo "Running post-commit hook…"
-node "$(dirname "$0")/post_commit.js" "$@"
