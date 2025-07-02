@@ -63,5 +63,5 @@ export async function build_prompt_text(ctx, tmpl, user_msg = '') {
 
   const system_prompt = compile_template_instructions(template_text);
 
-  return `${context}\n\n${instructions}\n\n${system_prompt}`.trim();
+  return `${instructions}\n\n${system_prompt}\n\n${context}\n\n${instructions}\n\n${system_prompt}`.trim();
 }
