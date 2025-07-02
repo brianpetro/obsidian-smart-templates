@@ -19,7 +19,7 @@ export class TemplateCompletionModal extends Modal {
 
   static open(env, opts = {}) {
     const plugin =
-      env.smart_contexts_plugin ||
+      env.smart_context_plugin ||
       env.smart_chat_plugin ||
       env.smart_connections_plugin ||
       env.plugin;
@@ -58,11 +58,8 @@ export class TemplateCompletionModal extends Modal {
     const header_actions = ctx_container.querySelector('.sc-context-actions');
     const edit_btn = document.createElement('button');
     edit_btn.textContent = 'Edit context';
-    // plugin.ContextSelectorModal is early-release if available
-    const ContextSelectorModalClass =
-      this.env.smart_context_plugin?.ContextSelectorModal || ContextSelectorModal;
     edit_btn.addEventListener('click', () =>
-      ContextSelectorModalClass.open(this.env, {
+      ContextSelectorModal.open(this.env, {
         ctx: this.context,
         update_callback: (_ctx) => {
           this.opts.context = _ctx;
