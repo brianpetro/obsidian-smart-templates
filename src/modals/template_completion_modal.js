@@ -37,19 +37,26 @@ export class TemplateCompletionModal extends Modal {
     this.render();
     this.setTitle('Template: ' + (this.opts?.template?.key || 'MISSING TEMPLATE'));
   }
-  get context() { return this.opts.ctx || this.env.smart_templates.current_context; }
+  get context() { return this.env.smart_templates.current_context; }
+  set context(ctx) {
+    this.env.smart_templates.current_context = ctx;
+  }
   get template() { return this.opts.template; }
 
   async render() {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.classList.add('st-template-completion-modal');
+    const update_callback = (_ctx) => {
+      const old_ctx = this.context;
+      this.context = _ctx;
+      contentEl.empty(); // clear content
+      this.render();
+    };
 
     /* ensure context */
     const ctx_container = await this.env.render_component('context_builder', this.context, {
-      update_callback: (_ctx) => {
-        this.opts.context = _ctx;
-      },
+      update_callback,
     });
     ctx_container.style.maxHeight = '50vh';
     ctx_container.style.overflowY = 'auto';
@@ -61,10 +68,7 @@ export class TemplateCompletionModal extends Modal {
     edit_btn.addEventListener('click', () =>
       ContextSelectorModal.open(this.env, {
         ctx: this.context,
-        update_callback: (_ctx) => {
-          this.opts.context = _ctx;
-          this.render();
-        },
+        update_callback, // propagate changes back to this modal
       }),
     );
     header_actions.appendChild(edit_btn);
