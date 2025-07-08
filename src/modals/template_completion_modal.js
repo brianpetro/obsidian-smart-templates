@@ -19,9 +19,10 @@ export class TemplateCompletionModal extends Modal {
 
   static open(env, opts = {}) {
     const plugin =
-      env.smart_context_plugin ||
-      env.smart_chat_plugin ||
-      env.smart_connections_plugin ||
+      env.smart_templates_plugin   ||
+      // env.smart_context_plugin ||
+      // env.smart_chat_plugin ||
+      // env.smart_connections_plugin ||
       env.plugin;
 
     if (!env.template_completion_modal) {

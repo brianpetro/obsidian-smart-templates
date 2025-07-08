@@ -47,9 +47,10 @@ export class TemplateReviewModal extends Modal {
    */
   static open(env, opts = {}) {
     const plugin =
-      env.smart_context_plugin   ||
-      env.smart_chat_plugin       ||
-      env.smart_connections_plugin||
+      env.smart_templates_plugin   ||
+      // env.smart_context_plugin   ||
+      // env.smart_chat_plugin       ||
+      // env.smart_connections_plugin||
       env.plugin;
     if (!env.template_review_modal) {
       env.template_review_modal = new this(plugin, opts);

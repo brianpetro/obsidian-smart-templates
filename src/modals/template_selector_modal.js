@@ -18,9 +18,10 @@ import { TemplateCompletionModal } from './template_completion_modal.js';
 export class TemplateSelectorModal extends FuzzySuggestModal {
   static open(env, opts = {}) {
     const plugin =
-      env.smart_context_plugin ||
-      env.smart_chat_plugin ||
-      env.smart_connections_plugin ||
+      env.smart_templates_plugin   ||
+      // env.smart_context_plugin ||
+      // env.smart_chat_plugin ||
+      // env.smart_connections_plugin ||
       env.plugin
     ;
     if (!env.template_selector_modal) {

@@ -96,11 +96,11 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
 
   get_editor() {
-    const activeLeaf = this.app.workspace.activeLeaf;
-    if (!activeLeaf || !activeLeaf.view || !activeLeaf.view.editor) {
+    const active_editor = this.app.workspace.activeEditor?.editor;
+    if (!active_editor) {
       return null;
     }
-    return activeLeaf.view.editor;
+    return active_editor;
   }
   get chat_model() {
     if (!this._chat_model) {
