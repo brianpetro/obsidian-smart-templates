@@ -6,6 +6,9 @@ import { TemplateSelectorModal } from "./src/modals/template_selector_modal.js";
 import { smart_contexts } from "smart-contexts";
 import { smart_env_config } from './smart_env.config.js';
 import { smart_env_config as smart_context_env_config } from "smart-context-obsidian/smart_env.config.js";
+import default_template_tags from "./src/defaults/tags.md" with {type: "markdown"};
+import default_template_summary from "./src/defaults/summary.md" with {type: "markdown"};
+import default_template_research_paper from "./src/defaults/research_paper.md" with {type: "markdown"};
 
 export default class SmartTemplatesPlugin extends Plugin {
   compiled_smart_env_config = smart_env_config;
@@ -66,6 +69,7 @@ export default class SmartTemplatesPlugin extends Plugin {
     // Register the new Smart Templates settings tab
     this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
 
+    this.add_default_templates();
   }
 
   register_commands() {
@@ -77,7 +81,7 @@ export default class SmartTemplatesPlugin extends Plugin {
         const add_items = [];
         const selection = editor.getSelection();
         const active_file = this.app.workspace.getActiveFile();
-        if(this.has_context_early && selection) {
+        if(selection) {
           add_items.push({ key: `selection:${active_file.path}`, content: selection });
         }else{
           if (active_file) {
@@ -89,10 +93,10 @@ export default class SmartTemplatesPlugin extends Plugin {
       }
     });
   }
-  // used to determine if the early-release smart-context plugin is installed
-  // prevents attempting to use features that require early context features (ex. text as context item)
-  get has_context_early() {
-    return (this.env.smart_context_plugin?.manifest?.name?.toLowerCase() || '').includes('early')
+  add_default_templates() {
+    this.env.smart_templates.create_or_update({ key: "Add tags (default)", content: default_template_tags });
+    this.env.smart_templates.create_or_update({ key: "Create summary (default)", content: default_template_summary });
+    this.env.smart_templates.create_or_update({ key: "Research paper (default)", content: default_template_research_paper });
   }
 
   get_editor() {
