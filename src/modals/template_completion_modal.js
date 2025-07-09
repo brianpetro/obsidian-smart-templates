@@ -56,20 +56,23 @@ export class TemplateCompletionModal extends Modal {
     };
 
     /* ensure context */
-    const ctx_container = await this.env.render_component('context_builder', this.context, {
-      update_callback,
+    const builder_container = await this.env.render_component('context_builder', this.context, {});
+    builder_container.style.maxHeight = '50vh';
+    builder_container.style.overflowY = 'auto';
+    contentEl.appendChild(builder_container);
+    builder_container.addEventListener('smart-env:context-changed', (e) => {
+      const updated_ctx = e.detail.context;
+      this.context = updated_ctx;
+      this.render();
     });
-    ctx_container.style.maxHeight = '50vh';
-    ctx_container.style.overflowY = 'auto';
-    contentEl.appendChild(ctx_container);
 
-    const header_actions = ctx_container.querySelector('.sc-context-actions');
+    const header_actions = builder_container.querySelector('.sc-context-actions');
     const edit_btn = document.createElement('button');
     edit_btn.textContent = 'Edit context';
     edit_btn.addEventListener('click', () =>
       ContextSelectorModal.open(this.env, {
         ctx: this.context,
-        update_callback, // propagate changes back to this modal
+        opener_container: builder_container,
       }),
     );
     header_actions.appendChild(edit_btn);
