@@ -60,3 +60,30 @@ test('when cursor is mid file and no existing frontmatter, should add frontmatte
     'e',
   ].join('\n'));
 });
+
+
+test('merges tags when cursor inside FM', (t) => {
+  const start = [
+    '---',
+    'title: A',
+    'tags:',
+    '  - existing',
+    '---',
+    '',
+    'Body',
+  ].join('\n');
+
+  const output = [
+    '---',
+    'tags:',
+    '  - new',
+    '---',
+  ].join('\n');
+
+  const result = insert_output(start, 2, output);
+
+  t.regex(result, /title:\s+A/u);
+  t.regex(result, /tags:\s*\n\s+- existing/u);
+  t.regex(result, /- new/u);
+  t.false(/tags:\s*\n\s+- existing[\s\S]*tags:/u.test(result), 'no duplicate tags key');
+});
