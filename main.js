@@ -6,9 +6,7 @@ import { TemplateSelectorModal } from "./src/modals/template_selector_modal.js";
 import { smart_contexts } from "smart-contexts";
 import { smart_env_config } from './smart_env.config.js';
 import { smart_env_config as smart_context_env_config } from "smart-context-obsidian/smart_env.config.js";
-import default_template_tags from "./src/defaults/tags.md" with {type: "markdown"};
-import default_template_summary from "./src/defaults/summary.md" with {type: "markdown"};
-import default_template_research_paper from "./src/defaults/research_paper.md" with {type: "markdown"};
+import { default_templates } from "./src/defaults/default_templates.js";
 
 export default class SmartTemplatesPlugin extends Plugin {
   compiled_smart_env_config = smart_env_config;
@@ -94,11 +92,10 @@ export default class SmartTemplatesPlugin extends Plugin {
     });
   }
   add_default_templates() {
-    this.env.smart_templates.create_or_update({ key: "Add tags (default)", content: default_template_tags });
-    this.env.smart_templates.create_or_update({ key: "Create summary (default)", content: default_template_summary });
-    this.env.smart_templates.create_or_update({ key: "Research paper (default)", content: default_template_research_paper });
+    for (const template of default_templates) {
+      this.env.smart_templates.create_or_update(template);
+    }
   }
-
   get_editor() {
     const active_editor = this.app.workspace.activeEditor?.editor;
     if (!active_editor) {
