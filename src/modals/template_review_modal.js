@@ -2,6 +2,7 @@ import { Modal, Notice } from 'obsidian';
 import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
 import { insert_output } from '../utils/insert_output.js';
 import { replace_vault_tags_var } from 'smart-context-obsidian/src/utils/replace_vault_tags_var.js';
+import { run_template_completion } from '../utils/run_template_completion.js';
 
 /**
  * @typedef {import('smart-contexts').SmartContext} SmartContext
@@ -125,26 +126,12 @@ export class TemplateReviewModal extends Modal {
       throw new Error('ctx and template are required.');
     }
 
-    /* build a SmartCompletion */
-    const completion_opts = {
-      key          : `${Date.now()}-${template.key}`,
-      context_key  : ctx.key,
-      template_key : template.key,
-      user_message: this.user_message,
-    };
-    const Completion = this.env.smart_completions.item_type;
-    this.completion  = new Completion(this.env, completion_opts);
-    this.env.smart_completions.set(this.completion);
-
-    /* attach chat_model (same lazy getter as plugin.generate_template) */
-    this.completion.chat_model =
-      this.plugin.chat_model ??
-      this.plugin.env?.smart_templates_plugin?.chat_model ??
-      null;
-
-    await this.completion.init({
-      stream : true,
-      stream_handlers : {
+    this.completion = await run_template_completion(
+      this.env,
+      template,
+      ctx.key,
+      this.user_message,
+      {
         chunk : c => {
           this._output_text = c.response_text;
           this._update_output(false);
@@ -158,7 +145,7 @@ export class TemplateReviewModal extends Modal {
           new Notice('Streaming error – see console.');
         }
       }
-    });
+    );
   }
 
   /**

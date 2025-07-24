@@ -117,7 +117,7 @@ Content
   const tmpl = new SmartTemplate(env, { key: 'tmpl', source_key: 'doc.md' });
   const result = await tmpl.get_template();
 
-  t.is(result, '', 'No matching heading => empty string');
+  t.is(result, CONTENT.trim(), 'No matching heading => entire content returned');
 });
 
 test('get_template() removes system_prompt_heading block', async t => {

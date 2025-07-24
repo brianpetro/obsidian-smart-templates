@@ -1,6 +1,6 @@
 {
   "name": "smart-templates-obsidian",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "description": "Configurable templates for use with Smart Environments in Obsidian.",
   "author": "🌴 Brian",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "smart-context-obsidian": "file:../smart-context-obsidian",
     "smart-contexts": "file:../jsbrains/smart-contexts",
     "obsidian-smart-env": "file:../obsidian-smart-env",
+    "smart-chat-obsidian": "file:../smart-chat-obsidian",
     "smart-http-request": "file:../jsbrains/smart-http-request"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
   "workspaces": [
     "../jsbrains/*",
     "../obsidian-smart-env",
-    "../smart-context-obsidian"
+    "../smart-context-obsidian",
+    "../smart-chat-obsidian"
   ]
 }
