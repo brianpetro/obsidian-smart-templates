@@ -48,12 +48,6 @@ export class TemplateCompletionModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.classList.add('st-template-completion-modal');
-    const update_callback = (_ctx) => {
-      const old_ctx = this.context;
-      this.context = _ctx;
-      contentEl.empty(); // clear content
-      this.render();
-    };
 
     /* ensure context */
     const builder_container = await this.env.render_component('context_builder', this.context, {});
