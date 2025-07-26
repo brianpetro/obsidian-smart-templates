@@ -10,10 +10,11 @@ import { build_template_completion } from './build_template_completion.js';
  * @param {string} ctx_key
  * @param {string} user_message
  * @param {Object} handlers
+ * @param {import('smart-chat-obsidian/src/items/smart_chat_thread.js').SmartChatThread} [chat_thread]
  * @returns {Promise<import('smart-completions').SmartCompletion>}
  */
-export async function run_template_completion(env, template, ctx_key, user_message, handlers = {}) {
-  const completion = await build_template_completion(env, template, ctx_key, user_message);
+export async function run_template_completion(env, template, ctx_key, user_message, handlers = {}, chat_thread = null) {
+  const completion = await build_template_completion(env, template, ctx_key, user_message, chat_thread);
   completion.chat_model = env?.smart_templates_plugin?.chat_model;
   await completion.init({
     stream: true,

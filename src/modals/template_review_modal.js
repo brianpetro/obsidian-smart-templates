@@ -144,7 +144,8 @@ export class TemplateReviewModal extends Modal {
           console.error('stream error', err);
           new Notice('Streaming error – see console.');
         }
-      }
+      },
+      this.opts.chat_thread
     );
   }
 

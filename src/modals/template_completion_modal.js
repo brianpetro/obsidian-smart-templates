@@ -100,6 +100,7 @@ export class TemplateCompletionModal extends Modal {
         ctx: this.context,
         user_message: this.user_message,
         template: this.opts.template,
+        chat_thread: this.opts.chat_thread
       });
       this.close();
     });

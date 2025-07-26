@@ -9,12 +9,15 @@
  * @param {import('../items/smart_template.js').SmartTemplate} template
  * @param {string} ctx_key
  * @param {string} user_message
+ * @param {import('smart-chat-obsidian/src/items/smart_chat_thread.js').SmartChatThread} [chat_thread]
  * @returns {import('smart-completions').SmartCompletion}
  */
-export async function build_template_completion(env, template, ctx_key, user_message) {
-  let thread = env.smart_templates?.active_thread;
+export async function build_template_completion(env, template, ctx_key, user_message, chat_thread = null) {
+  let thread = chat_thread || env.smart_templates?.active_thread;
   if (!thread) {
     thread = await env.smart_chat_threads.create_or_update();
+    env.smart_templates.active_thread = thread;
+  } else {
     env.smart_templates.active_thread = thread;
   }
   const completion_data = {

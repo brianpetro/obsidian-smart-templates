@@ -72,6 +72,7 @@ export class TemplateSelectorModal extends FuzzySuggestModal {
       this.env,
       {
         template: selection,
+        chat_thread: this.opts.chat_thread
       }
     );
     this.close();
