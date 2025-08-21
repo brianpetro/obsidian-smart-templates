@@ -14,6 +14,9 @@ export const smart_env_config = {
   item_types: {
     SmartTemplate
   },
+  items: {
+    smart_template: { class: SmartTemplate }
+  },
   components: {
 
   }

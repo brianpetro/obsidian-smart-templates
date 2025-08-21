@@ -13,12 +13,9 @@
  * @returns {import('smart-completions').SmartCompletion}
  */
 export async function build_template_completion(env, template, ctx_key, user_message, chat_thread = null) {
-  let thread = chat_thread || env.smart_templates?.active_thread;
+  let thread = chat_thread;
   if (!thread) {
     thread = await env.smart_chat_threads.create_or_update();
-    env.smart_templates.active_thread = thread;
-  } else {
-    env.smart_templates.active_thread = thread;
   }
   const completion_data = {
     context_key: ctx_key,

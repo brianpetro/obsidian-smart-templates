@@ -56,6 +56,7 @@ export class TemplateReviewModal extends Modal {
     if (!env.template_review_modal) {
       env.template_review_modal = new this(plugin, opts);
     }
+    env.template_review_modal.completion = null;
     env.template_review_modal.opts = opts;
     env.template_review_modal.open();
     return env.template_review_modal;
