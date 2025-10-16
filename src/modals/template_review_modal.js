@@ -1,5 +1,5 @@
 import { Modal, Notice } from 'obsidian';
-import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
+import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
 import { insert_output } from '../utils/insert_output.js';
 import { replace_vault_tags_var } from 'smart-context-obsidian/src/utils/replace_vault_tags_var.js';
 import { run_template_completion } from '../utils/run_template_completion.js';

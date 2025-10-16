@@ -1,7 +1,7 @@
 import { Modal, Notice } from 'obsidian';
 import { ContextSelectorModal } from 'smart-context-obsidian/src/views/context_selector_modal.js';
 import { TemplateReviewModal } from './template_review_modal.js';
-import { copy_to_clipboard } from 'smart-context-obsidian/src/utils/copy_to_clipboard.js';
+import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
 import { build_prompt_text } from '../utils/build_prompt_text.js';
 
 export class TemplateCompletionModal extends Modal {
