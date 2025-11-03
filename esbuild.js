@@ -13,7 +13,7 @@ import esbuild from 'esbuild';
 import fs from 'fs';
 import path from 'path';
 import 'dotenv/config';
-import { build_smart_env_config } from 'obsidian-smart-env/build_smart_env_config.js';
+import { build_smart_env_config } from 'obsidian-smart-env/build/build_env_config.js';
 
 console.log('process.cwd()', process.cwd());
 const roots = [
