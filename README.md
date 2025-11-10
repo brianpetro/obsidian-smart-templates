@@ -34,17 +34,17 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 
 
 ### Generate from a template
-![Generate command](./assets/Smart-Templates-v1-OP-generate-command-2025-06-29.png)
+![Generate command](/assets/Smart-Templates-v1-OP-generate-command-2025-06-29.png)
 
 - **<span style="color:lime;">Green</span>**: shows the command **Smart Templates: Generate from template** in the command palette.
 
 ### Pick a template
-![Template selector](./assets/Smart-Templates-v1-OP-template-selector-modal-2025-06-29.png)
+![Template selector](/assets/Smart-Templates-v1-OP-template-selector-modal-2025-06-29.png)
 
 - **<span style="color:lime;">Green</span>**: Select "Add tags" template
 
 ### Prepare context and add instructions
-![Template completion](./assets/Smart-Templates-v1-OP-template-complete-modal-2025-06-29.png)
+![Template completion](/assets/Smart-Templates-v1-OP-template-complete-modal-2025-06-29.png)
 
 - **<span style="color:cyan;">Blue</span>**: Shows the currently selected context and **Edit context** button to open the [Smart Context](http://obsidian.md/plugins?id=smart-context) selector.
 - **<span style="color:magenta;">Pink</span>**: Free-form **Additional instructions** area.
@@ -52,7 +52,7 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 - **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output configured chat model.
 
 ### Watch, insert, or copy
-![Template review](./assets/Smart-Templates-v1-OP-template-review-modal-2025-06-29.png)
+![Template review](/assets/Smart-Templates-v1-OP-template-review-modal-2025-06-29.png)
 
 - **<span style="color:yellow;">Yellow</span>**: Live stream preview of the template output
 - **<span style="color:cyan;">Blue</span>**: **Insert** → pastes output at the cursor position in the current note
@@ -61,7 +61,7 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 
 ## Settings
 
-![Settings tab](./assets/Smart-Templates-v1-OP-settings-2025-06-29.png)
+![Settings tab](/assets/Smart-Templates-v1-OP-settings-2025-06-29.png)
 
 - **<span style="color:lime;">Green</span>**: **Templates folder** selector imports notes from this folder as templates
 - **<span style="color:pink;">Pink</span>**: **Naming convention** pattern imports notes with this name as templates
