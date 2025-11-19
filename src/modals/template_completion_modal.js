@@ -61,8 +61,7 @@ export class TemplateCompletionModal extends Modal {
     const edit_btn = document.createElement('button');
     edit_btn.textContent = 'Edit context';
     edit_btn.addEventListener('click', () => {
-      this.env.config.modals.context_modal.open(this.context);
-      // replace with ContextModal
+      this.context.emit_event('context_selector:open');
     });
     header_actions.appendChild(edit_btn);
 
