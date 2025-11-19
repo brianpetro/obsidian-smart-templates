@@ -5,7 +5,6 @@ import { smart_completions, SmartCompletion } from "smart-completions";
 import { TemplateSelectorModal } from "./src/modals/template_selector_modal.js";
 import { smart_contexts } from "smart-contexts";
 import { smart_env_config } from './smart_env.config.js';
-import { smart_env_config as smart_context_env_config } from "smart-context-obsidian/smart_env.config.js";
 import { default_templates } from "./src/defaults/default_templates.js";
 
 export default class SmartTemplatesPlugin extends Plugin {
@@ -48,7 +47,6 @@ export default class SmartTemplatesPlugin extends Plugin {
   };
   onload() {
     const merged_config = merge_env_config(this.compiled_smart_env_config, this.smart_env_config);
-    merge_env_config(merged_config, smart_context_env_config);
     SmartEnv.create(this, merged_config);
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
   }

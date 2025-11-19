@@ -8,7 +8,7 @@
  * Returns a single string ready to paste into any chat UI.
  */
 
-import { replace_vault_tags_var } from 'smart-context-obsidian/src/utils/replace_vault_tags_var.js';
+import { replace_vault_tags_var } from 'obsidian-smart-env/utils/replace_vault_tags_var.js';
 
 /**
  * Escape special RegExp characters in a string.

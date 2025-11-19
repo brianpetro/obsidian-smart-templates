@@ -1,5 +1,4 @@
 import { Modal, Notice } from 'obsidian';
-import { ContextSelectorModal } from 'smart-context-obsidian/src/views/context_selector_modal.js';
 import { TemplateReviewModal } from './template_review_modal.js';
 import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
 import { build_prompt_text } from '../utils/build_prompt_text.js';
@@ -50,25 +49,21 @@ export class TemplateCompletionModal extends Modal {
     contentEl.classList.add('st-template-completion-modal');
 
     /* ensure context */
-    const builder_container = await this.env.render_component('context_builder', this.context, {});
+    const builder_container = await this.env.render_component('smart_context_item', this.context, {});
     builder_container.style.maxHeight = '50vh';
     builder_container.style.overflowY = 'auto';
     contentEl.appendChild(builder_container);
-    builder_container.addEventListener('smart-env:context-changed', (e) => {
-      const updated_ctx = e.detail.context;
-      this.context = updated_ctx;
+    this.context.on_event('context:updated', () => {
       this.render();
     });
 
     const header_actions = builder_container.querySelector('.sc-context-actions');
     const edit_btn = document.createElement('button');
     edit_btn.textContent = 'Edit context';
-    edit_btn.addEventListener('click', () =>
-      ContextSelectorModal.open(this.env, {
-        ctx: this.context,
-        opener_container: builder_container,
-      }),
-    );
+    edit_btn.addEventListener('click', () => {
+      this.env.config.modals.context_modal.open(this.context);
+      // replace with ContextModal
+    });
     header_actions.appendChild(edit_btn);
 
     /* user instructions textarea */
