@@ -53,7 +53,7 @@ function compile_template_instructions(
 export async function build_prompt_text(ctx, tmpl, user_msg = '') {
   if (!ctx || !tmpl) return '';
 
-  const { context } = await ctx.compile({ link_depth: 0 });
+  const context = await ctx.get_text();
   const template_text = await tmpl.get_template();
 
   let instructions = user_msg.trim();
