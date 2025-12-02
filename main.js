@@ -103,13 +103,9 @@ export default class SmartTemplatesPlugin extends Plugin {
   }
   get chat_model() {
     if (!this._chat_model) {
-      this._chat_model = this.env.init_module('smart_chat_model', {
-        model_config: {},
-        settings: this.env.settings.smart_templates_plugin.smart_completions.chat_model,  // each platform's config
-        env: this.env,
-        reload_model: this.reload_chat_model.bind(this),
-        re_render_settings: this.re_render_settings?.bind(this) ?? (() => { this.app.setting.openTabById('smart-templates'); }),
-      });
+      if( this.env.chat_completion_models?.default?.instance) {
+        return this.env.chat_completion_models.default.instance;
+      }
     }
     return this._chat_model;
   }
