@@ -30,7 +30,7 @@ export class SmartTemplates extends Collection {
   load_templates() {
     const settings = this.env.settings.smart_templates;
     const folder = settings?.template_folder
-      || this.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
+      || this.env.plugin.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
     let name;
     if (settings?.template_name) {
       name = settings.template_name;

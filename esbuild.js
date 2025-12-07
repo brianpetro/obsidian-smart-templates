@@ -140,6 +140,9 @@ esbuild.build({
     esbuild_css_plugin,
     esbuild_markdown_plugin,
   ],
+  loader: {
+    '.css': 'text',
+  },
 }).then(() => {
   console.log('Build complete');
   const release_file_paths = [manifest_path, styles_path, main_path];

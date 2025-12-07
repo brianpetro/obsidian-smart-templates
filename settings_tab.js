@@ -29,12 +29,6 @@ export class SmartTemplatesSettingTab extends SmartPluginSettingsTab {
       });
       return;
     }
-
-    this.env.smart_completions.re_render_settings = () => {
-      container.empty?.();
-      this.render_plugin_settings(container);
-    };
-
     const templates_config = this.env.smart_templates?.settings_config;
     if (templates_config) {
       const templates_fragment = await this.env.smart_view.render_settings(templates_config, {
@@ -43,12 +37,5 @@ export class SmartTemplatesSettingTab extends SmartPluginSettingsTab {
       if (templates_fragment) container.appendChild(templates_fragment);
     }
 
-    const chat_model_config = this.plugin.chat_model?.settings_config;
-    if (chat_model_config) {
-      const chat_fragment = await this.env.smart_view.render_settings(chat_model_config, {
-        scope: this.plugin.chat_model,
-      });
-      if (chat_fragment) container.appendChild(chat_fragment);
-    }
   }
 }

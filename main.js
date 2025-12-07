@@ -1,53 +1,24 @@
-import { Plugin } from "obsidian";
-import { SmartEnv, merge_env_config } from "obsidian-smart-env";
+import { SmartEnv, merge_env_config, SmartPlugin } from "obsidian-smart-env";
 import { SmartTemplatesSettingTab } from "./settings_tab.js";
-import { smart_completions, SmartCompletion } from "smart-completions";
-import { TemplateSelectorModal } from "./src/modals/template_selector_modal.js";
-import { smart_contexts } from "smart-contexts";
 import { smart_env_config } from './smart_env.config.js';
 import { default_templates } from "./src/defaults/default_templates.js";
+import {CreateFromTemplateModal} from "./src/modals/create_from_template_modal.js";
 
-export default class SmartTemplatesPlugin extends Plugin {
+const default_config = {
+  modals: {
+    create_from_template: {
+      class: CreateFromTemplateModal,
+      default_suggest_action_keys: [
+        'context_suggest_sources',
+      ]
+    },
+  },
+}
+
+export default class SmartTemplatesPlugin extends SmartPlugin {
   compiled_smart_env_config = smart_env_config;
-  smart_env_config = {
-    collections: {
-      smart_completions,
-      smart_contexts,
-    },
-    item_types: {
-      SmartCompletion,
-    },
-    default_settings: {
-      smart_templates_plugin: {
-        smart_completions: {
-          chat_model: {
-            adapter: "ollama",
-          },
-        },
-      },
-      smart_contexts: {
-        smart_templates_plugin: {
-          templates: {
-            '-1': {
-              before: `<context>\n<file_tree>\n{{FILE_TREE}}\n</file_tree>`,
-              after: `</context>`
-            },
-            '0': {
-              before: `<context_primary path="{{ITEM_PATH}}" mtime="{{ITEM_TIME_AGO}}">`,
-              after: `</context_primary>`
-            },
-            '1': {
-              before: `<context_linked path="{{ITEM_PATH}}" mtime="{{ITEM_TIME_AGO}}">`,
-              after: `</context_linked>`
-            },
-          },
-        },
-      },
-    },
-  };
   onload() {
-    const merged_config = merge_env_config(this.compiled_smart_env_config, this.smart_env_config);
-    SmartEnv.create(this, merged_config);
+    SmartEnv.create(this, merge_env_config(this.compiled_smart_env_config, default_config));
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
   }
 
@@ -66,27 +37,22 @@ export default class SmartTemplatesPlugin extends Plugin {
     this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
 
     this.add_default_templates();
+
+    // adds listener to open via event
+    CreateFromTemplateModal.register_modal(this);
+
   }
 
   register_commands() {
+
     this.addCommand({
-      id: "generate_from_template",
-      name: "Generate from template",
-      editorCallback: async (editor) => {
-        // get highlighted text or active file
-        const add_items = [];
-        const selection = editor.getSelection();
-        const active_file = this.app.workspace.getActiveFile();
-        if(selection) {
-          add_items.push({ key: `selection:${active_file.path}`, content: selection });
-        }else{
-          if (active_file) {
-            add_items.push(active_file.path);
-          }
-        }
-        this.env.smart_templates.current_context = this.env.smart_contexts.new_context({}, { add_items });
-        TemplateSelectorModal.open(this.env);
-      }
+      id: 'create-from-template',
+      name: 'Create from template (copy prompt to clipboard)',
+      callback: () => {
+        const ctx = this.env.smart_contexts.new_context();
+        // Open the modal bound to this new SmartContext
+        ctx.emit_event('create_from_template:open');
+      },
     });
   }
   add_default_templates() {
@@ -100,20 +66,5 @@ export default class SmartTemplatesPlugin extends Plugin {
       return null;
     }
     return active_editor;
-  }
-  get chat_model() {
-    if (!this._chat_model) {
-      if( this.env.chat_completion_models?.default?.instance) {
-        return this.env.chat_completion_models.default.instance;
-      }
-    }
-    return this._chat_model;
-  }
-  reload_chat_model() {
-    console.log('reload_chat_model', this.env.settings.smart_templates_plugin.smart_completions.chat_model);
-    if (this._chat_model?.unload) {
-      this._chat_model.unload();
-    }
-    this._chat_model = null;
   }
 }
