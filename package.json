@@ -16,7 +16,6 @@
     "smart-context-obsidian": "file:../smart-context-obsidian",
     "smart-contexts": "file:../jsbrains/smart-contexts",
     "obsidian-smart-env": "file:../obsidian-smart-env",
-    "smart-chat-obsidian": "file:../smart-chat-obsidian",
     "smart-http-request": "file:../jsbrains/smart-http-request"
   },
   "devDependencies": {
@@ -33,6 +32,5 @@
     "../jsbrains/*",
     "../obsidian-smart-env",
     "../smart-context-obsidian",
-    "../smart-chat-obsidian"
   ]
 }
