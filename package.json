@@ -31,6 +31,6 @@
   "workspaces": [
     "../jsbrains/*",
     "../obsidian-smart-env",
-    "../smart-context-obsidian",
+    "../smart-context-obsidian"
   ]
 }
