@@ -10,13 +10,23 @@
 
 import { replace_vault_tags_var } from 'obsidian-smart-env/utils/replace_vault_tags_var.js';
 
-/**
- * Escape special RegExp characters in a string.
- * @param {string} str
- * @returns {string}
- */
-function escape_reg_exp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const template_wrappers = {
+  before:
+    '<important>\n' +
+    'Important: use the following template to format your response:\n' +
+    '- should output exact headings\n' +
+    '- should interpret non-heading template text as instructions\n' +
+    '- should not output any other text outside of the template\n' +
+    '- should not output XML tags or other formatting\n' +
+    '</important>\n' +
+    '<template>',
+  after: '</template>'
+};
+
+function format_section(section) {
+  if (typeof section !== 'string') return '';
+  const trimmed = section.trim();
+  return trimmed.length ? trimmed : '';
 }
 
 /**
@@ -25,22 +35,17 @@ function escape_reg_exp(str) {
  * @param {Object} templates
  * @returns {string}
  */
-function compile_template_instructions(
-  template_text,
-  templates = {
-    before:
-      '<important>\n' +
-      'Important: use the following template to format your response:\n' +
-      '- should output exact headings\n' +
-      '- should interpret non‑heading template text as instructions\n' +
-      '- should not output any other text outside of the template\n' +
-      '- should not output XML tags or other formatting\n' +
-      '</important>\n' +
-      '<template>',
-    after: '</template>',
-  },
-) {
-  return `${templates.before}\n${template_text}\n${templates.after}`;
+function compile_template_instructions(template_text, templates = template_wrappers) {
+  const template_body = format_section(template_text);
+  if (!template_body) return '';
+  return `${templates.before}\n${template_body}\n${templates.after}`;
+}
+
+function format_instructions(instructions, ctx, tmpl) {
+  const trimmed = format_section(instructions);
+  if (!trimmed || !trimmed.includes('{{vault_tags}}')) return trimmed;
+  const app = ctx?.app || tmpl?.env?.app;
+  return replace_vault_tags_var.call({ app }, trimmed);
 }
 
 /**
@@ -53,15 +58,22 @@ function compile_template_instructions(
 export async function build_prompt_text(ctx, tmpl, user_msg = '') {
   if (!ctx || !tmpl) return '';
 
-  const context = await ctx.get_text();
-  const template_text = await tmpl.get_template();
+  const [context, template_text] = await Promise.all([
+    ctx.get_text?.() ?? '',
+    tmpl.get_template?.() ?? ''
+  ]);
 
-  let instructions = user_msg.trim();
-  if (instructions.includes('{{vault_tags}}')) {
-    instructions = replace_vault_tags_var(instructions);
-  }
+  const instructions = format_instructions(user_msg, ctx, tmpl);
+  const template_instructions = compile_template_instructions(template_text);
+  const context_block = format_section(context);
 
-  const system_prompt = compile_template_instructions(template_text);
+  const segments = [
+    instructions,
+    template_instructions,
+    context_block,
+    instructions,
+    template_instructions
+  ].map(format_section).filter(Boolean);
 
-  return `${instructions}\n\n${system_prompt}\n\n${context}\n\n${instructions}\n\n${system_prompt}`.trim();
+  return segments.join('\n\n');
 }
