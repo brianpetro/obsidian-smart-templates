@@ -39,6 +39,62 @@ export function stringify_template_headings(headings = []) {
 }
 
 /**
+ * Parse a comma-separated folder string from settings into a sorted unique array.
+ * @param {Object} settings
+ * @returns {string[]}
+ */
+export function parse_template_folders(settings = {}) {
+  if (!settings) return [];
+  const folders = Array.isArray(settings.template_folder)
+    ? settings.template_folder
+    : typeof settings.template_folder === 'string'
+      ? settings.template_folder.split(',')
+      : [];
+
+  return Array.from(
+    new Set(
+      folders
+        .map(folder => folder.trim())
+        .filter(Boolean)
+    )
+  ).sort();
+}
+
+/**
+ * Stringify a list of folders into comma-separated format for settings.
+ * @param {string[]} folders
+ * @returns {string}
+ */
+export function stringify_template_folders(folders = []) {
+  if (!Array.isArray(folders)) return '';
+  return folders
+    .map(folder => (typeof folder === 'string' ? folder.trim() : ''))
+    .filter(Boolean)
+    .join(', ');
+}
+
+/**
+ * Collect unique folder candidates from smart source keys.
+ * @param {Array<{key?: string}>} sources
+ * @returns {string[]}
+ */
+export function collect_template_folder_candidates(sources = []) {
+  if (!Array.isArray(sources)) return [];
+  const folders = new Set();
+  sources.forEach(source => {
+    const key = source?.key || source?.data?.key;
+    if (!key) return;
+    const hash_index = key.indexOf('#');
+    const path_without_hash = hash_index === -1 ? key : key.slice(0, hash_index);
+    const last_slash_index = path_without_hash.lastIndexOf('/');
+    if (last_slash_index === -1) return;
+    const folder = path_without_hash.slice(0, last_slash_index);
+    if (folder) folders.add(folder);
+  });
+  return Array.from(folders).sort();
+}
+
+/**
  * Collect unique heading candidates from smart block keys.
  * @param {Array<{key?: string}>} blocks
  * @returns {string[]}
@@ -91,9 +147,14 @@ export class SmartTemplates extends Collection {
     try_load_templates();
   }
   load_templates() {
-    const settings = this.env.settings.smart_templates;
-    const folder = settings?.template_folder
-      || this.env.plugin.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
+    const settings = this.settings;
+    const template_folders = parse_template_folders(settings);
+    const default_folder = this.env.plugin.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
+    const folders = template_folders.length
+      ? template_folders
+      : default_folder
+        ? [default_folder]
+        : [];
     let name;
     if (settings?.template_name) {
       name = settings.template_name;
@@ -107,7 +168,7 @@ export class SmartTemplates extends Collection {
       if (!source_item) return false;
       const source_key = source_item.key;
       if (!source_key) return false;
-      if (folder && source_key.startsWith(folder)) return true;
+      if (folders.length && folders.some(folder => source_key.startsWith(folder))) return true;
       if (name && source_key.endsWith(name)) return true;
       if (source_item.metadata?.['smart template']) return true;
       if (template_headings.length && template_headings.some(heading => source_key.endsWith(`#${heading}`))) {
@@ -135,29 +196,31 @@ export class SmartTemplates extends Collection {
     });
   }
 
+  get settings() {
+    return this.env?.settings?.smart_templates || {};
+  }
+
   get settings_config() {
+    const reload_templates = () => this.load_templates();
     return {
       template_folder: {
         name: "Templates folder",
-        description: "The folder where templates are stored.",
-        type: "folder", // folder selection
-        callback: "load_templates", // reload templates when changed
+        description: this.build_template_folder_description(),
+        type: "button",
+        callback: (...args) => this.open_template_folder_modal(...args),
       },
       template_name: {
         name: "Naming convention",
         description: "Specifies the name of the template.",
         type: "text", // text input
         default: "",
-        callback: "load_templates", // reload templates when changed
+        callback: reload_templates,
       },
       template_headings: {
         name: "Template headings",
         description: this.build_template_headings_description(),
         type: "button",
-        callback: () => {
-          console.log("callback called")
-          this.open_template_headings_modal()
-        },
+        callback: (...args) => this.open_template_headings_modal(...args),
       },
     };
   }
@@ -169,6 +232,14 @@ export class SmartTemplates extends Collection {
     return `Headings: ${template_headings}`;
   }
 
+  build_template_folder_description(template_folder = this.settings?.template_folder) {
+    const folders = parse_template_folders({ template_folder });
+    if (!folders.length) {
+      return "Select a folder to import matching notes as templates.";
+    }
+    return `Folders: ${folders.join(', ')}`;
+  }
+
   async open_template_headings_modal(_, setting) {
     const on_change = (csv) => {
       if (setting) {
@@ -178,6 +249,24 @@ export class SmartTemplates extends Collection {
     };
     const { TemplateHeadingsModal } = await import('../modals/template_headings_modal.js');
     const modal = new TemplateHeadingsModal(this.env.plugin.app, {
+      scope: this,
+      on_change,
+    });
+    modal.open();
+  }
+
+  async open_template_folder_modal(_, setting) {
+    const on_change = (csv) => {
+      if (this.settings) {
+        this.settings.template_folder = csv;
+      }
+      if (setting) {
+        setting.setDesc(this.build_template_folder_description(csv));
+      }
+      this.load_templates();
+    };
+    const { TemplateFolderModal } = await import('../modals/template_folder_modal.js');
+    const modal = new TemplateFolderModal(this.env.plugin.app, {
       scope: this,
       on_change,
     });
