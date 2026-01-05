@@ -1,4 +1,5 @@
 import { SmartPluginSettingsTab } from 'obsidian-smart-env';
+import {render_settings_config} from "obsidian-smart-env/src/utils/render_settings_config.js";
 
 /**
  * @class SmartTemplatesSettingTab
@@ -31,10 +32,18 @@ export class SmartTemplatesSettingTab extends SmartPluginSettingsTab {
     }
     const templates_config = this.env.smart_templates?.settings_config;
     if (templates_config) {
-      const templates_fragment = await this.env.smart_view.render_settings(templates_config, {
-        scope: this.env.smart_templates,
-      });
-      if (templates_fragment) container.appendChild(templates_fragment);
+      // const templates_fragment = await this.env.smart_view.render_settings(templates_config, {
+      //   scope: this.env.smart_templates,
+      // });
+      // if (templates_fragment) container.appendChild(templates_fragment);
+      render_settings_config(
+        templates_config,
+        this.env.smart_templates,
+        container,
+        {
+          default_group_name: 'Templates',
+        }
+      ); 
     }
 
   }
