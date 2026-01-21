@@ -74,6 +74,57 @@ export function stringify_template_folders(folders = []) {
 }
 
 /**
+ * Resolve template folders from settings or default folder.
+ * @param {Object} [settings={}]
+ * @param {string} [settings.template_folder]
+ * @param {string} [default_folder='']
+ * @returns {string[]}
+ */
+export function resolve_template_folders(settings = {}, default_folder = '') {
+  const template_folders = parse_template_folders(settings);
+  if (template_folders.length) return template_folders;
+  if (default_folder) return [default_folder];
+  return [];
+}
+
+/**
+ * Build a predicate that matches Smart Template sources.
+ * @param {Object} params
+ * @param {string[]} [params.template_folders=[]]
+ * @param {string} [params.template_name='']
+ * @param {string[]} [params.template_headings=[]]
+ * @returns {(source_item: {key?: string, data?: {key?: string}, metadata?: Object}) => boolean}
+ */
+export function build_template_matcher({
+  template_folders = [],
+  template_name = '',
+  template_headings = [],
+} = {}) {
+  let normalized_name = template_name;
+  if (normalized_name && !normalized_name.endsWith('.md')) {
+    normalized_name += '.md';
+  }
+  const normalized_headings = Array.isArray(template_headings)
+    ? template_headings.map(heading => heading.trim()).filter(Boolean)
+    : [];
+  const normalized_folders = Array.isArray(template_folders)
+    ? template_folders.map(folder => folder.trim()).filter(Boolean)
+    : [];
+
+  return (source_item = {}) => {
+    const source_key = source_item?.key || source_item?.data?.key;
+    if (!source_key) return false;
+    if (normalized_folders.length && normalized_folders.some(folder => source_key.startsWith(folder))) return true;
+    if (normalized_name && source_key.endsWith(normalized_name)) return true;
+    if (source_item?.metadata?.['smart template']) return true;
+    if (normalized_headings.length && normalized_headings.some(heading => source_key.endsWith(`#${heading}`))) {
+      return true;
+    }
+    return false;
+  };
+}
+
+/**
  * Collect unique folder candidates from smart source keys.
  * @param {Array<{key?: string}>} sources
  * @returns {string[]}
@@ -148,33 +199,8 @@ export class SmartTemplates extends Collection {
   }
   load_templates() {
     const settings = this.settings;
-    const template_folders = parse_template_folders(settings);
-    const default_folder = this.env.plugin.app.internalPlugins.plugins?.templates?.instance?.options?.folder;
-    const folders = template_folders.length
-      ? template_folders
-      : default_folder
-        ? [default_folder]
-        : [];
-    let name;
-    if (settings?.template_name) {
-      name = settings.template_name;
-      if (!name.endsWith('.md')) {
-        name += '.md';
-      }
-    }
     const template_headings = parse_template_headings(settings);
-
-    const matches_template_source = source_item => {
-      if (!source_item) return false;
-      const source_key = source_item.key;
-      if (!source_key) return false;
-      if (folders.length && folders.some(folder => source_key.startsWith(folder))) return true;
-      if (name && source_key.endsWith(name)) return true;
-      if (source_item.metadata?.['smart template']) return true;
-      if (template_headings.length && template_headings.some(heading => source_key.endsWith(`#${heading}`))) {
-        return true;
-      }
-    };
+    const matches_template_source = this.get_template_matcher({ template_headings });
     // import smart_templates
     const template_sources = this.env.smart_sources?.filter?.(matches_template_source) || [];
     const template_blocks = filter_blocks_by_headings(
@@ -198,6 +224,27 @@ export class SmartTemplates extends Collection {
 
   get settings() {
     return this.env?.settings?.smart_templates || {};
+  }
+
+  /**
+   * Build a predicate for matching template sources based on settings.
+   * @param {Object} [params={}]
+   * @param {string[]} [params.template_headings]
+   * @returns {(source_item: {key?: string, data?: {key?: string}, metadata?: Object}) => boolean}
+   */
+  get_template_matcher(params = {}) {
+    const settings = this.settings;
+    const template_headings = Array.isArray(params.template_headings)
+      ? params.template_headings
+      : parse_template_headings(settings);
+    const default_folder = this.env?.plugin?.app?.internalPlugins?.plugins?.templates?.instance?.options?.folder;
+    const template_folders = resolve_template_folders(settings, default_folder);
+    const template_name = settings?.template_name || '';
+    return build_template_matcher({
+      template_folders,
+      template_name,
+      template_headings,
+    });
   }
 
   get settings_config() {

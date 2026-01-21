@@ -1,10 +1,12 @@
 import test from 'ava';
 import {
+  build_template_matcher,
   collect_block_heading_candidates,
   collect_template_folder_candidates,
   filter_blocks_by_headings,
   parse_template_headings,
   parse_template_folders,
+  resolve_template_folders,
   SmartTemplates,
   stringify_template_headings,
   stringify_template_folders,
@@ -55,6 +57,29 @@ test('parse_template_folders trims and deduplicates folders', t => {
 test('stringify_template_folders joins folders with comma separation', t => {
   t.is(stringify_template_folders(['Templates', 'Docs', 'Archive']), 'Templates, Docs, Archive');
   t.is(stringify_template_folders([]), '');
+});
+
+test('resolve_template_folders respects settings before default folder', t => {
+  t.deepEqual(
+    resolve_template_folders({ template_folder: 'Templates, Docs' }, 'Default'),
+    ['Docs', 'Templates']
+  );
+  t.deepEqual(resolve_template_folders({}, 'Default'), ['Default']);
+  t.deepEqual(resolve_template_folders({}, ''), []);
+});
+
+test('build_template_matcher matches folder, name, metadata, and headings', t => {
+  const matcher = build_template_matcher({
+    template_folders: ['Templates'],
+    template_name: 'outline',
+    template_headings: ['Summary'],
+  });
+
+  t.true(matcher({ key: 'Templates/note.md' }));
+  t.true(matcher({ key: 'Other/outline.md' }));
+  t.true(matcher({ key: 'Other/file.md#Summary' }));
+  t.true(matcher({ key: 'Other/file.md', metadata: { 'smart template': true } }));
+  t.false(matcher({ key: 'Other/file.md' }));
 });
 
 test('collect_template_folder_candidates returns sorted unique folder names', t => {
