@@ -3,6 +3,7 @@ import { SmartTemplatesSettingTab } from "./settings_tab.js";
 import { smart_env_config } from './smart_env.config.js';
 import { default_templates } from "./src/defaults/default_templates.js";
 import {CreateFromTemplateModal} from "./src/modals/create_from_template_modal.js";
+import { should_reload_templates } from "./src/utils/should_reload_templates.js";
 
 const default_config = {
   modals: {
@@ -37,6 +38,7 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
     this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
 
     this.add_default_templates();
+    this.register_template_source_listeners();
 
     // adds listener to open via event
     CreateFromTemplateModal.register_modal(this);
@@ -58,6 +60,38 @@ export default class SmartTemplatesPlugin extends SmartPlugin {
   add_default_templates() {
     for (const template of default_templates) {
       this.env.smart_templates.create_or_update(template);
+    }
+  }
+  register_template_source_listeners() {
+    if (this.template_source_listeners_registered) return;
+    const smart_templates = this.env?.smart_templates;
+    const smart_sources = this.env?.smart_sources;
+    const events = this.env?.events;
+    if (!smart_templates || !events) return;
+
+    const reload_templates_if_needed = (payload = {}) => {
+      if (!should_reload_templates(smart_templates, { smart_sources, payload })) return;
+      smart_templates.load_templates();
+    };
+
+    const event_names = [
+      'sources:created',
+      'sources:deleted',
+      'sources:renamed',
+      'sources:modified',
+    ];
+    this.template_source_unsubscribers = event_names.map((event_name) => (
+      events.on(event_name, reload_templates_if_needed)
+    ));
+    this.template_source_listeners_registered = true;
+  }
+  onunload() {
+    if (Array.isArray(this.template_source_unsubscribers)) {
+      this.template_source_unsubscribers.forEach((unsubscribe) => {
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
+      });
     }
   }
   get_editor() {

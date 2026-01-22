@@ -1,4 +1,4 @@
-Stop staring at blank pages. **Smart Templates writes first drafts, summaries, and tag lists in seconds** so you can think instead of format.
+Stop staring at blank pages. **Smart Templates builds context-rich prompts you can reuse across drafts, summaries, and tag lists** so you can think instead of format.
 
 > [!NOTE] Why templates?  
 > Every prompt is a mini project: gather context, write instructions, copy results. Smart Templates turns that slog into a single command.
@@ -9,7 +9,7 @@ Stop staring at blank pages. **Smart Templates writes first drafts, summaries, a
 
 ✔️ Zero-setup: drop a Markdown file in the templates folder and go
 🔐 Local-first, privacy-preserving by default
-⚡ Works with 1000s of AI models via Smart Environment
+⚡ Core copies prompts to clipboard; Pro connects to AI models via Smart Environment
 ⚔️ Mission-driven, community-supported, user-aligned
 
 ---
@@ -48,10 +48,10 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 
 - **<span style="color:cyan;">Blue</span>**: Shows the currently selected context and **Edit context** button to open the [Smart Context](http://obsidian.md/plugins?id=smart-context) selector.
 - **<span style="color:magenta;">Pink</span>**: Free-form **Additional instructions** area.
-- **<span style="color:yellow;">Yellow</span>**: **Copy as prompt** button copies the context and template so they can be pasted into ChatGPT or other AI conversational interface.
-- **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output configured chat model.
+- **<span style="color:yellow;">Yellow</span>**: **Copy as prompt** button copies the context and template so they can be pasted into ChatGPT or another AI chat interface.
+- **<span style="color:lime;">Green</span>**: **Complete** button begins streaming the template output via a configured chat model (**Pro**).
 
-### Watch, insert, or copy
+### Watch, insert, or copy (Pro)
 ![Template review](/assets/Smart-Templates-v1-OP-template-review-modal-2025-06-29.png)
 
 - **<span style="color:yellow;">Yellow</span>**: Live stream preview of the template output
@@ -71,11 +71,17 @@ All parsing, variable substitution, and AI prompting run locally. Your vault nev
 
 ## Core features
 
+- **Prompt builder**: combine templates + context into a ready-to-paste prompt
+- **Clipboard workflow**: copy prompts into ChatGPT, Claude, or any chat UI
+- **Template discovery rules**: folder, naming convention, metadata flag, or heading suffix
+- **Thin, dependency-free bundle**: built on dependency-free Smart Environment for easy audits
+- **Smart Context integration**: pull semantic matches, backlinks, or folder scopes into template context
+
+## Pro features
+
 - **Modal previews**: see output before it lands in your note
 - **AI prompts in frontmatter**: add a `prompt:` key and Smart Templates merges it into the completion flow
 - **Multiple output targets**: insert inline, create a new note, or copy to clipboard
-- **Thin, dependency-free bundle**: built on dependency-free Smart Environment: easy to audit, fast to load
-- **Smart Context integration**: pull semantic matches, backlinks, or folder scopes into template context
 
 ## Settings
 - `template_folder`: vault-relative path for template discovery
