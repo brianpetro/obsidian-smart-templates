@@ -6,6 +6,8 @@ import archiver from 'archiver';
 import axios from 'axios';
 import { exec } from 'child_process';
 import { fileURLToPath } from 'url';
+import { parse_cli_options } from '../obsidian-smart-env/build/release_notes.js';
+import { remove_existing_release_and_tag } from '../obsidian-smart-env/build/github_release_utils.js';
 
 /**
  * Compares two SemVer strings (major.minor.patch).
@@ -77,6 +79,7 @@ function parse_cli_options(argv) {
 
 
 const is_main = path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url);
+const cli_options = parse_cli_options(process.argv.slice(2));
 
 if (is_main) {
   run_release().catch((err) => {
@@ -149,6 +152,17 @@ async function run_release() {
     process.exit(1);
   }
 
+  if (cli_options.replace_existing) {
+    console.log(
+      `--replace-existing set; removing any existing release and tag for ${confirmed_version}`,
+    );
+    await remove_existing_release_and_tag({
+      github_repo,
+      github_token,
+      tag_name: confirmed_version,
+    });
+  }
+
   // Create release via GH API
   const release_data = {
     tag_name: confirmed_version,
@@ -213,5 +227,4 @@ async function run_release() {
 /*  Exports for unit tests                                                    */
 /* -------------------------------------------------------------------------- */
 export { semver_compare, latest_release_file, build_combined_notes };
-
 
