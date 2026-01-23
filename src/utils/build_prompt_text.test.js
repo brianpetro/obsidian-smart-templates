@@ -49,6 +49,18 @@ test('wraps template text when present', async t => {
   t.true(prompt.endsWith('</template>'));
 });
 
+test('skips template wrappers when template text is whitespace', async t => {
+  const ctx = make_ctx('Context payload');
+  const tmpl = make_template('   \n  ');
+
+  const prompt = await build_prompt_text(ctx, tmpl, 'Shape output');
+
+  t.false(prompt.includes('<template>'));
+  t.true(prompt.includes('Context payload'));
+  t.true(prompt.startsWith('Shape output'));
+  t.true(prompt.endsWith('Shape output'));
+});
+
 test('replaces vault tag placeholders in instructions', async t => {
   const ctx = make_ctx('Context payload');
   const tmpl = make_template('Template instructions');

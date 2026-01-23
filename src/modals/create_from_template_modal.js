@@ -86,12 +86,16 @@ export class CreateFromTemplateModal extends ContextModal {
    * @private
    */
   _ensure_build_template_button() {
+    if (this._build_button_added) {
+      return;
+    }
 
     const build_btn = document.createElement('button');
     build_btn.textContent = 'Build template prompt';
     build_btn.addEventListener('click', this._open_template_menu);
 
     this.modalEl.prepend(build_btn);
+    this._build_button_added = true;
   }
 
   /**
