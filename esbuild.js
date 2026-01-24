@@ -26,55 +26,9 @@ console.log('env_config output_dir', output_dir);
 build_smart_env_config(output_dir, roots);
 
 /**
- * Plugin to process CSS files imported with an import attribute:
- *   import sheet from './style.css' with { type: 'css' };
- *
- * When such an import is detected, the plugin loads the CSS file,
- * optionally minifies it if the build options request minification,
- * and wraps the CSS text into a new CSSStyleSheet. The module then
- * exports the stylesheet as its default export.
- *
- * @returns {esbuild.Plugin} The esbuild plugin object.
+ * Import CSS as text:
+ *   import sheet from './style.css';
  */
-const esbuild_css_plugin = {
-  name: 'css-with-plugin',
-  setup(build) {
-    // Intercept all .css files
-    build.onLoad({ filter: /\.css$/ }, async (args) => {
-      // Check for the "with" import attribute and that its type is 'css'
-      if (args.with && args.with.type === 'css') {
-        // Read the CSS file contents
-        const fs = await import('fs/promises');
-        let css_content = await fs.readFile(args.path, 'utf8');
-
-        // Optionally transform (minify) the CSS if minification is enabled
-        const should_minify = build.initialOptions.minify || false;
-        if (should_minify) {
-          const result = await esbuild.transform(css_content, {
-            loader: 'css',
-            minify: true,
-          });
-          css_content = result.code;
-        }
-
-        // Escape any backticks in the CSS content to avoid breaking the template literal
-        const escaped_css = css_content.replace(/`/g, '\\`');
-
-        // Create a JavaScript module that creates a CSSStyleSheet and exports it
-        const js_module = `
-          const css_sheet = new CSSStyleSheet();
-          css_sheet.replaceSync(\`${escaped_css}\`);
-          export default css_sheet;
-        `;
-
-        return {
-          contents: js_module,
-          loader: 'js',
-        };
-      }
-    });
-  },
-};
 // markdown plugin
 const esbuild_markdown_plugin = {
   name: 'markdown',
@@ -136,10 +90,7 @@ esbuild.build({
   ],
   define: {
   },
-  plugins: [
-    esbuild_css_plugin,
-    esbuild_markdown_plugin,
-  ],
+  plugins: [esbuild_markdown_plugin],
   loader: {
     '.css': 'text',
   },
