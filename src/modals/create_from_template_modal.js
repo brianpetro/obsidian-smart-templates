@@ -14,6 +14,7 @@ import { Menu, Notice } from 'obsidian';
 import { ContextModal } from 'obsidian-smart-env/src/modals/context_selector.js';
 import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
 import { build_prompt_text } from '../utils/build_prompt_text.js';
+import { get_template_menu_items } from '../utils/get_template_menu_items.js';
 
 /**
  * @typedef {import('smart-contexts').SmartContext} SmartContext
@@ -119,20 +120,15 @@ export class CreateFromTemplateModal extends ContextModal {
    */
   _open_template_menu(evt) {
     const templates = this._get_templates();
-    if (!templates.length) {
+    const template_menu_items = get_template_menu_items(templates);
+    if (!template_menu_items.length) {
       new Notice('No Smart Templates found.');
       return;
     }
 
     const menu = new Menu(this.app);
 
-    templates.forEach((template_item) => {
-      const label =
-        template_item?.key ||
-        template_item?.data?.key ||
-        template_item?.data?.source_key ||
-        'Untitled template';
-
+    template_menu_items.forEach(({ label, template_item }) => {
       menu.addItem((item) => {
         item.setTitle(label);
         item.onClick(() => {
