@@ -29,6 +29,7 @@ import { get_template_menu_items } from '../utils/get_template_menu_items.js';
  * // Example open helper (from a command):
  * const ctx = env.smart_contexts.new_context({}, { add_items });
  * CreateFromTemplateModal.open(ctx, {});
+ * opens via `create_from_template:open` event (handled in grandparent class)
  */
 export class CreateFromTemplateModal extends ContextModal {
   /** Modal identity and registration metadata */
@@ -199,7 +200,6 @@ export class CreateFromTemplateModal extends ContextModal {
 
   /**
    * Optional helper: standard SmartFuzzySuggestModal registration.
-   * This allows opening via env.events.emit('create_from_template:open', payload).
    *
    * @param {import('obsidian').Plugin} plugin
    * @returns {{event_domain: string}}
