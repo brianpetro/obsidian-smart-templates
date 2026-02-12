@@ -82,6 +82,24 @@ test('build_template_matcher matches folder, name, metadata, and headings', t =>
   t.false(matcher({ key: 'Other/file.md' }));
 });
 
+test('build_template_matcher enforces folder path boundaries', t => {
+  const matcher = build_template_matcher({
+    template_folders: ['Templates'],
+  });
+
+  t.true(matcher({ key: 'Templates/guide.md' }));
+  t.false(matcher({ key: 'Templates-Archive/guide.md' }));
+});
+
+test('build_template_matcher accepts smart template metadata as string true', t => {
+  const matcher = build_template_matcher({
+    template_folders: [],
+  });
+
+  t.true(matcher({ key: 'Other/file.md', metadata: { 'smart template': 'true' } }));
+  t.false(matcher({ key: 'Other/file.md', metadata: { 'smart template': 'false' } }));
+});
+
 test('collect_template_folder_candidates returns sorted unique folder names', t => {
   const sources = [
     { key: 'Templates/note.md' },

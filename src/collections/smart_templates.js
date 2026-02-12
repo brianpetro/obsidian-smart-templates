@@ -111,12 +111,16 @@ export function build_template_matcher({
     ? template_folders.map(folder => folder.trim()).filter(Boolean)
     : [];
 
+  const is_smart_template_flag_enabled = (source_item = {}) => {
+    return !!source_item?.metadata?.['smart template'];
+  };
+
   return (source_item = {}) => {
     const source_key = source_item?.key || source_item?.data?.key;
     if (!source_key) return false;
     if (normalized_folders.length && normalized_folders.some(folder => source_key.startsWith(folder))) return true;
     if (normalized_name && source_key.endsWith(normalized_name)) return true;
-    if (source_item?.metadata?.['smart template']) return true;
+    if (is_smart_template_flag_enabled(source_item)) return true;
     if (normalized_headings.length && normalized_headings.some(heading => source_key.endsWith(`#${heading}`))) {
       return true;
     }
