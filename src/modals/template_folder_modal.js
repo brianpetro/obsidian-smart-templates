@@ -11,7 +11,7 @@ import {
 export class TemplateFolderModal extends FuzzySuggestModal {
   /**
    * @param {import('obsidian').App} app
-   * @param {Object} params
+   * @param {object} params
    * @param {import('../collections/smart_templates.js').SmartTemplates} params.scope
    * @param {Function} [params.on_change]
    */
@@ -54,6 +54,7 @@ export class TemplateFolderModal extends FuzzySuggestModal {
 
   render_selected_folders() {
     if (!this.modalEl) return;
+
     let header = this.modalEl.querySelector('.st-template-folders-header');
     if (!header) {
       header = this.modalEl.createEl('div', { cls: 'st-template-folders-header' });
@@ -71,7 +72,7 @@ export class TemplateFolderModal extends FuzzySuggestModal {
     }
 
     const list = header.createEl('ul');
-    folders.forEach(folder => {
+    folders.forEach((folder) => {
       const li = list.createEl('li');
       li.setText(folder + ' ');
       const remove_btn = li.createEl('button', { text: '(remove)' });

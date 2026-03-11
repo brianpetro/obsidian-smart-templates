@@ -11,7 +11,7 @@ import {
 export class TemplateHeadingsModal extends FuzzySuggestModal {
   /**
    * @param {import('obsidian').App} app
-   * @param {Object} params
+   * @param {object} params
    * @param {import('../collections/smart_templates.js').SmartTemplates} params.scope
    * @param {Function} [params.on_change]
    */
@@ -62,6 +62,7 @@ export class TemplateHeadingsModal extends FuzzySuggestModal {
 
   render_selected_headings() {
     if (!this.modalEl) return;
+
     let header = this.modalEl.querySelector('.st-template-headings-header');
     if (!header) {
       header = this.modalEl.createEl('div', { cls: 'st-template-headings-header' });
@@ -79,7 +80,7 @@ export class TemplateHeadingsModal extends FuzzySuggestModal {
     }
 
     const list = header.createEl('ul');
-    headings.forEach(heading => {
+    headings.forEach((heading) => {
       const li = list.createEl('li');
       li.setText(heading + ' ');
       const remove_btn = li.createEl('button', { text: '(remove)' });

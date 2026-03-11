@@ -1,79 +1,133 @@
 /**
- * @module build_prompt_text
+ * Build a single prompt string from instructions, template, and context.
  *
- * Pure helper that compiles:  
- *   1. Context (via ctx.compile)  
- *   2. User‑supplied instructions (after {{vault_tags}} expansion)  
- *   3. Template instructions (wrapped in BEGIN/END TEMPLATE)  
- * Returns a single string ready to paste into any chat UI.
- */
-
-import { replace_vault_tags_var } from 'obsidian-smart-env/utils/replace_vault_tags_var.js';
-
-const template_wrappers = {
-  before:
-    '<important>\n' +
-    'Important: use the following template to format your response:\n' +
-    '- should output exact headings\n' +
-    '- should interpret non-heading template text as instructions\n' +
-    '- should not output any other text outside of the template\n' +
-    '- should not output XML tags or other formatting\n' +
-    '</important>\n' +
-    '<template>',
-  after: '</template>'
-};
-
-function format_section(section) {
-  if (typeof section !== 'string') return '';
-  const trimmed = section.trim();
-  return trimmed.length ? trimmed : '';
-}
-
-/**
- * Wraps template text in standard delimiters.
- * @param {string} template_text
- * @param {Object} templates
- * @returns {string}
- */
-function compile_template_instructions(template_text, templates = template_wrappers) {
-  const template_body = format_section(template_text);
-  if (!template_body) return '';
-  return `${templates.before}\n${template_body}\n${templates.after}`;
-}
-
-function format_instructions(instructions, ctx, tmpl) {
-  const trimmed = format_section(instructions);
-  if (!trimmed || !trimmed.includes('{{vault_tags}}')) return trimmed;
-  const app = ctx?.app || tmpl?.env?.app;
-  return replace_vault_tags_var.call({ app }, trimmed);
-}
-
-/**
- * Build full prompt string.
+ * Empty sections are omitted.
+ * `{{vault_tags}}` is expanded before assembly.
+ *
  * @param {import('smart-contexts').SmartContext} ctx
- * @param {import('../items/smart_template.js').SmartTemplate} tmpl
- * @param {string} user_msg
+ * @param {import('../items/smart_template.js').SmartTemplate} template_item
+ * @param {string} [instructions='']
  * @returns {Promise<string>}
  */
-export async function build_prompt_text(ctx, tmpl, user_msg = '') {
-  if (!ctx || !tmpl) return '';
+export async function build_prompt_text(ctx, template_item, instructions = '') {
+  const env = ctx?.env || template_item?.env || null;
 
-  const [context, template_text] = await Promise.all([
-    ctx.get_text?.() ?? '',
-    tmpl.get_template?.() ?? ''
-  ]);
+  const context_text = await get_context_text(ctx);
+  const template_text = await get_template_text(template_item);
 
-  const instructions = format_instructions(user_msg, ctx, tmpl);
-  const template_instructions = compile_template_instructions(template_text);
-  const context_block = format_section(context);
+  const resolved_instructions = replace_vault_tags_var(
+    String(instructions ?? '').trim(),
+    env,
+  );
 
-  const segments = [
-    instructions,
-    template_instructions,
-    context_block,
-    instructions,
-    template_instructions
-  ].map(format_section).filter(Boolean);
+  const resolved_template = replace_vault_tags_var(
+    String(template_text ?? '').trim(),
+    env,
+  );
 
-  return segments.join('\n\n');
+  const sections = [];
+
+  if (resolved_instructions) {
+    sections.push([
+      '<instructions>',
+      resolved_instructions,
+      '</instructions>',
+    ].join('\n'));
+  }
+
+  if (resolved_template) {
+    sections.push([
+      '<template>',
+      resolved_template,
+      '</template>',
+    ].join('\n'));
+  }
+
+  if (context_text) {
+    sections.push([
+      '<context>',
+      context_text,
+      '</context>',
+    ].join('\n'));
+  }
+
+  if (!sections.length) return '';
+
+  return [
+    'Use the provided instructions, template, and context to produce the best possible response.',
+    '- Follow the template structure when a template is provided.',
+    '- Ground the result in the supplied context.',
+    '- Do not mention the wrapper tags in the final answer.',
+    '',
+    sections.join('\n\n'),
+  ].join('\n').trim();
+}
+
+/**
+ * @param {import('smart-contexts').SmartContext} ctx
+ * @returns {Promise<string>}
+ */
+async function get_context_text(ctx) {
+  if (!ctx || typeof ctx.get_text !== 'function') return '';
+  const value = await ctx.get_text();
+  if (typeof value === 'string') return value.trim();
+  if (value == null) return '';
+  return String(value).trim();
+}
+
+/**
+ * @param {import('../items/smart_template.js').SmartTemplate} template_item
+ * @returns {Promise<string>}
+ */
+async function get_template_text(template_item) {
+  if (!template_item || typeof template_item.get_template !== 'function') return '';
+  const value = await template_item.get_template();
+  if (typeof value === 'string') return value.trim();
+  if (value == null) return '';
+  return String(value).trim();
+}
+
+/**
+ * Expand `{{vault_tags}}` using the best available environment source.
+ *
+ * @param {string} value
+ * @param {object | null} env
+ * @returns {string}
+ */
+function replace_vault_tags_var(value, env) {
+  if (!value || !value.includes('{{vault_tags}}')) return value;
+
+  const vault_tags = get_vault_tags(env);
+  return value.replace(/{{vault_tags}}/g, vault_tags);
+}
+
+/**
+ * Resolve vault tags from app metadata cache when available, else aggregate from smart_sources.
+ *
+ * @param {object | null} env
+ * @returns {string}
+ */
+function get_vault_tags(env) {
+  const app_tags = env?.plugin?.app?.metadataCache?.getTags?.();
+  if (app_tags && typeof app_tags === 'object') {
+    const tags = Object.keys(app_tags)
+      .map((tag) => String(tag).trim())
+      .filter(Boolean)
+      .sort((left, right) => left.localeCompare(right))
+    ;
+    if (tags.length) return tags.join(', ');
+  }
+
+  const tags_set = new Set();
+  const source_items = Object.values(env?.smart_sources?.items || {});
+  source_items.forEach((source_item) => {
+    const tags = source_item?.metadata?.tags;
+    if (!Array.isArray(tags)) return;
+    tags.forEach((tag) => {
+      const normalized_tag = String(tag ?? '').trim();
+      if (normalized_tag) tags_set.add(normalized_tag);
+    });
+  });
+
+  return [...tags_set].sort((left, right) => left.localeCompare(right)).join(', ');
 }

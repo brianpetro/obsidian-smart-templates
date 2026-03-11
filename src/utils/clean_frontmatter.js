@@ -1,25 +1,48 @@
+import { parse_frontmatter } from 'smart-sources/utils/parse_frontmatter.js';
+
 /**
- * Removes specified keys from frontmatter and deletes empty frontmatter blocks.
- * @param {string} content
- * @param {string[]} keysToRemove
+ * Remove selected keys from frontmatter and rebuild markdown.
+ *
+ * If no frontmatter remains, returns the body only.
+ *
+ * @param {string} markdown
+ * @param {string[]} keys_to_remove
  * @returns {string}
  */
-export function clean_frontmatter(content, keysToRemove = []) {
-  if(!content || typeof content !== 'string') {
-    // console.warn('clean_frontmatter: Invalid content provided, returning empty string.');
-    return '';
+export function clean_frontmatter(markdown, keys_to_remove = []) {
+  const input = String(markdown || '');
+  if (!input.trim()) return input;
+
+  const { frontmatter, body } = parse_frontmatter(input);
+  if (!frontmatter || typeof frontmatter !== 'object' || !Object.keys(frontmatter).length) {
+    return input.trim();
   }
-  if (!Array.isArray(keysToRemove) || keysToRemove.length === 0) return content;
-  const keyRegex = new RegExp(`^(${keysToRemove.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s*:`, 'i');
-  return content.replace(
-    /^---\s*[\r\n]+([\s\S]*?)\r?\n---\s*/,
-    (match, frontmatter) => {
-      const lines = frontmatter.split(/\r?\n/).filter(Boolean);
-      const filtered = lines.filter(line => !keyRegex.test(line.trim()));
-      if (filtered.length === 0) {
-        return '';
-      }
-      return `---\n${filtered.join('\n')}\n---\n`;
+
+  const next_frontmatter = { ...frontmatter };
+  keys_to_remove.forEach((key) => {
+    delete next_frontmatter[key];
+  });
+
+  const remaining_keys = Object.keys(next_frontmatter);
+  if (!remaining_keys.length) {
+    return String(body || '').trim();
+  }
+
+  const lines = ['---'];
+  remaining_keys.forEach((key) => {
+    const value = next_frontmatter[key];
+    if (Array.isArray(value)) {
+      lines.push(`${key}:`);
+      value.forEach((entry) => {
+        lines.push(`  - ${entry}`);
+      });
+      return;
     }
-  ).replace(/^\s*---\s*\n---\s*$/, ''); // Remove empty frontmatter blocks
+    lines.push(`${key}: ${value}`);
+  });
+  lines.push('---');
+  lines.push('');
+  lines.push(String(body || '').trim());
+
+  return lines.join('\n').trim();
 }

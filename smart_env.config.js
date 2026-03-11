@@ -2,8 +2,10 @@
 import smart_templates from './src/collections/smart_templates.js';
 import { SmartTemplate } from './src/items/smart_template.js';
 
-
-
+import { render as template_request_panel_component, version as template_request_panel_component_version } from './src/components/template/request_panel.js';
+import { context_suggest_templates as context_suggest_templates_action, display_name as context_suggest_templates_action_display_name } from './src/actions/context-suggest/templates.js';
+import { template_build_prompt as template_build_prompt_action } from './src/actions/template/build_prompt.js';
+import { template_copy_with_context as template_copy_with_context_action } from './src/actions/template/copy_with_context.js';
 
 export const smart_env_config = {
   collections: {
@@ -19,9 +21,11 @@ export const smart_env_config = {
 
   },
   components: {
-
+    template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version }
   },
   actions: {
-
+    context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name },
+    template_build_prompt: { action: template_build_prompt_action },
+    template_copy_with_context: { action: template_copy_with_context_action }
   }
 };

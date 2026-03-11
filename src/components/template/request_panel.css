@@ -1,0 +1,59 @@
+.st-template-request-panel {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-secondary);
+}
+
+.st-template-request-panel__header,
+.st-template-request-panel__mode,
+.st-template-request-panel__actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.st-template-request-panel__header {
+  margin-bottom: 12px;
+}
+
+.st-template-request-panel__mode {
+  margin-bottom: 12px;
+}
+
+.st-template-request-panel__summary,
+.st-template-request-panel__instructions {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.st-template-request-panel__label,
+.st-template-request-panel__mode-label,
+.st-template-request-panel__instructions-label {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.st-template-request-panel__value {
+  font-weight: 600;
+}
+
+.st-template-request-panel__controls,
+.st-template-request-panel__mode-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.st-template-request-panel__mode-btn.is-active {
+  font-weight: 700;
+}
+
+.st-template-request-panel__instructions-input {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+}

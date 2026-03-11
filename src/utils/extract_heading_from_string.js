@@ -1,47 +1,46 @@
-import { escape_reg_exp } from "./escape_reg_exp.js";
-
 /**
- * @function extract_heading_from_string
- * @description
- * Returns only the block of text under the specified heading (until the next heading or EOF).
- * If not found, returns null.
- * (Copied from prior get_dynamic_template logic, lightly modified.)
- * @param {string} fileContent
- * @param {string} headingName
+ * Extract a heading block from markdown by exact heading text match.
+ *
+ * @param {string} markdown
+ * @param {string} heading_text
  * @returns {string|null}
  */
+export function extract_heading_from_string(markdown, heading_text) {
+  if (!markdown || !heading_text) return null;
 
+  const lines = String(markdown).split('\n');
+  const target = String(heading_text).trim();
 
-export function extract_heading_from_string(fileContent, headingName) {
-  if (!fileContent) return null;
-  if (!fileContent.includes(headingName)) return null;
-  const lines = fileContent.split('\n');
-  let headingLineIndex = -1;
-  const headingPattern = new RegExp(`^#{1,6}\\s+${escape_reg_exp(headingName)}\\s*$`);
+  let start_index = -1;
+  let start_level = 0;
 
-  for (let i = 0; i < lines.length; i++) {
-    if (headingPattern.test(lines[i])) {
-      headingLineIndex = i;
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+    if (!match) continue;
+
+    const level = match[1].length;
+    const text = String(match[2] || '').trim();
+
+    if (text === target) {
+      start_index = i;
+      start_level = level;
       break;
     }
   }
-  if (headingLineIndex === -1) {
-    return null;
-  }
 
-  const subsequent = [];
-  for (let j = headingLineIndex + 1; j < lines.length; j++) {
-    if (/^#{1,6}\s+/.test(lines[j])) {
+  if (start_index === -1) return null;
+
+  let end_index = lines.length;
+  for (let i = start_index + 1; i < lines.length; i += 1) {
+    const match = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+    if (!match) continue;
+
+    const level = match[1].length;
+    if (level <= start_level) {
+      end_index = i;
       break;
     }
-    subsequent.push(lines[j]);
   }
 
-  // remove trailing blank lines
-  while (subsequent.length && !subsequent[subsequent.length - 1].trim()) {
-    subsequent.pop();
-  }
-
-  const result = subsequent.join('\n').trim();
-  return result;
+  return lines.slice(start_index + 1, end_index).join('\n').trim();
 }

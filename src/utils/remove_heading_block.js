@@ -1,35 +1,49 @@
-import { escape_reg_exp } from "./escape_reg_exp.js";
-
 /**
- * @function remove_heading_block
- * @description
- * Removes all occurrences of the specified heading and its subsequent text
- * until the next heading or end-of-file.
- * @param {string} content
- * @param {string} headingName
- * @returns {string} content with that heading block removed
+ * Remove a heading block from markdown by exact heading text match.
+ *
+ * @param {string} markdown
+ * @param {string} heading_text
+ * @returns {string}
  */
-export function remove_heading_block(content, headingName) {
-  if (!content) return '';
-  const lines = content.split('\n');
-  const headingPattern = new RegExp(`^#{1,6}\\s+${escape_reg_exp(headingName)}\\s*$`);
+export function remove_heading_block(markdown, heading_text) {
+  if (!markdown || !heading_text) return String(markdown || '');
 
-  let result = [];
-  let skipMode = false;
+  const lines = String(markdown).split('\n');
+  const target = String(heading_text).trim();
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (headingPattern.test(line)) {
-      skipMode = true;
-      continue;
-    }
-    // If we see a new heading while skipping, stop skipping
-    if (skipMode && /^#{1,6}\s+/.test(line)) {
-      skipMode = false;
-    }
-    if (!skipMode) {
-      result.push(line);
+  let start_index = -1;
+  let start_level = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+    if (!match) continue;
+
+    const level = match[1].length;
+    const text = String(match[2] || '').trim();
+
+    if (text === target) {
+      start_index = i;
+      start_level = level;
+      break;
     }
   }
-  return result.join('\n').trim();
+
+  if (start_index === -1) return String(markdown || '');
+
+  let end_index = lines.length;
+  for (let i = start_index + 1; i < lines.length; i += 1) {
+    const match = /^(#{1,6})\s+(.*)$/.exec(lines[i]);
+    if (!match) continue;
+
+    const level = match[1].length;
+    if (level <= start_level) {
+      end_index = i;
+      break;
+    }
+  }
+
+  return [
+    ...lines.slice(0, start_index),
+    ...lines.slice(end_index),
+  ].join('\n').trim();
 }

@@ -1,46 +1,48 @@
 /**
  * @file smart_templates.js
- * @description
- * A specialized collection for managing template items, each representing a single
- * template.
- *
- * Also merges the chat_model's settings_config if present, so that UI can handle them together.
+ * @description Collection for Smart Template items and detection utilities.
  */
 
-import { Collection } from "smart-collections";
-import { AjsonSingleFileCollectionDataAdapter } from "smart-collections/adapters/ajson_single_file.js";
-import { SmartTemplate } from "../items/smart_template.js";
+import { Collection } from 'smart-collections';
+import { AjsonSingleFileCollectionDataAdapter } from 'smart-collections/adapters/ajson_single_file.js';
+import { SmartTemplate } from '../items/smart_template.js';
+import { should_reload_templates } from '../utils/should_reload_templates.js';
 
 /**
  * Parse a comma-separated headings string from settings into a unique array.
- * @param {Object} settings
+ *
+ * @param {object} settings
  * @returns {string[]}
  */
 export function parse_template_headings(settings = {}) {
   if (!settings || typeof settings.template_headings !== 'string') return [];
   const headings = settings.template_headings
     .split(',')
-    .map(h => h.trim())
-    .filter(Boolean);
+    .map((heading) => heading.trim())
+    .filter(Boolean)
+  ;
   return Array.from(new Set(headings));
 }
 
 /**
  * Stringify a list of headings into comma-separated format for settings.
+ *
  * @param {string[]} headings
  * @returns {string}
  */
 export function stringify_template_headings(headings = []) {
   if (!Array.isArray(headings)) return '';
   return headings
-    .map(h => (typeof h === 'string' ? h.trim() : ''))
+    .map((heading) => (typeof heading === 'string' ? heading.trim() : ''))
     .filter(Boolean)
-    .join(', ');
+    .join(', ')
+  ;
 }
 
 /**
  * Parse a comma-separated folder string from settings into a sorted unique array.
- * @param {Object} settings
+ *
+ * @param {object} settings
  * @returns {string[]}
  */
 export function parse_template_folders(settings = {}) {
@@ -49,34 +51,37 @@ export function parse_template_folders(settings = {}) {
     ? settings.template_folder
     : typeof settings.template_folder === 'string'
       ? settings.template_folder.split(',')
-      : [];
+      : []
+  ;
 
   return Array.from(
     new Set(
       folders
-        .map(folder => folder.trim())
-        .filter(Boolean)
-    )
+        .map((folder) => folder.trim())
+        .filter(Boolean),
+    ),
   ).sort();
 }
 
 /**
  * Stringify a list of folders into comma-separated format for settings.
+ *
  * @param {string[]} folders
  * @returns {string}
  */
 export function stringify_template_folders(folders = []) {
   if (!Array.isArray(folders)) return '';
   return folders
-    .map(folder => (typeof folder === 'string' ? folder.trim() : ''))
+    .map((folder) => (typeof folder === 'string' ? folder.trim() : ''))
     .filter(Boolean)
-    .join(', ');
+    .join(', ')
+  ;
 }
 
 /**
  * Resolve template folders from settings or default folder.
- * @param {Object} [settings={}]
- * @param {string} [settings.template_folder]
+ *
+ * @param {object} [settings={}]
  * @param {string} [default_folder='']
  * @returns {string[]}
  */
@@ -89,11 +94,12 @@ export function resolve_template_folders(settings = {}, default_folder = '') {
 
 /**
  * Build a predicate that matches Smart Template sources.
- * @param {Object} params
+ *
+ * @param {object} params
  * @param {string[]} [params.template_folders=[]]
  * @param {string} [params.template_name='']
  * @param {string[]} [params.template_headings=[]]
- * @returns {(source_item: {key?: string, data?: {key?: string}, metadata?: Object}) => boolean}
+ * @returns {(source_item: { key?: string, data?: { key?: string }, metadata?: object }) => boolean}
  */
 export function build_template_matcher({
   template_folders = [],
@@ -104,12 +110,15 @@ export function build_template_matcher({
   if (normalized_name && !normalized_name.endsWith('.md')) {
     normalized_name += '.md';
   }
+
   const normalized_headings = Array.isArray(template_headings)
-    ? template_headings.map(heading => heading.trim()).filter(Boolean)
-    : [];
+    ? template_headings.map((heading) => heading.trim()).filter(Boolean)
+    : []
+  ;
   const normalized_folders = Array.isArray(template_folders)
-    ? template_folders.map(folder => folder.trim()).filter(Boolean)
-    : [];
+    ? template_folders.map((folder) => folder.trim()).filter(Boolean)
+    : []
+  ;
 
   const is_smart_template_flag_enabled = (source_item = {}) => {
     return !!source_item?.metadata?.['smart template'];
@@ -118,25 +127,41 @@ export function build_template_matcher({
   return (source_item = {}) => {
     const source_key = source_item?.key || source_item?.data?.key;
     if (!source_key) return false;
-    if (normalized_folders.length && normalized_folders.some(folder => source_key.startsWith(folder))) return true;
-    if (normalized_name && source_key.endsWith(normalized_name)) return true;
-    if (is_smart_template_flag_enabled(source_item)) return true;
-    if (normalized_headings.length && normalized_headings.some(heading => source_key.endsWith(`#${heading}`))) {
+
+    if (normalized_folders.length && normalized_folders.some((folder) => source_key.startsWith(folder))) {
       return true;
     }
+
+    if (normalized_name && source_key.endsWith(normalized_name)) {
+      return true;
+    }
+
+    if (is_smart_template_flag_enabled(source_item)) {
+      return true;
+    }
+
+    if (
+      normalized_headings.length &&
+      normalized_headings.some((heading) => source_key.endsWith(`#${heading}`))
+    ) {
+      return true;
+    }
+
     return false;
   };
 }
 
 /**
  * Collect unique folder candidates from smart source keys.
- * @param {Array<{key?: string}>} sources
+ *
+ * @param {Array<{ key?: string }>} sources
  * @returns {string[]}
  */
 export function collect_template_folder_candidates(sources = []) {
   if (!Array.isArray(sources)) return [];
   const folders = new Set();
-  sources.forEach(source => {
+
+  sources.forEach((source) => {
     const key = source?.key || source?.data?.key;
     if (!key) return;
     const hash_index = key.indexOf('#');
@@ -146,18 +171,21 @@ export function collect_template_folder_candidates(sources = []) {
     const folder = path_without_hash.slice(0, last_slash_index);
     if (folder) folders.add(folder);
   });
+
   return Array.from(folders).sort();
 }
 
 /**
  * Collect unique heading candidates from smart block keys.
- * @param {Array<{key?: string}>} blocks
+ *
+ * @param {Array<{ key?: string }>} blocks
  * @returns {string[]}
  */
 export function collect_block_heading_candidates(blocks = []) {
   if (!Array.isArray(blocks)) return [];
   const headings = new Set();
-  blocks.forEach(block => {
+
+  blocks.forEach((block) => {
     const key = block?.key || block?.data?.key;
     if (!key) return;
     const hash_index = key.lastIndexOf('#');
@@ -165,65 +193,125 @@ export function collect_block_heading_candidates(blocks = []) {
     const heading = key.slice(hash_index + 1);
     if (heading) headings.add(heading);
   });
+
   return Array.from(headings).sort();
 }
 
 /**
- * Filter blocks that end with any of the provided headings (#Heading form).
- * @param {Array<{key?: string}>} blocks
+ * Filter blocks that end with any of the provided headings.
+ *
+ * @param {Array<{ key?: string }>} blocks
  * @param {string[]} headings
- * @returns {Array<{key?: string}>}
+ * @returns {Array<{ key?: string }>}
  */
 export function filter_blocks_by_headings(blocks = [], headings = []) {
   if (!Array.isArray(blocks) || !Array.isArray(headings) || !headings.length) return [];
-  const trimmed_headings = headings.map(h => h.trim()).filter(Boolean);
+  const trimmed_headings = headings.map((heading) => heading.trim()).filter(Boolean);
   if (!trimmed_headings.length) return [];
-  return blocks.filter(block => {
+
+  return blocks.filter((block) => {
     const key = block?.key || block?.data?.key;
     if (!key) return false;
-    return trimmed_headings.some(heading => key.endsWith(`#${heading}`));
+    return trimmed_headings.some((heading) => key.endsWith(`#${heading}`));
   });
 }
 
-/**
- * @class SmartTemplates
- * @extends Collection
- */
 export class SmartTemplates extends Collection {
-  static version = 1;
+  static version = 2;
+
   init() {
+    this.register_env_event_listeners();
+
     const try_load_templates = () => {
       if (this.env.collections?.smart_sources === 'loaded') {
         clearInterval(this._load_templates_interval);
+        this._load_templates_interval = null;
         this.load_templates();
       }
     };
+
     this._load_templates_interval = setInterval(try_load_templates, 300);
     try_load_templates();
   }
+
   load_templates() {
     const settings = this.settings;
     const template_headings = parse_template_headings(settings);
     const matches_template_source = this.get_template_matcher({ template_headings });
-    // import smart_templates
+
     const template_sources = this.env.smart_sources?.filter?.(matches_template_source) || [];
     const template_blocks = filter_blocks_by_headings(
       Object.values(this.env.smart_blocks?.items || {}),
       template_headings,
     );
+
     const processed_keys = new Set();
-    [...template_sources, ...template_blocks].forEach(source => {
-      if (!source?.key || processed_keys.has(source.key)) return;
-      processed_keys.add(source.key);
-      this.create_or_update({ source_key: source.key });
+
+    [...template_sources, ...template_blocks].forEach((source_item) => {
+      if (!source_item?.key || processed_keys.has(source_item.key)) return;
+      processed_keys.add(source_item.key);
+      this.create_or_update({ source_key: source_item.key });
     });
 
-    // clean-up old (no-longer matching filter) templates
-    Object.values(this.items).forEach(template => {
-      if (template.source && !matches_template_source(template.source)) {
-        delete this.items[template.key];
+    Object.values(this.items).forEach((template_item) => {
+      if (template_item.source && !matches_template_source(template_item.source)) {
+        delete this.items[template_item.key];
       }
     });
+  }
+
+  register_env_event_listeners() {
+    this.unregister_env_event_listeners();
+    if (!this.env?.events) return;
+
+    const event_names = [
+      'sources:created',
+      'sources:deleted',
+      'sources:renamed',
+      'sources:modified',
+    ];
+
+    this._template_event_unsubscribers = event_names
+      .map((event_name) => {
+        return this.env.events.on(event_name, (payload = {}) => {
+          this.handle_source_event(payload);
+        });
+      })
+      .filter(Boolean)
+    ;
+  }
+
+  unregister_env_event_listeners() {
+    if (!Array.isArray(this._template_event_unsubscribers)) return;
+    while (this._template_event_unsubscribers.length) {
+      const unsubscribe = this._template_event_unsubscribers.pop();
+      try {
+        unsubscribe?.();
+      } catch (error) {
+        console.warn('SmartTemplates: failed to unregister listener', error);
+      }
+    }
+  }
+
+  handle_source_event(payload = {}) {
+    if (this.env.collections?.smart_sources !== 'loaded') return;
+    if (!should_reload_templates(this, {
+      smart_sources: this.env.smart_sources,
+      payload,
+    })) {
+      return;
+    }
+
+    this.load_templates();
+  }
+
+  unload() {
+    if (this._load_templates_interval) {
+      clearInterval(this._load_templates_interval);
+      this._load_templates_interval = null;
+    }
+    this.unregister_env_event_listeners();
+    super.unload();
   }
 
   get settings() {
@@ -232,18 +320,22 @@ export class SmartTemplates extends Collection {
 
   /**
    * Build a predicate for matching template sources based on settings.
-   * @param {Object} [params={}]
+   *
+   * @param {object} [params={}]
    * @param {string[]} [params.template_headings]
-   * @returns {(source_item: {key?: string, data?: {key?: string}, metadata?: Object}) => boolean}
+   * @returns {(source_item: { key?: string, data?: { key?: string }, metadata?: object }) => boolean}
    */
   get_template_matcher(params = {}) {
     const settings = this.settings;
     const template_headings = Array.isArray(params.template_headings)
       ? params.template_headings
-      : parse_template_headings(settings);
+      : parse_template_headings(settings)
+    ;
+
     const default_folder = this.env?.plugin?.app?.internalPlugins?.plugins?.templates?.instance?.options?.folder;
     const template_folders = resolve_template_folders(settings, default_folder);
     const template_name = settings?.template_name || '';
+
     return build_template_matcher({
       template_folders,
       template_name,
@@ -252,25 +344,24 @@ export class SmartTemplates extends Collection {
   }
 
   get settings_config() {
-    const reload_templates = () => this.load_templates();
     return {
       template_folder: {
-        name: "Templates folder",
+        name: 'Templates folder',
         description: this.build_template_folder_description(),
-        type: "button",
+        type: 'button',
         callback: (...args) => this.open_template_folder_modal(...args),
       },
       template_name: {
-        name: "Naming convention",
-        description: "Specifies the name of the template.",
-        type: "text", // text input
-        default: "",
-        callback: reload_templates,
+        name: 'Naming convention',
+        description: 'Specifies the file name used to detect template notes.',
+        type: 'text',
+        default: '',
+        callback: () => this.load_templates(),
       },
       template_headings: {
-        name: "Template headings",
+        name: 'Template headings',
         description: this.build_template_headings_description(),
-        type: "button",
+        type: 'button',
         callback: (...args) => this.open_template_headings_modal(...args),
       },
     };
@@ -278,7 +369,7 @@ export class SmartTemplates extends Collection {
 
   build_template_headings_description(template_headings = this.settings?.template_headings) {
     if (!template_headings) {
-      return "Select headings to import matching blocks as templates.";
+      return 'Select headings to import matching blocks as templates.';
     }
     return `Headings: ${template_headings}`;
   }
@@ -286,7 +377,7 @@ export class SmartTemplates extends Collection {
   build_template_folder_description(template_folder = this.settings?.template_folder) {
     const folders = parse_template_folders({ template_folder });
     if (!folders.length) {
-      return "Select a folder to import matching notes as templates.";
+      return 'Select a folder to import matching notes as templates.';
     }
     return `Folders: ${folders.join(', ')}`;
   }
@@ -298,6 +389,7 @@ export class SmartTemplates extends Collection {
       }
       this.load_templates();
     };
+
     const { TemplateHeadingsModal } = await import('../modals/template_headings_modal.js');
     const modal = new TemplateHeadingsModal(this.env.plugin.app, {
       scope: this,
@@ -316,6 +408,7 @@ export class SmartTemplates extends Collection {
       }
       this.load_templates();
     };
+
     const { TemplateFolderModal } = await import('../modals/template_folder_modal.js');
     const modal = new TemplateFolderModal(this.env.plugin.app, {
       scope: this,
@@ -325,10 +418,9 @@ export class SmartTemplates extends Collection {
   }
 }
 
-/* default export consumed by SmartEnv */
 export default {
-  class          : SmartTemplates,
-  collection_key : "smart_templates",
-  data_adapter   : AjsonSingleFileCollectionDataAdapter,
-  item_type      : SmartTemplate,
+  class: SmartTemplates,
+  collection_key: 'smart_templates',
+  data_adapter: AjsonSingleFileCollectionDataAdapter,
+  item_type: SmartTemplate,
 };

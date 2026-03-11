@@ -1,9 +1,9 @@
 {
   "name": "smart-templates-obsidian",
-  "version": "1.1.14",
-  "description": "Configurable templates for use with Smart Environments in Obsidian.",
+  "version": "2.0.0",
+  "description": "Context-first templating for Obsidian Smart Plugins.",
   "author": "🌴 Brian",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "scripts": {
     "build": "node esbuild.js",
@@ -11,12 +11,10 @@
   },
   "dependencies": {
     "obsidian": "latest",
-    "smart-chat-model": "file:../jsbrains/smart-chat-model",
-    "smart-completions": "file:../jsbrains/smart-completions",
-    "smart-context-obsidian": "file:../smart-context-obsidian",
-    "smart-contexts": "file:../jsbrains/smart-contexts",
     "obsidian-smart-env": "file:../obsidian-smart-env",
-    "smart-http-request": "file:../jsbrains/smart-http-request"
+    "smart-collections": "file:../jsbrains/smart-collections",
+    "smart-context-obsidian": "file:../smart-context-obsidian",
+    "smart-contexts": "file:../jsbrains/smart-contexts"
   },
   "devDependencies": {
     "archiver": "^7.0.1",
