@@ -15,6 +15,7 @@ import { CreateFromTemplateModal } from './modals/create_from_template_modal.js'
 export class SmartTemplatesPlugin extends SmartPlugin {
   SmartEnv = SmartEnv;
   ReleaseNotesView = ReleaseNotesView;
+  SettingsTab = SmartTemplatesSettingTab;
 
   onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
@@ -38,7 +39,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     this.register_item_views();
     this.register_file_menu();
 
-    this.addSettingTab(new SmartTemplatesSettingTab(this.app, this));
+    this.addSettingTab(new this.SettingsTab(this.app, this));
 
     await this.check_for_updates();
   }
