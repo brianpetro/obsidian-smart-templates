@@ -1,59 +1,190 @@
+/* Shared TemplateContextModal request panel */
+
+.st-template-context-modal {
+  width: min(1240px, 96vw);
+  max-height: min(860px, 92vh);
+}
+
+.st-template-context-modal__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.95fr);
+  gap: 16px;
+  align-items: stretch;
+  margin: 12px 0 16px;
+}
+
+.st-template-context-modal__context-pane,
+.st-template-context-modal__request-pane {
+  min-width: 0;
+}
+
+.st-template-context-modal__context-pane {
+  display: flex;
+}
+
+.st-template-context-modal__context-pane > .sc-context-view {
+  flex: 1 1 auto;
+}
+
 .st-template-request-panel {
-  margin-top: 12px;
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+
+  padding: 14px;
+
   border: 1px solid var(--background-modifier-border);
   border-radius: 12px;
   background: var(--background-secondary);
 }
 
-.st-template-request-panel__header,
-.st-template-request-panel__mode,
-.st-template-request-panel__actions {
+.st-template-request-panel__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.st-template-request-panel__header {
-  margin-bottom: 12px;
-}
-
-.st-template-request-panel__mode {
-  margin-bottom: 12px;
-}
-
-.st-template-request-panel__summary,
-.st-template-request-panel__instructions {
+.st-template-request-panel__header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
-  flex: 1 1 auto;
 }
 
-.st-template-request-panel__label,
-.st-template-request-panel__mode-label,
-.st-template-request-panel__instructions-label {
+.st-template-request-panel__title {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.st-template-request-panel__caption {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
-  margin-bottom: 4px;
+  line-height: 1.35;
 }
 
-.st-template-request-panel__value {
-  font-weight: 600;
-}
-
-.st-template-request-panel__controls,
-.st-template-request-panel__mode-buttons {
+.st-template-request-panel__row {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.st-template-request-panel__label {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.st-template-request-panel__template {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-primary);
+}
+
+.st-template-request-panel__template-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-weight: 600;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-template-request-panel__template-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.st-template-request-panel__mode-btn.is-active {
-  font-weight: 700;
+.st-template-request-panel__textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
 }
 
-.st-template-request-panel__instructions-input {
+.st-template-request-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* Template modal specific context view cleanup */
+.modal-container .st-template-context-modal .sc-context-name-wrapper,
+.modal-container .st-template-context-modal .sc-copy-clipboard,
+.modal-container .st-template-context-modal .sc-add-context-btn {
+  display: none !important;
+}
+
+.modal-container .st-template-context-modal .sc-context-view {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  min-height: 112px;
-  resize: vertical;
+  min-height: 340px;
+  max-height: 420px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  background: var(--background-primary);
+  overflow: hidden;
+}
+
+.modal-container .st-template-context-modal .sc-context-view-header,
+.modal-container .st-template-context-modal .sc-context-view-body,
+.modal-container .st-template-context-modal .sc-context-view-footer {
+  padding: 12px;
+}
+
+.modal-container .st-template-context-modal .sc-context-view-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+}
+
+.modal-container .st-template-context-modal .sc-context-view-footer {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.modal-container .st-template-context-modal .sc-context-actions {
+  align-items: center;
+}
+
+.modal-container .st-template-context-modal .sc-context-actions-right {
+  gap: 8px;
+}
+
+@media (max-width: 960px) {
+  .st-template-context-modal__workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modal-container .st-template-context-modal .sc-context-view {
+    min-height: 260px;
+    max-height: 320px;
+  }
+}
+
+@media (max-width: 720px) {
+  .st-template-request-panel__template {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .st-template-request-panel__actions {
+    justify-content: stretch;
+  }
+
+  .st-template-request-panel__actions .mod-cta {
+    width: 100%;
+  }
 }

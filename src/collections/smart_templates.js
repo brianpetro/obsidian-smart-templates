@@ -6,6 +6,7 @@
 import { Collection } from 'smart-collections';
 import { AjsonSingleFileCollectionDataAdapter } from 'smart-collections/adapters/ajson_single_file.js';
 import { SmartTemplate } from '../items/smart_template.js';
+import { default_templates } from '../defaults/default_templates.js';
 import { should_reload_templates } from '../utils/should_reload_templates.js';
 
 /**
@@ -216,8 +217,38 @@ export function filter_blocks_by_headings(blocks = [], headings = []) {
   });
 }
 
+/**
+ * Resolve the active Obsidian app from the collection environment.
+ *
+ * @param {SmartTemplates} scope
+ * @returns {import('obsidian').App | null}
+ */
+function get_scope_app(scope) {
+  return scope?.env?.plugin?.app || scope?.env?.main?.app || window.app || null;
+}
+
+/**
+ * Resolve a configured modal class by key.
+ *
+ * @param {SmartTemplates} scope
+ * @param {string} modal_key
+ * @returns {Function | null}
+ */
+function get_modal_class(scope, modal_key) {
+  const ModalClass = scope?.env?.config?.modals?.[modal_key]?.class;
+  return typeof ModalClass === 'function' ? ModalClass : null;
+}
+
 export class SmartTemplates extends Collection {
-  static version = 2;
+  static version = 3;
+
+  get default_settings() {
+    return {
+      template_folder: '',
+      template_name: '',
+      template_headings: '',
+    };
+  }
 
   init() {
     this.register_env_event_listeners();
@@ -246,18 +277,63 @@ export class SmartTemplates extends Collection {
     );
 
     const processed_keys = new Set();
+    this.load_default_templates(processed_keys);
 
     [...template_sources, ...template_blocks].forEach((source_item) => {
       if (!source_item?.key || processed_keys.has(source_item.key)) return;
       processed_keys.add(source_item.key);
-      this.create_or_update({ source_key: source_item.key });
+      this.create_or_update({
+        key: source_item.key,
+        source_key: source_item.key,
+        content: null,
+        built_in: false,
+      });
     });
 
+    let stale_template_count = 0;
     Object.values(this.items).forEach((template_item) => {
-      if (template_item.source && !matches_template_source(template_item.source)) {
-        delete this.items[template_item.key];
+      if (template_item?.data?.built_in) return;
+
+      const source_key = template_item?.data?.source_key;
+      if (!source_key) {
+        template_item.delete?.();
+        stale_template_count += 1;
+        return;
+      }
+
+      const source_item = template_item.source;
+      if (!source_item || !matches_template_source(source_item)) {
+        template_item.delete?.();
+        stale_template_count += 1;
       }
     });
+
+    if (stale_template_count > 0) {
+      this.queue_save();
+    }
+  }
+
+  /**
+   * Load source-less built-in templates into the collection.
+   * These remain available even when no vault-backed template source exists.
+   *
+   * @param {Set<string>} processed_keys
+   * @returns {void}
+   */
+  load_default_templates(processed_keys = new Set()) {
+    if (!Array.isArray(default_templates)) return;
+
+    for (const template of default_templates) {
+      const key = typeof template?.key === 'string' ? template.key.trim() : '';
+      if (!key) continue;
+      processed_keys.add(key);
+      this.create_or_update({
+        key,
+        source_key: null,
+        content: template.content || '',
+        built_in: true,
+      });
+    }
   }
 
   register_env_event_listeners() {
@@ -315,7 +391,7 @@ export class SmartTemplates extends Collection {
   }
 
   get settings() {
-    return this.env?.settings?.smart_templates || {};
+    return super.settings;
   }
 
   /**
@@ -383,6 +459,10 @@ export class SmartTemplates extends Collection {
   }
 
   async open_template_headings_modal(_, setting) {
+    const ModalClass = get_modal_class(this, 'template_headings');
+    const app = get_scope_app(this);
+    if (!ModalClass || !app) return;
+
     const on_change = (csv) => {
       if (setting) {
         setting.setDesc(this.build_template_headings_description(csv));
@@ -390,8 +470,7 @@ export class SmartTemplates extends Collection {
       this.load_templates();
     };
 
-    const { TemplateHeadingsModal } = await import('../modals/template_headings_modal.js');
-    const modal = new TemplateHeadingsModal(this.env.plugin.app, {
+    const modal = new ModalClass(app, {
       scope: this,
       on_change,
     });
@@ -399,6 +478,10 @@ export class SmartTemplates extends Collection {
   }
 
   async open_template_folder_modal(_, setting) {
+    const ModalClass = get_modal_class(this, 'template_folder');
+    const app = get_scope_app(this);
+    if (!ModalClass || !app) return;
+
     const on_change = (csv) => {
       if (this.settings) {
         this.settings.template_folder = csv;
@@ -409,8 +492,7 @@ export class SmartTemplates extends Collection {
       this.load_templates();
     };
 
-    const { TemplateFolderModal } = await import('../modals/template_folder_modal.js');
-    const modal = new TemplateFolderModal(this.env.plugin.app, {
+    const modal = new ModalClass(app, {
       scope: this,
       on_change,
     });

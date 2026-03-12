@@ -2,6 +2,7 @@
 import smart_templates from './src/collections/smart_templates.js';
 import { SmartTemplate } from './src/items/smart_template.js';
 
+import { render as smart_templates_settings_tab_component, version as smart_templates_settings_tab_component_version } from './src/components/smart-templates/settings_tab.js';
 import { render as template_request_panel_component, version as template_request_panel_component_version } from './src/components/template/request_panel.js';
 import { context_suggest_templates as context_suggest_templates_action, display_name as context_suggest_templates_action_display_name } from './src/actions/context-suggest/templates.js';
 import { template_build_prompt as template_build_prompt_action } from './src/actions/template/build_prompt.js';
@@ -21,6 +22,7 @@ export const smart_env_config = {
 
   },
   components: {
+    smart_templates_settings_tab: { render: smart_templates_settings_tab_component, version: smart_templates_settings_tab_component_version },
     template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version }
   },
   actions: {

@@ -62,6 +62,17 @@ function apply_selected_template(modal, template_item) {
 }
 
 /**
+ * Return from template suggestions to the template modal's context suggestions.
+ *
+ * @param {object} modal
+ * @returns {null}
+ */
+function restore_context_suggestions(modal) {
+  modal?.restore_context_suggestions?.();
+  return null;
+}
+
+/**
  * Select the template, then rebuild the suggestions so selected state updates.
  *
  * @param {object} ctx
@@ -115,6 +126,9 @@ export function context_suggest_templates(params = {}) {
       {
         key: 'templates:none',
         display: 'No templates found',
+        arrow_left_action: ({ modal } = {}) => {
+          return restore_context_suggestions(modal);
+        },
       },
     ];
   }
@@ -132,6 +146,9 @@ export function context_suggest_templates(params = {}) {
     },
     arrow_right_action: () => {
       return select_template_and_refresh(ctx, modal, template_item);
+    },
+    arrow_left_action: ({ modal } = {}) => {
+      return restore_context_suggestions(modal);
     },
   }));
 }

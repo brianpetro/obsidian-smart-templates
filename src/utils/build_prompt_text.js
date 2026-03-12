@@ -45,9 +45,24 @@ export async function build_prompt_text(ctx, template_item, instructions = '') {
 
   if (context_text) {
     sections.push([
-      '<context>',
       context_text,
-      '</context>',
+    ].join('\n'));
+  }
+
+  // again at the end to increase focus on the template and instructions
+  if (resolved_instructions) {
+    sections.push([
+      '<instructions>',
+      resolved_instructions,
+      '</instructions>',
+    ].join('\n'));
+  }
+
+  if (resolved_template) {
+    sections.push([
+      '<template>',
+      resolved_template,
+      '</template>',
     ].join('\n'));
   }
 

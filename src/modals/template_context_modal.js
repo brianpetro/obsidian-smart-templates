@@ -8,15 +8,20 @@ const DEFAULT_REQUEST_STATE = Object.freeze({
   preferred_output_target: null,
 });
 
-const SUPPORTED_REQUEST_MODES = new Set([
-  'copy_prompt',
-  'generate',
+const DEFAULT_CONTEXT_SUGGEST_ACTION_KEYS = Object.freeze([
+  'context_suggest_sources',
+  'context_suggest_contexts',
+  'context_suggest_blocks',
 ]);
+
+const CONTEXT_SUGGEST_ACTION_PREFIX = 'context_suggest_';
+const TEMPLATE_SUGGEST_ACTION_KEY = 'context_suggest_templates';
 
 /**
  * Clone and normalize request state.
  *
  * @param {object} [request_state={}]
+ * @param {Set<string>} [supported_request_modes]
  * @returns {{
  *   mode: string,
  *   selected_template_key: string | null,
@@ -24,13 +29,16 @@ const SUPPORTED_REQUEST_MODES = new Set([
  *   preferred_output_target: string | null
  * }}
  */
-function create_request_state(request_state = {}) {
+function create_request_state(
+  request_state = {},
+  supported_request_modes = new Set([DEFAULT_REQUEST_STATE.mode]),
+) {
   const next_request_state = {
     ...DEFAULT_REQUEST_STATE,
     ...(request_state || {}),
   };
 
-  if (!SUPPORTED_REQUEST_MODES.has(next_request_state.mode)) {
+  if (!supported_request_modes.has(next_request_state.mode)) {
     next_request_state.mode = DEFAULT_REQUEST_STATE.mode;
   }
 
@@ -72,7 +80,42 @@ function get_default_user_message(template_item) {
   return metadata_prompt.trim();
 }
 
+/**
+ * Remove invalid or duplicate action keys while preserving order.
+ *
+ * @param {string[]} action_keys
+ * @returns {string[]}
+ */
+function dedupe_action_keys(action_keys = []) {
+  return Array.from(new Set(
+    (Array.isArray(action_keys) ? action_keys : [])
+      .filter((action_key) => typeof action_key === 'string' && action_key.trim().length > 0),
+  ));
+}
+
+/**
+ * @param {string} action_key
+ * @returns {boolean}
+ */
+function is_context_suggest_action_key(action_key) {
+  if (typeof action_key !== 'string' || !action_key.length) return false;
+  if (!action_key.startsWith(CONTEXT_SUGGEST_ACTION_PREFIX)) return false;
+  return action_key !== TEMPLATE_SUGGEST_ACTION_KEY;
+}
+
+/**
+ * @param {object} env
+ * @returns {string[]}
+ */
+function get_available_context_suggest_action_keys(env) {
+  const configured_actions = Object.keys(env?.config?.actions || {});
+  return configured_actions.filter((action_key) => is_context_suggest_action_key(action_key));
+}
+
 export class TemplateContextModal extends ContextModal {
+  static plugin_version = '2.0.0';
+  static version = 2.0;
+
   static get modal_type() { return 'template_context'; }
   static get display_text() { return 'Template context'; }
   static get event_domain() { return 'template_context'; }
@@ -90,40 +133,195 @@ export class TemplateContextModal extends ContextModal {
     this.smart_context = smart_context;
     this.params = { ...params };
 
-    this.request_state = create_request_state(params);
+    this.request_state = create_request_state(params, this.supported_request_modes);
     this.selected_template_key = this.request_state.selected_template_key;
     this.request_panel_el = null;
     this.request_panel_render_id = 0;
+    this.workspace_el = null;
+    this.context_pane_el = null;
+    this.request_pane_el = null;
 
-    this.context_default_suggest_action_keys = Array.isArray(this.default_suggest_action_keys)
-      ? [...this.default_suggest_action_keys]
-      : ['context_suggest_sources']
-    ;
+    this.context_default_suggest_action_keys = this.build_context_suggest_action_keys(params);
   }
 
+  /**
+   * Request modes supported by the current modal implementation.
+   *
+   * Pro overrides this getter to opt into generate mode.
+   *
+   * @returns {Set<string>}
+   */
+  get supported_request_modes() {
+    return new Set([DEFAULT_REQUEST_STATE.mode]);
+  }
+
+  /**
+   * Build the default context-suggest action set for this modal.
+   *
+   * The template modal cannot rely on `context_selector` modal defaults because it
+   * has its own modal key. Resolve the available actions directly from the env so
+   * core and early/pro both get a usable context-first flow.
+   *
+   * Order:
+   *   1. Explicit per-open overrides
+   *   2. `context_selector` modal defaults
+   *   3. Preferred built-in order
+   *   4. Any remaining registered `context_suggest_*` action
+   *
+   * @param {object} [params={}]
+   * @returns {string[]}
+   */
+  build_context_suggest_action_keys(params = {}) {
+    const available_action_keys = get_available_context_suggest_action_keys(this.env);
+    const explicit_action_keys = dedupe_action_keys(params.default_suggest_action_keys)
+      .filter((action_key) => available_action_keys.includes(action_key))
+    ;
+    if (explicit_action_keys.length) return explicit_action_keys;
+
+    const context_selector_defaults = dedupe_action_keys(
+      this.env?.config?.modals?.context_selector?.default_suggest_action_keys,
+    ).filter((action_key) => available_action_keys.includes(action_key));
+
+    const ordered_action_keys = dedupe_action_keys([
+      ...context_selector_defaults,
+      ...DEFAULT_CONTEXT_SUGGEST_ACTION_KEYS,
+      ...available_action_keys,
+    ]);
+
+    return ordered_action_keys.filter((action_key) => available_action_keys.includes(action_key));
+  }
+
+  /**
+   * Prefer the template modal's resolved context-suggest actions when the caller
+   * did not provide an explicit override.
+   *
+   * @returns {string[]}
+   */
+  get default_suggest_action_keys() {
+    const explicit_action_keys = dedupe_action_keys(this.params?.default_suggest_action_keys);
+    if (explicit_action_keys.length) return explicit_action_keys;
+
+    const resolved_action_keys = dedupe_action_keys(this.context_default_suggest_action_keys);
+    if (resolved_action_keys.length) return resolved_action_keys;
+
+    return this.build_context_suggest_action_keys(this.params);
+  }
+
+  /**
+   * Provide context-scope instructions when multiple suggest actions are available.
+   *
+   * @returns {void}
+   */
+  set_default_instructions() {
+    const default_action_keys = this.default_suggest_action_keys;
+    if (Array.isArray(default_action_keys) && default_action_keys.length > 1) {
+      this.setInstructions([
+        { command: 'Enter / →', purpose: 'Browse context suggestions' },
+        { command: 'Esc', purpose: 'Close' },
+      ], false);
+      return;
+    }
+
+    super.set_default_instructions();
+  }
+
+  /**
+   * Update request state from params while respecting current modal capabilities.
+   *
+   * @param {object} [params={}]
+   * @returns {void}
+   */
   sync_request_state_from_params(params = {}) {
-    this.request_state = create_request_state({
-      ...this.request_state,
+    this.request_state = create_request_state(
+      {
+        ...this.request_state,
+        ...(params || {}),
+      },
+      this.supported_request_modes,
+    );
+    this.context_default_suggest_action_keys = this.build_context_suggest_action_keys({
+      ...(this.params || {}),
       ...(params || {}),
     });
     this.selected_template_key = this.request_state.selected_template_key;
   }
 
+  /**
+   * Render the modal shell, then arrange the context view and request panel side by side.
+   *
+   * @param {object} [params]
+   * @returns {Promise<void>}
+   */
   async render(params = this.params) {
     this.sync_request_state_from_params(params);
     await super.render(params);
+
+    this.modalEl?.classList?.add('st-template-context-modal');
+    if (this.modalEl?.style) {
+      this.modalEl.style.height = 'auto';
+      this.modalEl.style.maxHeight = '92vh';
+    }
+
+    this.ensure_workspace_layout();
     await this.render_request_panel();
+  }
+
+  /**
+   * Ensure the side-by-side workspace wrapper exists and owns the context view.
+   *
+   * @returns {void}
+   */
+  ensure_workspace_layout() {
+    if (!this.modalEl) return;
+
+    if (!this.workspace_el) {
+      const owner_document = this.modalEl.ownerDocument || document;
+      this.workspace_el = owner_document.createElement('div');
+      this.workspace_el.className = 'st-template-context-modal__workspace';
+
+      this.context_pane_el = owner_document.createElement('div');
+      this.context_pane_el.className = 'st-template-context-modal__context-pane';
+
+      this.request_pane_el = owner_document.createElement('div');
+      this.request_pane_el.className = 'st-template-context-modal__request-pane';
+
+      this.workspace_el.appendChild(this.context_pane_el);
+      this.workspace_el.appendChild(this.request_pane_el);
+      this.modalEl.prepend(this.workspace_el);
+    }
+
+    const context_view_el = this.modalEl.querySelector('.sc-context-view');
+    if (context_view_el && context_view_el.parentElement !== this.context_pane_el) {
+      this.context_pane_el.replaceChildren(context_view_el);
+    }
+
+    if (
+      this.request_panel_el &&
+      this.request_pane_el &&
+      this.request_panel_el.parentElement !== this.request_pane_el
+    ) {
+      this.request_pane_el.replaceChildren(this.request_panel_el);
+    }
   }
 
   onClose() {
     this.request_panel_render_id += 1;
-    if (this.request_panel_el?.isConnected) {
-      this.request_panel_el.remove();
-    }
     this.request_panel_el = null;
+    this.request_pane_el?.replaceChildren?.();
+    this.workspace_el?.remove?.();
+    this.workspace_el = null;
+    this.context_pane_el = null;
+    this.request_pane_el = null;
+    this.modalEl?.classList?.remove?.('st-template-context-modal');
     super.onClose();
   }
 
+  /**
+   * Persist the selected template key and seed the textarea from template metadata when empty.
+   *
+   * @param {string | null} template_key
+   * @returns {void}
+   */
   set_selected_template_key(template_key) {
     this.request_state.selected_template_key =
       typeof template_key === 'string' && template_key.trim().length
@@ -150,8 +348,14 @@ export class TemplateContextModal extends ContextModal {
     this.refresh_request_panel();
   }
 
+  /**
+   * Update the current request mode when that mode is supported by the modal.
+   *
+   * @param {string} mode
+   * @returns {void}
+   */
   set_request_mode(mode) {
-    if (!SUPPORTED_REQUEST_MODES.has(mode)) return;
+    if (!this.supported_request_modes.has(mode)) return;
 
     this.request_state.mode = mode;
     this.params = {
@@ -162,6 +366,12 @@ export class TemplateContextModal extends ContextModal {
     this.refresh_request_panel();
   }
 
+  /**
+   * Update transient instructions for the current request.
+   *
+   * @param {string} user_message
+   * @returns {void}
+   */
   set_user_message(user_message) {
     this.request_state.user_message =
       typeof user_message === 'string'
@@ -175,6 +385,11 @@ export class TemplateContextModal extends ContextModal {
     };
   }
 
+  /**
+   * Resolve the currently selected SmartTemplate item.
+   *
+   * @returns {import('../items/smart_template.js').SmartTemplate | null}
+   */
   get_selected_template() {
     const template_key = this.request_state.selected_template_key;
     if (!template_key) return null;
@@ -182,6 +397,11 @@ export class TemplateContextModal extends ContextModal {
     return this.env?.smart_templates?.get?.(template_key) || null;
   }
 
+  /**
+   * Resolve the user message, falling back to template metadata when no explicit value exists.
+   *
+   * @returns {string}
+   */
   get_resolved_user_message() {
     const explicit_user_message = String(this.request_state.user_message || '').trim();
     if (explicit_user_message.length) {
@@ -191,36 +411,111 @@ export class TemplateContextModal extends ContextModal {
     return get_default_user_message(this.get_selected_template());
   }
 
+  /**
+   * Resolve the primary CTA label for the current modal implementation.
+   *
+   * @returns {string}
+   */
   get_primary_action_label() {
-    if (this.request_state.mode === 'generate') {
-      return 'Generate';
-    }
-
     return 'Copy prompt';
   }
 
+  /**
+   * Resolve the request-panel component key.
+   *
+   * Pro overrides this so the request panel does not depend on merged-key precedence.
+   *
+   * @returns {string}
+   */
+  get_request_panel_component_key() {
+    return 'template_request_panel';
+  }
+
+  /**
+   * Switch the suggestion list into template selection mode.
+   *
+   * @returns {void}
+   */
   open_template_suggest() {
     if (this.inputEl) {
       this.last_input_value = this.inputEl.value;
       this.inputEl.value = '';
     }
-
+    this.params = {
+      ...(this.params || {}),
+      default_suggest_action_keys: null,
+    };
     this.update_suggestions('context_suggest_templates');
   }
 
+  /**
+   * Restore the modal to its context-suggestion state.
+   *
+   * @returns {void}
+   */
+  restore_context_suggestions() {
+    const default_action_keys = this.default_suggest_action_keys;
+
+    if (this.inputEl) {
+      const next_value = typeof this.last_input_value === 'string'
+        ? this.last_input_value
+        : ''
+      ;
+      this.inputEl.value = next_value;
+      this.inputEl.focus?.();
+      const cursor_position = this.inputEl.value.length;
+      this.inputEl.setSelectionRange?.(cursor_position, cursor_position);
+    }
+
+    this.suggestions = null;
+    this.params = {
+      ...(this.params || {}),
+      default_suggest_action_keys: default_action_keys,
+    };
+    this.set_default_instructions();
+
+    if (default_action_keys.length === 1) {
+      this.update_suggestions(default_action_keys[0]);
+      return;
+    }
+
+    this.updateSuggestions();
+  }
+
+  /**
+   * Switch back into context suggestion mode.
+   *
+   * @returns {void}
+   */
+  open_context_suggest() {
+    this.restore_context_suggestions();
+  }
+
+  /**
+   * Clear the selected template from the transient request state.
+   *
+   * @returns {void}
+   */
   clear_selected_template() {
     this.set_selected_template_key(null);
   }
 
+  /**
+   * Run the primary request action for the current modal implementation.
+   *
+   * Core always copies the prompt.
+   *
+   * @returns {Promise<void>}
+   */
   async run_primary_action() {
-    if (this.request_state.mode === 'generate') {
-      await this.run_generate_action();
-      return;
-    }
-
     await this.run_copy_prompt_action();
   }
 
+  /**
+   * Copy the built template prompt to the clipboard.
+   *
+   * @returns {Promise<void>}
+   */
   async run_copy_prompt_action() {
     const template_item = this.get_selected_template();
     if (!template_item) {
@@ -234,65 +529,76 @@ export class TemplateContextModal extends ContextModal {
     });
   }
 
-  async run_generate_action() {
-    const template_item = this.get_selected_template();
-    if (!template_item) {
-      new Notice('Select a template first.');
-      return;
-    }
-
-    this.env?.events?.emit?.('template_generate:requested', {
-      collection_key: template_item.collection_key,
-      item_key: template_item.key,
-      context_key: this.smart_context?.key,
-      user_message: this.get_resolved_user_message(),
-      preferred_output_target: this.request_state.preferred_output_target,
-      mode: this.request_state.mode,
-    });
-
-    new Notice('Generate flow is not wired yet. Add Pro generate actions next.');
-  }
-
+  /**
+   * Handle request-panel action errors with a user-visible notice.
+   *
+   * @param {unknown} error
+   * @returns {void}
+   */
   handle_primary_action_error(error) {
     console.error('TemplateContextModal: primary action failed', error);
     new Notice('Template action failed. See console for details.');
   }
 
+  /**
+   * Refresh the panel without rerendering the full fuzzy modal.
+   *
+   * @returns {void}
+   */
   refresh_request_panel() {
     this.render_request_panel().catch((error) => {
       this.handle_request_panel_render_error(error);
     });
   }
 
+  /**
+   * Handle request-panel render errors with a user-visible notice.
+   *
+   * @param {unknown} error
+   * @returns {void}
+   */
   handle_request_panel_render_error(error) {
     console.error('TemplateContextModal: request panel render failed', error);
     new Notice('Template panel failed to render. See console for details.');
   }
 
+  /**
+   * Render the request panel into the workspace request pane.
+   *
+   * @returns {Promise<void>}
+   */
   async render_request_panel() {
     if (!this.modalEl) return;
 
+    this.ensure_workspace_layout();
+
     const render_id = ++this.request_panel_render_id;
-    const next_request_panel_el = await this.env.smart_components.render_component(
-      'template_request_panel',
-      this,
-    );
+    const component_key = this.get_request_panel_component_key();
 
-    if (render_id !== this.request_panel_render_id) {
-      return;
+    let next_request_panel_el = null;
+    try {
+      next_request_panel_el = await this.env.smart_components.render_component(
+        component_key,
+        this,
+      );
+    } catch (error) {
+      if (component_key !== 'template_request_panel') {
+        next_request_panel_el = await this.env.smart_components.render_component(
+          'template_request_panel',
+          this,
+        );
+      } else {
+        throw error;
+      }
     }
 
-    if (!next_request_panel_el) {
+    if (render_id !== this.request_panel_render_id || !next_request_panel_el) {
       return;
-    }
-
-    if (this.request_panel_el?.isConnected) {
-      this.request_panel_el.remove();
     }
 
     this.request_panel_el = next_request_panel_el;
-
-    this.modalEl.prepend(next_request_panel_el);
+    this.ensure_workspace_layout();
+    this.request_pane_el?.replaceChildren?.(next_request_panel_el);
   }
 }
 
