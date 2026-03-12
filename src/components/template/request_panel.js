@@ -21,10 +21,6 @@ export function build_html(modal) {
 
   return `<div class="${REQUEST_PANEL_CLASS}">
     <div class="st-template-request-panel__header">
-      <div class="st-template-request-panel__header-copy">
-        <div class="st-template-request-panel__title">Prompt builder</div>
-        <div class="st-template-request-panel__caption">Refine the request, then copy the assembled prompt.</div>
-      </div>
       <button
         type="button"
         data-template-action="open-context"

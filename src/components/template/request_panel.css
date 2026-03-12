@@ -47,13 +47,6 @@
   flex-wrap: wrap;
 }
 
-.st-template-request-panel__header-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
 .st-template-request-panel__title {
   font-weight: 600;
   line-height: 1.25;

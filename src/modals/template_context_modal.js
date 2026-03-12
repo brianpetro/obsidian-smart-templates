@@ -142,6 +142,7 @@ export class TemplateContextModal extends ContextModal {
     this.request_pane_el = null;
 
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys(params);
+
   }
 
   /**
