@@ -527,17 +527,6 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Resolve the request-panel component key.
-   *
-   * Pro overrides this so the request panel does not depend on merged-key precedence.
-   *
-   * @returns {string}
-   */
-  get_request_panel_component_key() {
-    return 'template_request_panel';
-  }
-
-  /**
    * Run the primary request action for the current modal implementation.
    *
    * Core always copies the prompt.
@@ -612,24 +601,12 @@ export class TemplateContextModal extends ContextModal {
     this.ensure_workspace_layout();
 
     const render_id = ++this.request_panel_render_id;
-    const component_key = this.get_request_panel_component_key();
+    const component_key = 'template_request_panel';
 
-    let next_request_panel_el = null;
-    try {
-      next_request_panel_el = await this.env.smart_components.render_component(
-        component_key,
-        this,
-      );
-    } catch (error) {
-      if (component_key !== 'template_request_panel') {
-        next_request_panel_el = await this.env.smart_components.render_component(
-          'template_request_panel',
-          this,
-        );
-      } else {
-        throw error;
-      }
-    }
+    const next_request_panel_el = await this.env.smart_components.render_component(
+      component_key,
+      this,
+    );
 
     if (render_id !== this.request_panel_render_id || !next_request_panel_el) {
       return;
