@@ -7,7 +7,7 @@
 
 # Smart Templates
 
-![[Templates-Context-Modal-2026-03-13.png]]
+![[Templates-Context-Pro-Modal-2026-03-13.png]]
 
 > [!QUESTION] Is this you?
 > You already have useful note structures in your vault: meeting notes, research outlines, recommendation tables, writing briefs, summaries, postmortems.
@@ -39,7 +39,7 @@
 4. Add more context if needed, choose one or more templates, and add optional instructions.
 5. Click `Copy prompt`, then paste it into ChatGPT, Claude, Gemini, or any other chat UI.
 
-<!-- Add annotated screenshot of the modal here -->
+<!-- TODO: Add annotated screenshot of the modal here -->
 
 ## Why Obsidian users get the epiphany fast
 
