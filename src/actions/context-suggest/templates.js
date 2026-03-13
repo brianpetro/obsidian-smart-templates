@@ -28,8 +28,7 @@ function set_template_suggest_instructions(modal) {
   if (!modal?.setInstructions) return;
 
   modal.setInstructions([
-    { command: 'Enter / ->', purpose: 'Select template' },
-    // TODO: primary action configurable in settings (core defaults to Copy Prompt)
+    { command: 'Enter / ->', purpose: 'Select or unselect template' },
     { command: `${MOD_CHAR} + Enter`, purpose: 'Select and run primary action' },
     { command: '<-', purpose: 'Back to context suggestions' },
   ]);
@@ -63,35 +62,84 @@ function is_template_selected(modal, template_key) {
 }
 
 /**
- * Apply the selected template to the modal.
+ * Replace the modal selection set.
+ *
+ * @param {object} modal
+ * @param {string[]} selected_template_keys
+ * @returns {void}
+ */
+function set_selected_template_keys(modal, selected_template_keys = []) {
+  if (!modal) return;
+
+  if (typeof modal.set_selected_template_keys === 'function') {
+    modal.set_selected_template_keys(selected_template_keys);
+    return;
+  }
+
+  const next_selected_template_keys = Array.isArray(selected_template_keys)
+    ? [...new Set(selected_template_keys.filter(Boolean))]
+    : []
+  ;
+
+  modal.selected_template_key = next_selected_template_keys[0] || null;
+  modal.params = {
+    ...(modal.params || {}),
+    selected_template_keys: next_selected_template_keys,
+  };
+
+  modal.render_request_panel?.();
+}
+
+/**
+ * Add the template when missing.
  *
  * @param {object} modal
  * @param {object} template_item
  * @returns {void}
  */
-function apply_selected_template(modal, template_item) {
+function ensure_selected_template(modal, template_item) {
   const template_key = template_item?.key || null;
   if (!modal || !template_key) return;
+  if (is_template_selected(modal, template_key)) return;
 
   if (typeof modal.add_selected_template_key === 'function') {
     modal.add_selected_template_key(template_key);
     return;
   }
 
-  if (typeof modal.set_selected_template_key === 'function') {
-    modal.set_selected_template_key(template_key);
+  const selected_template_keys = get_selected_template_keys_from_modal(modal);
+  set_selected_template_keys(modal, [...selected_template_keys, template_key]);
+}
+
+/**
+ * Toggle a template in the current selection.
+ *
+ * Re-selecting a template removes it from the curated selection while preserving
+ * the stable order of the remaining templates.
+ *
+ * @param {object} modal
+ * @param {object} template_item
+ * @returns {void}
+ */
+function toggle_selected_template(modal, template_item) {
+  const template_key = template_item?.key || null;
+  if (!modal || !template_key) return;
+
+  if (typeof modal.toggle_selected_template_key === 'function') {
+    modal.toggle_selected_template_key(template_key);
     return;
   }
 
-  modal.selected_template_key = template_key;
-  modal.params = {
-    ...(modal.params || {}),
-    selected_template_key: template_key,
-  };
-
-  if (typeof modal.render_request_panel === 'function') {
-    modal.render_request_panel();
+  const selected_template_keys = get_selected_template_keys_from_modal(modal);
+  if (selected_template_keys.includes(template_key)) {
+    set_selected_template_keys(
+      modal,
+      selected_template_keys.filter((selected_key) => selected_key !== template_key),
+    );
+    return;
   }
+
+  set_selected_template_keys(modal, [...selected_template_keys, template_key]);
 }
 
 /**
@@ -106,7 +154,7 @@ function restore_context_suggestions(modal) {
 }
 
 /**
- * Select the template, then rebuild the suggestions so selected state updates.
+ * Toggle the template, then rebuild the suggestions so selected state updates.
  *
  * @param {object} ctx
  * @param {object} modal
@@ -114,12 +162,15 @@ function restore_context_suggestions(modal) {
  * @returns {object[]}
  */
 function select_template_and_refresh(ctx, modal, template_item) {
-  apply_selected_template(modal, template_item);
+  toggle_selected_template(modal, template_item);
   return context_suggest_templates.call(ctx, { modal });
 }
 
 /**
- * Select the template and run the modal primary action.
+ * Ensure the template is selected and run the modal primary action.
+ *
+ * A template that is already selected remains selected so MOD+SELECT can be used
+ * to run against an already curated multi-template selection.
  *
  * @param {object} ctx
  * @param {object} modal
@@ -127,7 +178,7 @@ function select_template_and_refresh(ctx, modal, template_item) {
  * @returns {Promise<object[]>}
  */
 async function select_template_and_run(ctx, modal, template_item) {
-  apply_selected_template(modal, template_item);
+  ensure_selected_template(modal, template_item);
 
   if (typeof modal?.run_primary_action === 'function') {
     await modal.run_primary_action();

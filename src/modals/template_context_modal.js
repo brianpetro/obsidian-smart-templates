@@ -106,7 +106,7 @@ function get_available_context_suggest_action_keys(env) {
 
 export class TemplateContextModal extends ContextModal {
   static plugin_version = '2.0.0';
-  static version = 2.1;
+  static version = 2.0;
 
   static get modal_type() { return 'template_context'; }
   static get display_text() { return 'Template context'; }
@@ -401,6 +401,39 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
+   * Remove a selected template key while preserving the order of the remaining selection.
+   *
+   * @param {string | null} template_key
+   * @returns {void}
+   */
+  remove_selected_template_key(template_key) {
+    if (typeof template_key !== 'string' || !template_key.trim().length) return;
+
+    this.set_selected_template_keys(
+      this.request_state.selected_template_keys.filter((selected_key) => selected_key !== template_key),
+    );
+  }
+
+  /**
+   * Toggle a selected template key.
+   *
+   * Re-selecting a template removes it from the current curated set.
+   *
+   * @param {string | null} template_key
+   * @returns {void}
+   */
+  toggle_selected_template_key(template_key) {
+    if (typeof template_key !== 'string' || !template_key.trim().length) return;
+
+    if (this.request_state.selected_template_keys.includes(template_key)) {
+      this.remove_selected_template_key(template_key);
+      return;
+    }
+
+    this.add_selected_template_key(template_key);
+  }
+
+  /**
    * Compatibility alias for older single-template selection calls.
    *
    * @param {string | null} template_key
@@ -518,12 +551,21 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
+   * Resolve the primary action kind for the current modal implementation.
+   *
+   * @returns {'copy'}
+   */
+  get_primary_action_kind() {
+    return 'copy';
+  }
+
+  /**
    * Resolve the primary CTA label for the current modal implementation.
    *
    * @returns {string}
    */
   get_primary_action_label() {
-    return 'Copy prompt';
+    return this.get_primary_action_kind() === 'copy' ? 'Copy prompt' : 'Copy prompt';
   }
 
   /**
