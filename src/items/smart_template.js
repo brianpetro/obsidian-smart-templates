@@ -1,6 +1,4 @@
 import { CollectionItem } from 'smart-collections';
-import { extract_heading_from_string } from '../utils/extract_heading_from_string.js';
-import { remove_heading_block } from '../utils/remove_heading_block.js';
 import { clean_frontmatter } from '../utils/clean_frontmatter.js';
 import { parse_frontmatter } from 'smart-sources/utils/parse_frontmatter.js';
 
@@ -50,19 +48,7 @@ export class SmartTemplate extends CollectionItem {
 
     if (!content) return null;
 
-    const settings = this.env.smart_templates?.settings || {};
-
-    if (settings.template_heading && content.includes(settings.template_heading)) {
-      const contained_template = extract_heading_from_string(content, settings.template_heading);
-      content = contained_template ?? '';
-    }
-
-    if (settings.system_prompt_heading) {
-      content = remove_heading_block(content, settings.system_prompt_heading);
-    }
-
     content = clean_frontmatter(content, ['smart template', 'prompt']);
-
     return content.trim();
   }
 

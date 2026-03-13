@@ -28,10 +28,38 @@ function set_template_suggest_instructions(modal) {
   if (!modal?.setInstructions) return;
 
   modal.setInstructions([
-    { command: 'Enter / →', purpose: 'Select template' },
-    { command: `${MOD_CHAR} + Enter`, purpose: 'Select and run current mode' },
-    { command: '←', purpose: 'Back to context suggestions' },
+    { command: 'Enter / ->', purpose: 'Select template' },
+    // TODO: primary action configurable in settings (core defaults to Copy Prompt)
+    { command: `${MOD_CHAR} + Enter`, purpose: 'Select and run primary action' },
+    { command: '<-', purpose: 'Back to context suggestions' },
   ]);
+}
+
+/**
+ * Resolve selected template keys from the modal.
+ *
+ * @param {object} modal
+ * @returns {string[]}
+ */
+function get_selected_template_keys_from_modal(modal) {
+  if (typeof modal?.get_selected_template_keys === 'function') {
+    return modal.get_selected_template_keys();
+  }
+
+  const template_key = typeof modal?.selected_template_key === 'string'
+    ? modal.selected_template_key.trim()
+    : ''
+  ;
+  return template_key ? [template_key] : [];
+}
+
+/**
+ * @param {object} modal
+ * @param {string} template_key
+ * @returns {boolean}
+ */
+function is_template_selected(modal, template_key) {
+  return get_selected_template_keys_from_modal(modal).includes(template_key);
 }
 
 /**
@@ -44,6 +72,11 @@ function set_template_suggest_instructions(modal) {
 function apply_selected_template(modal, template_item) {
   const template_key = template_item?.key || null;
   if (!modal || !template_key) return;
+
+  if (typeof modal.add_selected_template_key === 'function') {
+    modal.add_selected_template_key(template_key);
+    return;
+  }
 
   if (typeof modal.set_selected_template_key === 'function') {
     modal.set_selected_template_key(template_key);
@@ -104,6 +137,23 @@ async function select_template_and_run(ctx, modal, template_item) {
 }
 
 /**
+ * Build display_right text with an optional selected marker.
+ *
+ * @param {object} modal
+ * @param {object} template_item
+ * @returns {string}
+ */
+function build_display_right(modal, template_item) {
+  const base_display_right = get_template_display_right(modal, template_item);
+  if (!is_template_selected(modal, template_item?.key)) {
+    return base_display_right;
+  }
+
+  const parts = [base_display_right, 'selected'].filter(Boolean);
+  return parts.join(' | ');
+}
+
+/**
  * Suggest available templates inside a SmartContext-bound fuzzy modal.
  *
  * @this {import('smart-contexts').SmartContext}
@@ -136,7 +186,7 @@ export function context_suggest_templates(params = {}) {
   return template_records.map(({ label, template_item }) => ({
     key: template_item.key,
     display: label,
-    display_right: get_template_display_right(modal, template_item),
+    display_right: build_display_right(modal, template_item),
     item: template_item,
     select_action: () => {
       return select_template_and_refresh(ctx, modal, template_item);

@@ -210,7 +210,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     const ctx = this.create_seed_context(params);
     const ModalClass = this.get_template_context_modal_class();
     return ModalClass.open(ctx, {
-      mode: 'copy_prompt',
       ...params,
     });
   }
@@ -225,7 +224,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     const ctx = this.create_seed_context(params);
     const ModalClass = this.get_create_from_template_modal_class();
     return ModalClass.open(ctx, {
-      mode: 'copy_prompt',
       ...params,
     });
   }

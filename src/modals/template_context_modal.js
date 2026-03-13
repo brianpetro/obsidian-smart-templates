@@ -1,9 +1,12 @@
 import { Notice } from 'obsidian';
 import { ContextModal } from 'obsidian-smart-env/src/modals/context_selector.js';
+import {
+  get_selected_template_items,
+  normalize_selected_template_keys,
+} from '../utils/selected_templates.js';
 
 const DEFAULT_REQUEST_STATE = Object.freeze({
-  mode: 'copy_prompt',
-  selected_template_key: null,
+  selected_template_keys: [],
   user_message: '',
   preferred_output_target: null,
 });
@@ -21,33 +24,22 @@ const TEMPLATE_SUGGEST_ACTION_KEY = 'context_suggest_templates';
  * Clone and normalize request state.
  *
  * @param {object} [request_state={}]
- * @param {Set<string>} [supported_request_modes]
  * @returns {{
- *   mode: string,
- *   selected_template_key: string | null,
+ *   selected_template_keys: string[],
  *   user_message: string,
  *   preferred_output_target: string | null
  * }}
  */
-function create_request_state(
-  request_state = {},
-  supported_request_modes = new Set([DEFAULT_REQUEST_STATE.mode]),
-) {
+function create_request_state(request_state = {}) {
   const next_request_state = {
     ...DEFAULT_REQUEST_STATE,
     ...(request_state || {}),
   };
 
-  if (!supported_request_modes.has(next_request_state.mode)) {
-    next_request_state.mode = DEFAULT_REQUEST_STATE.mode;
-  }
-
-  next_request_state.selected_template_key =
-    typeof next_request_state.selected_template_key === 'string' &&
-    next_request_state.selected_template_key.trim().length
-      ? next_request_state.selected_template_key
-      : null
-  ;
+  next_request_state.selected_template_keys = normalize_selected_template_keys(
+    next_request_state.selected_template_keys,
+    next_request_state.selected_template_key,
+  );
 
   next_request_state.user_message =
     typeof next_request_state.user_message === 'string'
@@ -114,7 +106,7 @@ function get_available_context_suggest_action_keys(env) {
 
 export class TemplateContextModal extends ContextModal {
   static plugin_version = '2.0.0';
-  static version = 2.0;
+  static version = 2.1;
 
   static get modal_type() { return 'template_context'; }
   static get display_text() { return 'Template context'; }
@@ -133,8 +125,8 @@ export class TemplateContextModal extends ContextModal {
     this.smart_context = smart_context;
     this.params = { ...params };
 
-    this.request_state = create_request_state(params, this.supported_request_modes);
-    this.selected_template_key = this.request_state.selected_template_key;
+    this.request_state = create_request_state(params);
+    this.selected_template_key = this.request_state.selected_template_keys[0] || null;
     this.request_panel_el = null;
     this.request_panel_render_id = 0;
     this.workspace_el = null;
@@ -144,17 +136,6 @@ export class TemplateContextModal extends ContextModal {
 
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys(params);
     this.sync_default_user_message();
-  }
-
-  /**
-   * Request modes supported by the current modal implementation.
-   *
-   * Pro overrides this getter to opt into generate mode.
-   *
-   * @returns {Set<string>}
-   */
-  get supported_request_modes() {
-    return new Set([DEFAULT_REQUEST_STATE.mode]);
   }
 
   /**
@@ -231,13 +212,24 @@ export class TemplateContextModal extends ContextModal {
    * Keep request_state.user_message aligned with the selected template prompt
    * until the user edits the textarea explicitly.
    *
+   * Auto-seeding only applies when exactly one template is selected.
+   *
    * @returns {void}
    */
   sync_default_user_message() {
     if (this.user_message_touched) return;
 
-    const template_item = this.get_selected_template();
-    this.request_state.user_message = get_default_user_message(template_item);
+    const selected_templates = this.get_selected_templates();
+    if (selected_templates.length !== 1) {
+      this.request_state.user_message = '';
+      this.params = {
+        ...(this.params || {}),
+        user_message: this.request_state.user_message,
+      };
+      return;
+    }
+
+    this.request_state.user_message = get_default_user_message(selected_templates[0]);
     this.params = {
       ...(this.params || {}),
       user_message: this.request_state.user_message,
@@ -245,27 +237,26 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Update request state from params while respecting current modal capabilities.
+   * Update request state from params.
    *
    * @param {object} [params={}]
    * @returns {void}
    */
   sync_request_state_from_params(params = {}) {
-    this.request_state = create_request_state(
-      {
-        ...this.request_state,
-        ...(params || {}),
-      },
-      this.supported_request_modes,
-    );
+    this.request_state = create_request_state({
+      ...this.request_state,
+      ...(params || {}),
+    });
+
     if (Object.prototype.hasOwnProperty.call(params, 'user_message')) {
       this.user_message_touched = true;
     }
+
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys({
       ...(this.params || {}),
       ...(params || {}),
     });
-    this.selected_template_key = this.request_state.selected_template_key;
+    this.selected_template_key = this.request_state.selected_template_keys[0] || null;
     this.sync_default_user_message();
   }
 
@@ -340,112 +331,83 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Persist the selected template key and seed the textarea from template metadata when untouched.
+   * Return currently selected template keys.
+   *
+   * @returns {string[]}
+   */
+  get_selected_template_keys() {
+    return [...(this.request_state.selected_template_keys || [])];
+  }
+
+  /**
+   * Resolve selected SmartTemplate items.
+   *
+   * @returns {Array<import('../items/smart_template.js').SmartTemplate>}
+   */
+  get_selected_templates() {
+    return get_selected_template_items(
+      this.env,
+      {
+        selected_template_keys: this.request_state.selected_template_keys,
+      },
+      null,
+    );
+  }
+
+  /**
+   * Resolve the first selected SmartTemplate item.
+   *
+   * Compatibility helper for older single-template call sites.
+   *
+   * @returns {import('../items/smart_template.js').SmartTemplate | null}
+   */
+  get_selected_template() {
+    return this.get_selected_templates()[0] || null;
+  }
+
+  /**
+   * Replace the selected template keys.
+   *
+   * @param {string[]} template_keys
+   * @returns {void}
+   */
+  set_selected_template_keys(template_keys = []) {
+    this.request_state.selected_template_keys = normalize_selected_template_keys(template_keys);
+    this.selected_template_key = this.request_state.selected_template_keys[0] || null;
+
+    this.sync_default_user_message();
+    this.params = {
+      ...(this.params || {}),
+      selected_template_keys: this.request_state.selected_template_keys,
+      user_message: this.request_state.user_message,
+    };
+
+    this.refresh_request_panel();
+  }
+
+  /**
+   * Add a selected template key while preserving selection order.
+   *
+   * @param {string | null} template_key
+   * @returns {void}
+   */
+  add_selected_template_key(template_key) {
+    if (typeof template_key !== 'string' || !template_key.trim().length) return;
+
+    this.set_selected_template_keys([
+      ...this.request_state.selected_template_keys,
+      template_key,
+    ]);
+  }
+
+  /**
+   * Compatibility alias for older single-template selection calls.
    *
    * @param {string | null} template_key
    * @returns {void}
    */
   set_selected_template_key(template_key) {
-    this.request_state.selected_template_key =
-      typeof template_key === 'string' && template_key.trim().length
-        ? template_key
-        : null
-    ;
-
-    this.selected_template_key = this.request_state.selected_template_key;
-    this.sync_default_user_message();
-
-    this.params = {
-      ...(this.params || {}),
-      selected_template_key: this.request_state.selected_template_key,
-      user_message: this.request_state.user_message,
-    };
-
-    this.refresh_request_panel();
-  }
-
-  /**
-   * Update the current request mode when that mode is supported by the modal.
-   *
-   * @param {string} mode
-   * @returns {void}
-   */
-  set_request_mode(mode) {
-    if (!this.supported_request_modes.has(mode)) return;
-
-    this.request_state.mode = mode;
-    this.params = {
-      ...(this.params || {}),
-      mode,
-    };
-
-    this.refresh_request_panel();
-  }
-
-  /**
-   * Update transient instructions for the current request.
-   *
-   * @param {string} user_message
-   * @returns {void}
-   */
-  set_user_message(user_message) {
-    this.user_message_touched = true;
-    this.request_state.user_message =
-      typeof user_message === 'string'
-        ? user_message
-        : ''
-    ;
-
-    this.params = {
-      ...(this.params || {}),
-      user_message: this.request_state.user_message,
-    };
-  }
-
-  /**
-   * Resolve the currently selected SmartTemplate item.
-   *
-   * @returns {import('../items/smart_template.js').SmartTemplate | null}
-   */
-  get_selected_template() {
-    const template_key = this.request_state.selected_template_key;
-    if (!template_key) return null;
-
-    return this.env?.smart_templates?.get?.(template_key) || null;
-  }
-
-  /**
-   * Resolve the user message, falling back to template metadata when no explicit value exists.
-   *
-   * @returns {string}
-   */
-  get_resolved_user_message() {
-    const explicit_user_message = String(this.request_state.user_message || '').trim();
-    if (explicit_user_message.length) {
-      return explicit_user_message;
-    }
-
-    return get_default_user_message(this.get_selected_template());
-  }
-
-  /**
-   * Resolve the primary CTA label for the current modal implementation.
-   *
-   * @returns {string}
-   */
-  get_primary_action_label() {
-    return 'Copy prompt';
-  }
-
-  /**
-   * Resolve the request-panel component key.
-   *
-   * Pro overrides this so the request panel does not depend on merged-key precedence.
-   *
-   * @returns {string}
-   */
-  get_request_panel_component_key() {
-    return 'template_request_panel';
+    this.add_selected_template_key(template_key);
   }
 
   /**
@@ -509,12 +471,70 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Clear the selected template from the transient request state.
+   * Clear all selected templates from the transient request state.
    *
    * @returns {void}
    */
   clear_selected_template() {
-    this.set_selected_template_key(null);
+    this.set_selected_template_keys([]);
+  }
+
+  /**
+   * Update transient instructions for the current request.
+   *
+   * @param {string} user_message
+   * @returns {void}
+   */
+  set_user_message(user_message) {
+    this.user_message_touched = true;
+    this.request_state.user_message =
+      typeof user_message === 'string'
+        ? user_message
+        : ''
+    ;
+
+    this.params = {
+      ...(this.params || {}),
+      user_message: this.request_state.user_message,
+    };
+  }
+
+  /**
+   * Resolve the user message, falling back to template metadata when no explicit value exists.
+   *
+   * Auto-seeding only applies when exactly one template is selected.
+   *
+   * @returns {string}
+   */
+  get_resolved_user_message() {
+    const explicit_user_message = String(this.request_state.user_message || '').trim();
+    if (explicit_user_message.length) {
+      return explicit_user_message;
+    }
+
+    const selected_templates = this.get_selected_templates();
+    if (selected_templates.length !== 1) return '';
+    return get_default_user_message(selected_templates[0]);
+  }
+
+  /**
+   * Resolve the primary CTA label for the current modal implementation.
+   *
+   * @returns {string}
+   */
+  get_primary_action_label() {
+    return 'Copy prompt';
+  }
+
+  /**
+   * Resolve the request-panel component key.
+   *
+   * Pro overrides this so the request panel does not depend on merged-key precedence.
+   *
+   * @returns {string}
+   */
+  get_request_panel_component_key() {
+    return 'template_request_panel';
   }
 
   /**
@@ -534,15 +554,17 @@ export class TemplateContextModal extends ContextModal {
    * @returns {Promise<void>}
    */
   async run_copy_prompt_action() {
+    const selected_template_keys = this.get_selected_template_keys();
     const template_item = this.get_selected_template();
     if (!template_item) {
-      new Notice('Select a template first.');
+      new Notice('Select one or more templates first.');
       return;
     }
 
     await template_item.actions.template_copy_with_context({
       ctx: this.smart_context,
       user_message: this.get_resolved_user_message(),
+      selected_template_keys,
     });
   }
 

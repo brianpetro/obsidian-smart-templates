@@ -1,4 +1,8 @@
 import styles from './request_panel.css';
+import {
+  format_selected_templates_label,
+  format_selected_templates_meta,
+} from '../../utils/selected_templates.js';
 
 const REQUEST_PANEL_CLASS = 'st-template-request-panel';
 
@@ -7,16 +11,10 @@ const REQUEST_PANEL_CLASS = 'st-template-request-panel';
  * @returns {string}
  */
 export function build_html(modal) {
-  const selected_template = modal.get_selected_template?.() || null;
-  const has_template = Boolean(selected_template);
-  const selected_template_label = has_template
-    ? selected_template.key
-    : 'No template selected'
-  ;
-  const selected_template_meta = has_template
-    ? (selected_template?.data?.built_in ? 'Built-in template' : 'Vault template')
-    : 'Choose a built-in or vault template'
-  ;
+  const selected_templates = modal.get_selected_templates?.() || [];
+  const has_templates = selected_templates.length > 0;
+  const selected_template_label = format_selected_templates_label(selected_templates);
+  const selected_template_meta = format_selected_templates_meta(selected_templates);
   const user_message = typeof modal.request_state?.user_message === 'string'
     ? modal.request_state.user_message
     : ''
@@ -24,16 +22,6 @@ export function build_html(modal) {
   const primary_label = modal.get_primary_action_label?.() || 'Copy prompt';
 
   return `<div class="${REQUEST_PANEL_CLASS}">
-    <div class="st-template-request-panel__header">
-      <div class="st-template-request-panel__header-actions">
-        <button
-          type="button"
-          class="st-template-request-panel__action-btn"
-          data-template-action="open-context"
-        >Add context</button>
-      </div>
-    </div>
-
     <div class="st-template-request-panel__row">
       <div class="st-template-request-panel__label">Template</div>
       <div class="st-template-request-panel__template">
@@ -46,12 +34,12 @@ export function build_html(modal) {
             type="button"
             class="st-template-request-panel__action-btn"
             data-template-action="select-template"
-          >${has_template ? 'Change' : 'Select'}</button>
+          >${has_templates ? 'Change' : 'Select'}</button>
           <button
             type="button"
             class="st-template-request-panel__action-btn"
             data-template-action="clear-template"
-            ${has_template ? '' : 'disabled'}
+            ${has_templates ? '' : 'disabled'}
           >Clear</button>
         </div>
       </div>
@@ -67,12 +55,22 @@ export function build_html(modal) {
     </div>
 
     <div class="st-template-request-panel__actions">
-      <button
-        type="button"
-        class="st-template-request-panel__action-btn mod-cta is-active"
-        data-template-action="run-primary"
-        ${has_template ? '' : 'disabled'}
-      >${escape_html(primary_label)}</button>
+      <div class="st-template-request-panel__actions-left">
+        <button
+          type="button"
+          class="st-template-request-panel__action-btn"
+          data-template-action="open-context"
+        >Add context</button>
+      </div>
+
+      <div class="st-template-request-panel__actions-right">
+        <button
+          type="button"
+          class="st-template-request-panel__action-btn mod-cta is-active"
+          data-template-action="run-primary"
+          ${has_templates ? '' : 'disabled'}
+        >${escape_html(primary_label)}</button>
+      </div>
     </div>
   </div>`;
 }
