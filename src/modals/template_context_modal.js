@@ -140,9 +140,10 @@ export class TemplateContextModal extends ContextModal {
     this.workspace_el = null;
     this.context_pane_el = null;
     this.request_pane_el = null;
+    this.user_message_touched = Object.prototype.hasOwnProperty.call(params, 'user_message');
 
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys(params);
-
+    this.sync_default_user_message();
   }
 
   /**
@@ -217,13 +218,30 @@ export class TemplateContextModal extends ContextModal {
     const default_action_keys = this.default_suggest_action_keys;
     if (Array.isArray(default_action_keys) && default_action_keys.length > 1) {
       this.setInstructions([
-        { command: 'Enter / →', purpose: 'Browse context suggestions' },
+        { command: 'Enter / ->', purpose: 'Browse context suggestions' },
         { command: 'Esc', purpose: 'Close' },
       ], false);
       return;
     }
 
     super.set_default_instructions();
+  }
+
+  /**
+   * Keep request_state.user_message aligned with the selected template prompt
+   * until the user edits the textarea explicitly.
+   *
+   * @returns {void}
+   */
+  sync_default_user_message() {
+    if (this.user_message_touched) return;
+
+    const template_item = this.get_selected_template();
+    this.request_state.user_message = get_default_user_message(template_item);
+    this.params = {
+      ...(this.params || {}),
+      user_message: this.request_state.user_message,
+    };
   }
 
   /**
@@ -240,11 +258,15 @@ export class TemplateContextModal extends ContextModal {
       },
       this.supported_request_modes,
     );
+    if (Object.prototype.hasOwnProperty.call(params, 'user_message')) {
+      this.user_message_touched = true;
+    }
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys({
       ...(this.params || {}),
       ...(params || {}),
     });
     this.selected_template_key = this.request_state.selected_template_key;
+    this.sync_default_user_message();
   }
 
   /**
@@ -260,7 +282,7 @@ export class TemplateContextModal extends ContextModal {
     this.modalEl?.classList?.add('st-template-context-modal');
     if (this.modalEl?.style) {
       this.modalEl.style.height = 'auto';
-      this.modalEl.style.maxHeight = '92vh';
+      this.modalEl.style.maxHeight = '94vh';
     }
 
     this.ensure_workspace_layout();
@@ -318,7 +340,7 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Persist the selected template key and seed the textarea from template metadata when empty.
+   * Persist the selected template key and seed the textarea from template metadata when untouched.
    *
    * @param {string | null} template_key
    * @returns {void}
@@ -331,14 +353,7 @@ export class TemplateContextModal extends ContextModal {
     ;
 
     this.selected_template_key = this.request_state.selected_template_key;
-
-    if (!this.request_state.user_message) {
-      const template_item = this.get_selected_template();
-      const default_user_message = get_default_user_message(template_item);
-      if (default_user_message) {
-        this.request_state.user_message = default_user_message;
-      }
-    }
+    this.sync_default_user_message();
 
     this.params = {
       ...(this.params || {}),
@@ -374,6 +389,7 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   set_user_message(user_message) {
+    this.user_message_touched = true;
     this.request_state.user_message =
       typeof user_message === 'string'
         ? user_message

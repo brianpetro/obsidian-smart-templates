@@ -13,36 +13,55 @@ export function build_html(modal) {
     ? selected_template.key
     : 'No template selected'
   ;
-  const user_message = modal.request_state?.user_message
-    || modal.get_selected_template?.()?.metadata?.prompt
-    || ''
+  const selected_template_meta = has_template
+    ? (selected_template?.data?.built_in ? 'Built-in template' : 'Vault template')
+    : 'Choose a built-in or vault template'
+  ;
+  const user_message = typeof modal.request_state?.user_message === 'string'
+    ? modal.request_state.user_message
+    : ''
   ;
   const primary_label = modal.get_primary_action_label?.() || 'Copy prompt';
 
   return `<div class="${REQUEST_PANEL_CLASS}">
     <div class="st-template-request-panel__header">
-      <button
-        type="button"
-        data-template-action="open-context"
-      >Add context</button>
+      <div class="st-template-request-panel__header-actions">
+        <button
+          type="button"
+          class="st-template-request-panel__action-btn"
+          data-template-action="open-context"
+        >Add context</button>
+      </div>
     </div>
 
     <div class="st-template-request-panel__row">
       <div class="st-template-request-panel__label">Template</div>
       <div class="st-template-request-panel__template">
-        <span class="st-template-request-panel__template-name">${escape_html(selected_template_label)}</span>
+        <div class="st-template-request-panel__template-copy">
+          <span class="st-template-request-panel__template-name">${escape_html(selected_template_label)}</span>
+          <span class="st-template-request-panel__template-meta">${escape_html(selected_template_meta)}</span>
+        </div>
         <div class="st-template-request-panel__template-actions">
-          <button type="button" data-template-action="select-template">${has_template ? 'Change' : 'Select'}</button>
-          <button type="button" data-template-action="clear-template" ${has_template ? '' : 'disabled'}>Clear</button>
+          <button
+            type="button"
+            class="st-template-request-panel__action-btn"
+            data-template-action="select-template"
+          >${has_template ? 'Change' : 'Select'}</button>
+          <button
+            type="button"
+            class="st-template-request-panel__action-btn"
+            data-template-action="clear-template"
+            ${has_template ? '' : 'disabled'}
+          >Clear</button>
         </div>
       </div>
     </div>
 
-    <div class="st-template-request-panel__row">
+    <div class="st-template-request-panel__row st-template-request-panel__row--fill">
       <div class="st-template-request-panel__label">Instructions</div>
       <textarea
         class="st-template-request-panel__textarea"
-        rows="7"
+        rows="10"
         placeholder="Optional instructions"
       >${escape_html(user_message)}</textarea>
     </div>
@@ -50,7 +69,7 @@ export function build_html(modal) {
     <div class="st-template-request-panel__actions">
       <button
         type="button"
-        class="mod-cta"
+        class="st-template-request-panel__action-btn mod-cta is-active"
         data-template-action="run-primary"
         ${has_template ? '' : 'disabled'}
       >${escape_html(primary_label)}</button>
