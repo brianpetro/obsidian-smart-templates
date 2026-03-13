@@ -240,7 +240,7 @@ function get_modal_class(scope, modal_key) {
 }
 
 export class SmartTemplates extends Collection {
-  static version = 3;
+  static version = 2.0;
 
   get default_settings() {
     return {
