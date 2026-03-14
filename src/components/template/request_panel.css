@@ -5,6 +5,10 @@
   max-height: min(900px, 94vh);
 }
 
+.st-template-context-modal > .prompt-results {
+  max-height: 40vh;
+}
+
 .st-template-context-modal__workspace {
   display: flex;
   align-items: stretch;
