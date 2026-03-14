@@ -15,7 +15,7 @@
 
 # Smart Templates `v2`
 
-![Templates-Context-Pro-Modal-2026-03-13.png](assets/Templates-Context-Pro-Modal-2026-03-13.png)
+![Templates-Context-Pro-Modal-2026-03-13.png](/assets/Templates-Context-Pro-Modal-2026-03-13.png)
 
 > [!QUESTION] Is this you?
 > You already have useful structures in your vault: meeting notes, research outlines, recommendation tables, writing briefs, summaries, postmortems.
