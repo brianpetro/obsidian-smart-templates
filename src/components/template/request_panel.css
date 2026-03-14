@@ -38,19 +38,10 @@
 .st-template-request-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
   height: 100%;
   min-height: 0;
-  padding: 18px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      var(--background-secondary),
-      var(--background-primary)
-    );
-  box-shadow: var(--shadow-s);
+  padding: 3px;
   overflow: hidden;
 }
 
@@ -220,7 +211,7 @@
 
 @media (max-width: 720px) {
   .st-template-request-panel {
-    padding: 14px;
+    padding: 6px;
     border-radius: 16px;
   }
 
