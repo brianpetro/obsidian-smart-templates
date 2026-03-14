@@ -1,88 +1,76 @@
-**Turn your existing Markdown templates into reusable AI workflows.**
+**Turn your existing Markdown templates into reusable AI workflows.** **Smart Templates pairs your vault context with the structures you already trust** so you can copy better prompts in one guided flow.
 
-> Build better prompts from the notes you already trust.
+> Build your prompt workflow with Obsidian.
 
 > [!NOTE] Why Smart Templates?
-> Every AI prompt is a mini project: gather the right notes, explain the task, paste the structure, and remind the model how to answer. Smart Templates turns that repeated setup into one guided flow inside Obsidian.
+> Every AI prompt is a mini project: gather the right notes, explain the task, paste the structure, and remind the model how to answer. Smart Templates turns that repeated setup into one command path inside Obsidian.
 
-# Smart Templates
+✔️ Works with your existing templates
 
-![[Templates-Context-Pro-Modal-2026-03-13.png]]
+🔐 Local-first and privacy-preserving by default
+
+🤖 Compatible with any AI chat workflow
+
+⚔️ Mission-driven, community-supported
+
+# Smart Templates `v2`
+
+![Templates-Context-Pro-Modal-2026-03-13.png](assets/Templates-Context-Pro-Modal-2026-03-13.png)
 
 > [!QUESTION] Is this you?
-> You already have useful note structures in your vault: meeting notes, research outlines, recommendation tables, writing briefs, summaries, postmortems.
-> But when you use ChatGPT, Claude, or Gemini, you still rebuild the same prompt by hand.
+> You already have useful structures in your vault: meeting notes, research outlines, recommendation tables, writing briefs, summaries, postmortems.
+> But when you use AI, you still rebuild the same prompt by hand.
+
+> [!WARNING] The Problem
+> Good outputs need both context and structure. Most AI workflows make you gather the notes, restate the instructions, and paste the format every single time.
 
 > [!NOTE] What Smart Templates does
-> Smart Templates helps you select context, apply one or more templates, and copy a ready-to-run prompt for any AI chat.
+> Smart Templates helps you start from your current note or selection, refine the context, choose one or more templates, and copy a ready-to-run prompt for any AI chat.
 > Core focuses on prompt building and clipboard workflows. Pro adds in-Obsidian generation.
 
-- Works with templates you already keep in your vault
-- Starts from your current note or editor selection
-- Lets you refine context before you copy
-- Supports one or more templates in the same request
-- Copies a ready-to-run prompt for any AI chat
-- Local-first and privacy-preserving by default
-- No API setup required in Core
-
 > [!SUCCESS] What success looks like
-> You stop rebuilding prompts from scratch. Your best structures become reusable workflows. AI outputs follow the shape you want because the template and context travel together.
+> You stop rebuilding prompts from scratch. Your best note structures become reusable AI workflows. The template and the context travel together, so outputs are more consistent and easier to trust.
 
-> [!FAILURE] The cost of doing nothing
-> Keep hand-assembling the same prompt scaffolding over and over. Lose flow. Get outputs that drift from your format. Let your best templates stay trapped inside notes instead of becoming reusable AI workflows.
+> [!FAILURE] The Cost of Doing Nothing
+> Keep hand-assembling the same prompt scaffolding over and over. Lose flow. Get outputs that drift from your format. Let your best templates stay trapped inside notes instead of becoming reusable workflows.
 
-## Quick start
+## Quick start flows
+
+1. **Copy a prompt from the current note** - Open Smart Templates and use the active note as context.
+2. **Start from a selection** - Highlight text first to use only the section you care about.
+3. **Reuse the templates you already trust** - Choose one or more templates and copy the final prompt into any AI chat.
+
+## Getting started
 
 1. Install and enable Smart Templates from Community plugins.
-2. Open `Smart Templates: Open template context` from the command palette or ribbon.
-3. Your current note or editor selection becomes the starting context.
-4. Add more context if needed, choose one or more templates, and add optional instructions.
-5. Click `Copy prompt`, then paste it into ChatGPT, Claude, Gemini, or any other chat UI.
+2. Run **Smart Templates: Open template context** from the command palette, or click the ribbon icon.
+3. Your current note becomes the starting context. If you had text selected, the selection is used instead.
+4. Add more context if needed.
+5. Choose one or more templates.
+6. Add optional instructions, then click **Copy prompt**.
+7. Paste the result into ChatGPT, Claude, Gemini, or any other chat interface.
 
-<!-- TODO: Add annotated screenshot of the modal here -->
-
-## Why Obsidian users get the epiphany fast
-
-Your templates already define what good output looks like.
-
-Smart Templates does not ask you to replace them with another system.
-It turns them into reusable AI workflows.
-
-That is the whole pitch:
-**Structure once in your vault. Reuse everywhere.**
-
-## What you can use it for
-
-- Turn a meeting template into a meeting summary prompt
-- Turn a research outline into a synthesis prompt
-- Turn a writing brief into a draft prompt
-- Turn your house note format into a rewrite prompt
-- Turn specific headings into reusable block-level templates
-- Merge multiple templates when one output needs more than one constraint
+<!-- Add annotated screenshot of the shared modal -->
 
 ## Works with your existing templates
 
-Smart Templates can discover templates from the patterns you already use in your vault.
-
-<details><summary><span style="cursor: pointer;">How template discovery works</span></summary>
+Smart Templates does not ask you to replace the template system you already like.
+It helps you reuse those templates with AI.
 
 Templates can be discovered from:
 
-- Configured template folders
-- The Obsidian Templates folder as a fallback
-- Notes flagged with `smart template: true`
-- A configured template filename
-- Matching block headings
+- configured template folders
+- the Obsidian Templates folder as a fallback
+- notes flagged with `smart template: true`
+- a configured template filename
+- matching block headings
 
-Built-in defaults remain available even if you do not have any vault-backed templates yet.
+Built-in defaults are also available:
 
-Current built-in defaults:
 - Add tags
 - Create summary
 - Research paper
 - Diagram
-
-</details>
 
 ## Context first, not template first
 
@@ -92,23 +80,32 @@ Smart Templates starts with the work in front of you.
 Open it from the note you are writing, or from a selection inside that note.
 Then refine the context, choose the template, and copy the final prompt.
 
-That keeps the workflow grounded in what you are actually trying to do.
+## Multiple templates when one structure is not enough
+
+Some jobs need more than one constraint.
+Smart Templates can merge multiple templates in the order you select them, so one output can follow several reusable structures at once.
+
+## Key commands
+
+- **Smart Templates: Open template context** - open the shared context-first workflow
 
 ## Core and Pro
 
 **Core**
+
 - Discover templates in your vault
-- Build a prompt from context + template
-- Copy the final prompt to clipboard
-- Use it with any external AI chat
+- Build prompts from context plus templates
+- Copy prompts to the clipboard
+- Use them with any external AI chat
 
 **Pro**
+
 - Generate inside Obsidian
 - Review streamed output
 - Copy, insert, or create a note
-- Choose a generate model inside Smart Templates settings
+- Choose the generate model in Smart Templates settings
 
-## Private by design
+## Private by Design
 
 Core uses a clipboard-first workflow.
 Your notes stay local unless you choose to paste the copied prompt into an external AI tool.
@@ -122,23 +119,23 @@ Smart Templates is part of the Smart Plugins ecosystem: local-first, user-aligne
 
 ## FAQ
 
-<details><summary><span style="cursor: pointer;">Do I need an API key?</span></summary>
+<details><summary><span style="--font-weight: var(--h3-weight); font-variant: var(--h3-variant); letter-spacing: var(--h3-letter-spacing); line-height: var(--h3-line-height); font-size: var(--h3-size); color: var(--h3-color); font-weight: var(--font-weight); font-style: var(--h3-style); font-family: var(--h3-font); cursor: pointer;">Do I need an API key?</span></summary>
 No for Core. Core builds and copies prompts so you can use any chat interface you already prefer. Pro adds in-Obsidian generation.
-</details>
+</details><br>
 
-<details><summary><span style="cursor: pointer;">Does this replace Obsidian Templates or Templater?</span></summary>
-No. Smart Templates is best understood as a bridge between your vault templates and AI workflows. Keep the Markdown templates you already like. Smart Templates helps package them with context.
-</details>
+<details><summary><span style="--font-weight: var(--h3-weight); font-variant: var(--h3-variant); letter-spacing: var(--h3-letter-spacing); line-height: var(--h3-line-height); font-size: var(--h3-size); color: var(--h3-color); font-weight: var(--font-weight); font-style: var(--h3-style); font-family: var(--h3-font); cursor: pointer;">Does this replace Obsidian Templates?</span></summary>
+No. Obsidian Templates inserts predefined content into notes. Smart Templates helps package your templates with note context so you can use them as AI workflows.
+</details><br>
 
-<details><summary><span style="cursor: pointer;">Can I generate inside Obsidian?</span></summary>
+<details><summary><span style="--font-weight: var(--h3-weight); font-variant: var(--h3-variant); letter-spacing: var(--h3-letter-spacing); line-height: var(--h3-line-height); font-size: var(--h3-size); color: var(--h3-color); font-weight: var(--font-weight); font-style: var(--h3-style); font-family: var(--h3-font); cursor: pointer;">Can I generate inside Obsidian?</span></summary>
 Yes, in Pro. Core is intentionally focused on prompt building and prompt copy.
-</details>
+</details><br>
 
 ## More Smart Plugins
 
-- Smart Context: gather the right notes fast
-- Smart Connections: find related notes
-- Smart Chat: keep AI conversations in notes
+Quickly gather the right notes with **Smart Context**.
+Find relevant notes with **Smart Connections**.
+Manage AI conversations in notes with **Smart Chat**.
 
 ## License
 
