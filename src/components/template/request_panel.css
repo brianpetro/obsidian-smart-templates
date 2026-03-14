@@ -1,8 +1,8 @@
 /* Shared TemplateContextModal request panel */
 
 .st-template-context-modal {
-  width: min(1320px, 96vw);
-  max-height: min(900px, 94vh);
+  width: min(1320px, calc(100vw - var(--size-4-5, 24px)));
+  max-height: min(900px, calc(100vh - var(--size-4-6, 32px)));
 }
 
 .st-template-context-modal > .prompt-results {
@@ -12,7 +12,7 @@
 .st-template-context-modal__workspace {
   display: flex;
   align-items: stretch;
-  gap: 9px;
+  gap: var(--size-4-2, 8px);
   min-height: 0;
   max-height: 40vh;
 }
@@ -42,10 +42,10 @@
 .st-template-request-panel {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--size-4-2, 8px);
   height: 100%;
   min-height: 0;
-  padding: 3px;
+  padding: var(--size-4-2, 8px);
   overflow: hidden;
 }
 
@@ -55,14 +55,14 @@
 .st-template-request-panel__actions-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--size-4-2, 8px);
   flex-wrap: wrap;
 }
 
 .st-template-request-panel__row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--size-4-2, 8px);
   min-height: 0;
 }
 
@@ -75,12 +75,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--size-4-3, 12px);
   flex-wrap: wrap;
   min-width: 0;
-  padding: 12px 14px;
+  padding: var(--size-4-3, 12px) var(--size-4-4, 16px);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 14px;
+  border-radius: var(--radius-l, 16px);
   background: var(--background-primary);
   box-shadow: var(--shadow-s);
 }
@@ -89,13 +89,14 @@
   display: flex;
   flex: 1 1 220px;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--size-2-1, 4px);
   min-width: 0;
 }
 
 .st-template-request-panel__template-name {
   min-width: 0;
   font-weight: 600;
+  color: var(--text-normal);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -113,16 +114,20 @@
   max-height: 180px;
   flex: 1 1 auto;
   resize: vertical;
-  padding: 12px 14px;
-  border-radius: 14px;
+  padding: var(--size-4-3, 12px) var(--size-4-4, 16px);
+  border-radius: var(--radius-l, 16px);
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   box-shadow: var(--shadow-s);
+  color: var(--text-normal);
+  font-family: var(--font-text);
+  font-size: var(--font-text-size);
+  line-height: 1.55;
 }
 
 .st-template-request-panel__action-btn {
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: var(--size-2-2, 6px) var(--size-4-3, 12px);
 }
 
 .st-template-request-panel__action-btn.is-active {
@@ -133,7 +138,7 @@
 .st-template-request-panel__actions {
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 2px;
+  padding-top: var(--size-2-1, 4px);
 }
 
 .st-template-request-panel__actions-left {
@@ -160,17 +165,13 @@
   width: 100%;
   min-height: 0;
   max-height: 100%;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 18px;
-  background: var(--background-primary);
   overflow: hidden;
-  box-shadow: var(--shadow-s);
 }
 
 .modal-container .st-template-context-modal .sc-context-view-header,
 .modal-container .st-template-context-modal .sc-context-view-body,
 .modal-container .st-template-context-modal .sc-context-view-footer {
-  padding: 14px;
+  padding: var(--size-4-4, 16px);
 }
 
 .modal-container .st-template-context-modal .sc-context-view-body {
@@ -189,7 +190,7 @@
 }
 
 .modal-container .st-template-context-modal .sc-context-actions-right {
-  gap: 8px;
+  gap: var(--size-4-2, 8px);
 }
 
 @media (max-width: 980px) {
@@ -215,8 +216,8 @@
 
 @media (max-width: 720px) {
   .st-template-request-panel {
-    padding: 6px;
-    border-radius: 16px;
+    padding: var(--size-4-2, 8px);
+    border-radius: var(--radius-xl, 20px);
   }
 
   .st-template-request-panel__template {

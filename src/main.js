@@ -7,7 +7,6 @@ import { smart_env_config } from './default.config.js';
 import { SmartTemplatesSettingTab } from './views/settings_tab.js';
 import { ReleaseNotesView } from './views/release_notes_view.js';
 import { TemplateContextModal } from './modals/template_context_modal.js';
-import { CreateFromTemplateModal } from './modals/create_from_template_modal.js';
 
 /**
  * Smart Templates core plugin host.
@@ -74,16 +73,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
           return true;
         },
       },
-      create_from_template: {
-        id: 'create-from-template',
-        name: 'Create from template',
-        checkCallback: (checking) => {
-          if (!this.can_open_template_context()) return false;
-          if (checking) return true;
-          this.open_create_from_template_modal();
-          return true;
-        },
-      },
     };
   }
 
@@ -121,15 +110,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
    */
   get_template_context_modal_class() {
     return this.env?.config?.modals?.template_context?.class || TemplateContextModal;
-  }
-
-  /**
-   * Resolve the CreateFromTemplateModal class from env config so Pro can override it.
-   *
-   * @returns {typeof CreateFromTemplateModal}
-   */
-  get_create_from_template_modal_class() {
-    return this.env?.config?.modals?.create_from_template?.class || CreateFromTemplateModal;
   }
 
   /**
@@ -209,20 +189,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
   open_template_context_modal(params = {}) {
     const ctx = this.create_seed_context(params);
     const ModalClass = this.get_template_context_modal_class();
-    return ModalClass.open(ctx, {
-      ...params,
-    });
-  }
-
-  /**
-   * Open the create-from-template alias modal.
-   *
-   * @param {object} [params={}]
-   * @returns {import('./modals/create_from_template_modal.js').CreateFromTemplateModal}
-   */
-  open_create_from_template_modal(params = {}) {
-    const ctx = this.create_seed_context(params);
-    const ModalClass = this.get_create_from_template_modal_class();
     return ModalClass.open(ctx, {
       ...params,
     });

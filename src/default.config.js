@@ -3,7 +3,6 @@ import context_items from 'smart-contexts/context_items.js';
 import { smart_env_config as compiled_config } from '../smart_env.config.js';
 import { InlineTextContextItemAdapter } from './adapters/context-items/inline_text.js';
 import { TemplateContextModal } from './modals/template_context_modal.js';
-import { CreateFromTemplateModal } from './modals/create_from_template_modal.js';
 import { TemplateFolderModal } from './modals/template_folder_modal.js';
 import { TemplateHeadingsModal } from './modals/template_headings_modal.js';
 
@@ -20,9 +19,6 @@ const default_config = {
   modals: {
     template_context: {
       class: TemplateContextModal,
-    },
-    create_from_template: {
-      class: CreateFromTemplateModal,
     },
     template_folder: {
       class: TemplateFolderModal,

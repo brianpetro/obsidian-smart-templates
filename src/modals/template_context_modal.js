@@ -261,6 +261,70 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
+   * Determine whether the caller explicitly requested a specific suggestion scope.
+   *
+   * @param {object} [params={}]
+   * @returns {boolean}
+   */
+  has_explicit_suggest_action_override(params = {}) {
+    return Array.isArray(params?.default_suggest_action_keys);
+  }
+
+  /**
+   * Open directly into template suggestions when the modal is seeded with context.
+   *
+   * @param {object} [params={}]
+   * @returns {boolean}
+   */
+  should_open_template_suggest_on_open(params = {}) {
+    if (this.has_explicit_suggest_action_override(params)) return false;
+    return Boolean(this.smart_context?.has_context_items);
+  }
+
+  /**
+   * Prime the first suggestion list before FuzzySuggestModal renders.
+   *
+   * This prevents a flicker where context scopes briefly render before the
+   * template list when the modal already has seeded context.
+   *
+   * @param {object} [params={}]
+   * @returns {void}
+   */
+  prime_initial_suggestions(params = {}) {
+    this.suggestions = null;
+
+    if (!this.should_open_template_suggest_on_open(params)) {
+      return;
+    }
+
+    this.params = {
+      ...(this.params || {}),
+      default_suggest_action_keys: null,
+    };
+
+    const template_suggestions = this.smart_context?.actions?.context_suggest_templates?.({
+      modal: this,
+    });
+
+    if (Array.isArray(template_suggestions)) {
+      this.suggestions = template_suggestions;
+    }
+  }
+
+  /**
+   * Open the modal and seed the initial suggestion mode before the fuzzy list renders.
+   *
+   * @param {object} [params={}]
+   * @returns {void}
+   */
+  open(params = {}) {
+    this.params = { ...this.params, ...params };
+    this.sync_request_state_from_params(this.params);
+    this.prime_initial_suggestions(params);
+    super.open(this.params);
+  }
+
+  /**
    * Render the modal shell, then arrange the context view and request panel side by side.
    *
    * @param {object} [params]
