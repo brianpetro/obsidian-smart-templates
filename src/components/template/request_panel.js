@@ -23,7 +23,6 @@ export function build_html(modal) {
 
   return `<div class="${REQUEST_PANEL_CLASS}">
     <div class="st-template-request-panel__row">
-      <div class="st-template-request-panel__label">Template</div>
       <div class="st-template-request-panel__template">
         <div class="st-template-request-panel__template-copy">
           <span class="st-template-request-panel__template-name">${escape_html(selected_template_label)}</span>
@@ -46,7 +45,6 @@ export function build_html(modal) {
     </div>
 
     <div class="st-template-request-panel__row st-template-request-panel__row--fill">
-      <div class="st-template-request-panel__label">Instructions</div>
       <textarea
         class="st-template-request-panel__textarea"
         rows="10"
