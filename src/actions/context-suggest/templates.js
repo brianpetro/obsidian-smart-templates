@@ -19,6 +19,38 @@ function get_template_items(env) {
 }
 
 /**
+ * Lower-case the first character of a label so it reads naturally inside
+ * an instruction sentence.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+export function lower_case_first_character(value = '') {
+  const label = String(value || '').trim();
+  if (!label) return '';
+  return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
+/**
+ * Resolve the concrete primary-action label for instruction text.
+ *
+ * Examples:
+ * - `Generate` -> `generate`
+ * - `Copy prompt` -> `copy prompt`
+ *
+ * @param {object} modal
+ * @returns {string}
+ */
+export function get_primary_action_instruction_label(modal) {
+  const label = typeof modal?.get_primary_action_label === 'function'
+    ? modal.get_primary_action_label()
+    : ''
+  ;
+  const normalized_label = lower_case_first_character(label);
+  return normalized_label || 'run the selected action';
+}
+
+/**
  * Set modal instructions for template selection mode.
  *
  * @param {object} modal
@@ -27,9 +59,11 @@ function get_template_items(env) {
 function set_template_suggest_instructions(modal) {
   if (!modal?.setInstructions) return;
 
+  const primary_action_label = get_primary_action_instruction_label(modal);
+
   modal.setInstructions([
     { command: 'Enter / ->', purpose: 'Select or unselect template' },
-    { command: `${MOD_CHAR} + Enter`, purpose: 'Select and run primary action' },
+    { command: `${MOD_CHAR} + Enter`, purpose: `Select and ${primary_action_label}` },
     { command: '<-', purpose: 'Back to context suggestions' },
   ]);
 }
@@ -182,6 +216,7 @@ async function select_template_and_run(ctx, modal, template_item) {
 
   if (typeof modal?.run_primary_action === 'function') {
     await modal.run_primary_action();
+    modal.close();
   }
 
   return context_suggest_templates.call(ctx, { modal });
