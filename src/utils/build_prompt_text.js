@@ -70,12 +70,8 @@ export async function build_prompt_text(ctx, template_item, instructions = '') {
 
   const system_lines = [
     'Use the provided instructions, template, and context to produce the best possible response.',
-    resolved_template
-      ? '- Follow the template structure when a template is provided.'
-      : '- Follow the provided instructions directly.',
-    context_text
-      ? '- Ground the result in the supplied context.'
-      : '- If no context is provided, rely only on the supplied instructions and template.',
+    '- Follow the template structure and any specific instructions provided.',
+    '- Ground the result in the supplied context.',
     '- Do not repeat the context in the output.',
     '- Do not mention the wrapper tags in the final answer.',
   ];
