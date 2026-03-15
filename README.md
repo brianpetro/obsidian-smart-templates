@@ -1,15 +1,15 @@
-**Turn your existing Markdown templates into context-aware prompts you can copy into any AI chat.**
+**Turn your existing Markdown templates into reusable AI workflows.** **Smart Templates pairs your vault context with the templates you already trust** so you can build better prompts in one guided flow.
 
-> Build better prompts from the notes and templates you already trust.
+> Build your AI workflow with Obsidian.
 
 > [!NOTE] Why Smart Templates?
-> Stop rebuilding the same prompt every time you use AI. Start from your current note or selection, choose one or more templates, and copy a ready-to-run prompt in one guided flow.
+> Every AI prompt is a mini project: gather the right notes, explain the task, paste the structure, and remind the model how to answer. Smart Templates turns that repeated setup into one command path inside Obsidian.
 
 ✔️ Works with your existing templates
 
 🔐 Local-first and privacy-preserving by default
 
-🤖 No API setup required in Core
+🤖 Compatible with any AI chat
 
 ⚔️ Mission-driven, community-supported
 
