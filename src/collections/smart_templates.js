@@ -10,6 +10,32 @@ import { default_templates } from '../defaults/default_templates.js';
 import { should_reload_templates } from '../utils/should_reload_templates.js';
 
 /**
+ * Normalize a template folder so folder matching respects path boundaries.
+ *
+ * @param {string} folder
+ * @returns {string}
+ */
+function normalize_template_folder(folder = '') {
+  return String(folder || '').trim().replace(/\/+$/g, '');
+}
+
+/**
+ * Resolve the path portion of a source or block key.
+ *
+ * @param {string} source_key
+ * @returns {string}
+ */
+function get_source_path(source_key = '') {
+  const normalized_source_key = String(source_key || '').trim();
+  if (!normalized_source_key) return '';
+  const hash_index = normalized_source_key.indexOf('#');
+  return hash_index === -1
+    ? normalized_source_key
+    : normalized_source_key.slice(0, hash_index)
+  ;
+}
+
+/**
  * Parse a comma-separated headings string from settings into a unique array.
  *
  * @param {object} settings
@@ -58,7 +84,7 @@ export function parse_template_folders(settings = {}) {
   return Array.from(
     new Set(
       folders
-        .map((folder) => folder.trim())
+        .map((folder) => normalize_template_folder(folder))
         .filter(Boolean),
     ),
   ).sort();
@@ -73,7 +99,7 @@ export function parse_template_folders(settings = {}) {
 export function stringify_template_folders(folders = []) {
   if (!Array.isArray(folders)) return '';
   return folders
-    .map((folder) => (typeof folder === 'string' ? folder.trim() : ''))
+    .map((folder) => normalize_template_folder(folder))
     .filter(Boolean)
     .join(', ')
   ;
@@ -89,7 +115,8 @@ export function stringify_template_folders(folders = []) {
 export function resolve_template_folders(settings = {}, default_folder = '') {
   const template_folders = parse_template_folders(settings);
   if (template_folders.length) return template_folders;
-  if (default_folder) return [default_folder];
+  const normalized_default_folder = normalize_template_folder(default_folder);
+  if (normalized_default_folder) return [normalized_default_folder];
   return [];
 }
 
@@ -117,7 +144,9 @@ export function build_template_matcher({
     : []
   ;
   const normalized_folders = Array.isArray(template_folders)
-    ? template_folders.map((folder) => folder.trim()).filter(Boolean)
+    ? template_folders
+      .map((folder) => normalize_template_folder(folder))
+      .filter(Boolean)
     : []
   ;
 
@@ -129,11 +158,19 @@ export function build_template_matcher({
     const source_key = source_item?.key || source_item?.data?.key;
     if (!source_key) return false;
 
-    if (normalized_folders.length && normalized_folders.some((folder) => source_key.startsWith(folder))) {
+    const source_path = get_source_path(source_key);
+
+    if (
+      normalized_folders.length &&
+      normalized_folders.some((folder) => {
+        if (source_path === folder) return true;
+        return source_path.startsWith(`${folder}/`);
+      })
+    ) {
       return true;
     }
 
-    if (normalized_name && source_key.endsWith(normalized_name)) {
+    if (normalized_name && source_path.endsWith(normalized_name)) {
       return true;
     }
 
@@ -165,11 +202,10 @@ export function collect_template_folder_candidates(sources = []) {
   sources.forEach((source) => {
     const key = source?.key || source?.data?.key;
     if (!key) return;
-    const hash_index = key.indexOf('#');
-    const path_without_hash = hash_index === -1 ? key : key.slice(0, hash_index);
-    const last_slash_index = path_without_hash.lastIndexOf('/');
+    const source_path = get_source_path(key);
+    const last_slash_index = source_path.lastIndexOf('/');
     if (last_slash_index === -1) return;
-    const folder = path_without_hash.slice(0, last_slash_index);
+    const folder = source_path.slice(0, last_slash_index);
     if (folder) folders.add(folder);
   });
 

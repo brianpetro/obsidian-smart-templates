@@ -2,6 +2,10 @@ import { CollectionItem } from 'smart-collections';
 import { clean_frontmatter } from '../utils/clean_frontmatter.js';
 import { parse_frontmatter } from 'smart-sources/utils/parse_frontmatter.js';
 
+const TEMPLATE_ONLY_FRONTMATTER_KEYS = Object.freeze([
+  'smart template',
+]);
+
 /**
  * @class SmartTemplate
  * @extends CollectionItem
@@ -48,7 +52,7 @@ export class SmartTemplate extends CollectionItem {
 
     if (!content) return null;
 
-    content = clean_frontmatter(content, ['smart template', 'prompt']);
+    content = clean_frontmatter(content, TEMPLATE_ONLY_FRONTMATTER_KEYS);
     return content.trim();
   }
 

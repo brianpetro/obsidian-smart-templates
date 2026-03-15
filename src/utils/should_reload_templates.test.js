@@ -1,5 +1,5 @@
 import test from 'ava';
-import {should_reload_templates} from './should_reload_templates.js';
+import { should_reload_templates } from './should_reload_templates.js';
 
 test('returns false when matcher is unavailable', t => {
 	const smart_templates = {
@@ -61,6 +61,23 @@ test('returns false when no path data is provided', t => {
 	const result = should_reload_templates(smart_templates, {
 		smart_sources: {get: () => null},
 		payload: {},
+	});
+	t.false(result);
+});
+
+test('returns false for partial folder-prefix matches that do not actually match template folders', t => {
+	const smart_templates = {
+		get_template_matcher: () => (source_item) => {
+			const key = source_item?.key || '';
+			return key === 'Templates' || key.startsWith('Templates/');
+		},
+	};
+	const smart_sources = {
+		get: (key) => ({key}),
+	};
+	const result = should_reload_templates(smart_templates, {
+		smart_sources,
+		payload: {path: 'Templates-Archive/Legacy.md'},
 	});
 	t.false(result);
 });
