@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, Notice } from 'obsidian';
+import { FuzzySuggestModal } from 'obsidian';
 import {
   collect_template_folder_candidates,
   parse_template_folders,
@@ -28,7 +28,11 @@ export class TemplateFolderModal extends FuzzySuggestModal {
     const sources = Object.values(this.scope?.env?.smart_sources?.items || {});
     const folders = collect_template_folder_candidates(sources);
     if (!folders.length) {
-      new Notice('No folders detected in sources.');
+      this.scope?.env?.events?.emit?.('templates:template_folders_missing', {
+        level: 'warning',
+        message: 'No folders detected in sources.',
+        event_source: 'template_folder_modal.getItems',
+      });
     }
     return folders;
   }

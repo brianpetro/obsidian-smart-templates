@@ -1,4 +1,3 @@
-import { Notice } from 'obsidian';
 import { ContextModal } from 'obsidian-smart-env/src/modals/context_selector.js';
 import {
   get_selected_template_items,
@@ -652,7 +651,11 @@ export class TemplateContextModal extends ContextModal {
     const selected_template_keys = this.get_selected_template_keys();
     const template_item = this.get_selected_template();
     if (!template_item) {
-      new Notice('Select one or more templates first.');
+      this.env?.events?.emit?.('templates:selection_required', {
+        level: 'warning',
+        message: 'Select one or more templates first.',
+        event_source: 'template_context_modal.run_copy_prompt_action',
+      });
       return;
     }
 
@@ -671,7 +674,12 @@ export class TemplateContextModal extends ContextModal {
    */
   handle_primary_action_error(error) {
     console.error('TemplateContextModal: primary action failed', error);
-    new Notice('Template action failed. See console for details.');
+    this.env?.events?.emit?.('templates:primary_action_failed', {
+      level: 'error',
+      message: 'Template action failed. See console for details.',
+      details: error?.message || '',
+      event_source: 'template_context_modal.handle_primary_action_error',
+    });
   }
 
   /**
@@ -693,7 +701,12 @@ export class TemplateContextModal extends ContextModal {
    */
   handle_request_panel_render_error(error) {
     console.error('TemplateContextModal: request panel render failed', error);
-    new Notice('Template panel failed to render. See console for details.');
+    this.env?.events?.emit?.('templates:request_panel_render_failed', {
+      level: 'error',
+      message: 'Template panel failed to render. See console for details.',
+      details: error?.message || '',
+      event_source: 'template_context_modal.handle_request_panel_render_error',
+    });
   }
 
   /**

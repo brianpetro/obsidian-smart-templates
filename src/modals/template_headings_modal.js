@@ -1,4 +1,4 @@
-import { FuzzySuggestModal, Notice } from 'obsidian';
+import { FuzzySuggestModal } from 'obsidian';
 import {
   collect_block_heading_candidates,
   parse_template_headings,
@@ -33,7 +33,11 @@ export class TemplateHeadingsModal extends FuzzySuggestModal {
     const blocks = Object.values(this.scope?.env?.smart_blocks?.items || {});
     const candidates = collect_block_heading_candidates(blocks);
     if (!candidates.length) {
-      new Notice('No headings detected in blocks.');
+      this.scope?.env?.events?.emit?.('templates:template_headings_missing', {
+        level: 'warning',
+        message: 'No headings detected in blocks.',
+        event_source: 'template_headings_modal.getItems',
+      });
     }
     return candidates;
   }

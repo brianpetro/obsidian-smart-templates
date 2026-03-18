@@ -1,4 +1,3 @@
-import { Notice } from 'obsidian';
 import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
 import { build_prompt_text } from '../../utils/build_prompt_text.js';
 import { resolve_request_template } from '../../utils/selected_templates.js';
@@ -40,7 +39,13 @@ export async function template_copy_with_context(params = {}) {
   });
 
   if (params.skip_notice !== true) {
-    new Notice('Template prompt copied to clipboard.');
+    this.env?.events?.emit?.('templates:prompt_copied', {
+      level: 'info',
+      message: 'Template prompt copied to clipboard.',
+      context_key: ctx.key,
+      selected_template_keys: params.selected_template_keys || [this.key],
+      event_source: 'template.actions.template_copy_with_context',
+    });
   }
 
   return prompt_text;
