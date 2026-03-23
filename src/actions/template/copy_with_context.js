@@ -1,4 +1,4 @@
-import { copy_to_clipboard } from 'obsidian-smart-env/utils/copy_to_clipboard.js';
+import { copy_to_clipboard } from 'obsidian-smart-env/src/utils/copy_to_clipboard.js';
 import { build_prompt_text } from '../../utils/build_prompt_text.js';
 import { resolve_request_template } from '../../utils/selected_templates.js';
 
