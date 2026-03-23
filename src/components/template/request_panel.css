@@ -154,8 +154,7 @@
 
 /* Template modal specific context view cleanup */
 .modal-container .st-template-context-modal .sc-context-name-wrapper,
-.modal-container .st-template-context-modal .sc-copy-clipboard,
-.modal-container .st-template-context-modal .sc-add-context-btn {
+.modal-container .st-template-context-modal .sc-copy-clipboard {
   display: none !important;
 }
 
