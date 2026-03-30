@@ -38,7 +38,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     this.register_item_views();
     this.register_file_menu();
 
-    this.addSettingTab(new this.SettingsTab(this.app, this, 'files'));
+    this.addSettingTab(new this.SettingsTab(this.app, this, 'file-plus'));
 
     await this.check_for_updates();
   }
