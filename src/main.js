@@ -19,6 +19,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
   onload() {
     this.app.workspace.onLayoutReady(this.initialize.bind(this));
     this.SmartEnv.create(this, smart_env_config);
+    this.addSettingTab(new this.SettingsTab(this.app, this, 'file-plus'));
   }
 
   onunload() {
@@ -38,7 +39,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     this.register_item_views();
     this.register_file_menu();
 
-    this.addSettingTab(new this.SettingsTab(this.app, this, 'file-plus'));
 
     await this.check_for_updates();
   }
