@@ -4,11 +4,6 @@ import { SmartPluginSettingsTab } from 'obsidian-smart-env';
  * Thin host that delegates rendering to the Smart Component layer.
  */
 export class SmartTemplatesSettingTab extends SmartPluginSettingsTab {
-  constructor(app, plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
   async render_header(container) {
     if (!container) return;
     container.empty?.();
