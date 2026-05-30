@@ -2,6 +2,9 @@
 
 # Smart Templates Core `v2.1`
 
+> [!NOTE] What's new in `v2.1.1`
+> Added: Context builder menu action to open current context in template selector
+
 Smart Templates Core v2.1 is a refinement release for the context-first templating workflow. There is no new headline template feature in this drop; the goal is to keep the Core flow simple, dependable, and ready when you want structured prompts fast.
 
 ## Highlights
@@ -14,3 +17,7 @@ Smart Templates Core v2.1 is a refinement release for the context-first templati
 ### Built for repeatable prompt work
 
 - When you rely on Smart Templates for structured outputs, the value here is steadiness: open the flow, choose context, choose structure, and keep moving.
+
+Updated: 2026-05-30
+
+[More details about the latest releases](https://smartconnections.app/smart-templates/releases/2-1/)
