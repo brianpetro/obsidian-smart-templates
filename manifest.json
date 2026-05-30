@@ -1,7 +1,7 @@
 {
   "id": "smart-templates",
   "name": "Smart Templates",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "minAppVersion": "1.5.0",
   "description": "Build context-aware prompts from your existing Markdown templates and copy them into any AI chat.",
   "author": "🌴 Brian Petro",
