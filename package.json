@@ -13,22 +13,15 @@
     "obsidian": "latest",
     "obsidian-smart-env": "file:../obsidian-smart-env",
     "smart-collections": "file:../jsbrains/smart-collections",
-    "smart-context-obsidian": "file:../smart-context-obsidian",
     "smart-contexts": "file:../jsbrains/smart-contexts"
   },
   "devDependencies": {
-    "archiver": "^7.0.1",
     "ava": "^6.2.0",
-    "axios": "^1.7.9",
-    "dotenv": "^16.4.5",
     "esbuild": "^0.25.9",
-    "readline": "^1.3.0",
-    "smart-file-system": "file:../jsbrains/smart-fs",
     "smart-sources": "file:../jsbrains/smart-sources"
   },
   "workspaces": [
     "../jsbrains/*",
-    "../obsidian-smart-env",
-    "../smart-context-obsidian"
+    "../obsidian-smart-env"
   ]
 }
