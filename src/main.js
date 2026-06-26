@@ -38,7 +38,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     this.register_ribbon_icons();
     this.register_item_views();
     this.register_file_menu();
-    this.register_context_builder_menu_actions();
 
     await this.check_for_updates();
   }
@@ -191,32 +190,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     const ModalClass = this.get_template_context_modal_class();
     return ModalClass.open(ctx, {
       ...params,
-    });
-  }
-
-  /**
-   * Add Smart Templates actions to the Smart Context builder copy menu.
-   *
-   * @returns {void}
-   */
-  register_context_builder_menu_actions() {
-    if (this._registered_context_builder_menu_actions) return;
-
-    this._registered_context_builder_menu_actions = true;
-    this.env.register_menu_action('smart_context:copy_menu', (menu, ctx) => {
-      // if (!ctx.item_count) return;
-
-      menu.addItem((item) => {
-        item
-          .setTitle('Copy with Template')
-          .setIcon('file-plus')
-          .onClick(() => {
-            const ModalClass = this.get_template_context_modal_class();
-            ModalClass.open(ctx);
-          })
-        ;
-        item._order = 2;
-      });
     });
   }
 
