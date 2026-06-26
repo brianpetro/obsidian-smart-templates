@@ -28,17 +28,11 @@ test('context_copy_with_template opens configured template modal with context sc
 });
 
 test('copy-with-template menu metadata targets Smart Context copy menu', (t) => {
-  t.deepEqual(menus['smart_context:copy_menu'], {
-    title: 'Copy with Template',
-    icon: 'file-plus',
-    order: 2,
-    when: menus['smart_context:copy_menu'].when,
-  });
-});
+  const spec = menus['smart_context:copy_menu'];
 
-test('copy-with-template menu predicate requires active context items', (t) => {
-  const menu_spec = menus['smart_context:copy_menu'];
-
-  t.false(menu_spec.when.call({ scope: { item_count: 0 } }));
-  t.true(menu_spec.when.call({ scope: { item_count: 1 } }));
+  t.is(spec.title, 'Copy with Template');
+  t.is(spec.icon, 'file-plus');
+  t.is(spec.order, 2);
+  t.false(spec.when.call({ scope: { item_count: 0 } }));
+  t.true(spec.when.call({ scope: { item_count: 1 } }));
 });
