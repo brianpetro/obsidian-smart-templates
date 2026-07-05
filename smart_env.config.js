@@ -7,6 +7,7 @@ import { SmartTemplate } from './src/items/smart_template.js';
 import { render as smart_templates_settings_tab_component, version as smart_templates_settings_tab_component_version } from './src/components/smart-templates/settings_tab.js';
 import { render as template_request_panel_component, version as template_request_panel_component_version } from './src/components/template/request_panel.js';
 
+import { context_copy_with_template as context_copy_with_template_action, menus as context_copy_with_template_action_menus } from './src/actions/context/copy_with_template.js';
 import { context_suggest_templates as context_suggest_templates_action, display_name as context_suggest_templates_action_display_name } from './src/actions/context-suggest/templates.js';
 import { template_build_prompt as template_build_prompt_action } from './src/actions/template/build_prompt.js';
 import { template_copy_with_context as template_copy_with_context_action } from './src/actions/template/copy_with_context.js';
@@ -27,6 +28,7 @@ export const smart_env_config = {
     template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version }
   },
   actions: {
+    context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "2.4.6" },
     context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "2.4.6" },
     template_build_prompt: { action: template_build_prompt_action, version: "2.4.6" },
     template_copy_with_context: { action: template_copy_with_context_action, version: "2.4.6" }
