@@ -11,6 +11,7 @@ import { context_copy_with_template as context_copy_with_template_action, menus 
 import { context_suggest_templates as context_suggest_templates_action, display_name as context_suggest_templates_action_display_name } from './src/actions/context-suggest/templates.js';
 import { template_build_prompt as template_build_prompt_action } from './src/actions/template/build_prompt.js';
 import { template_copy_with_context as template_copy_with_context_action } from './src/actions/template/copy_with_context.js';
+import { template_open_context as template_open_context_action, display_name as template_open_context_action_display_name, commands as template_open_context_action_commands, ribbon_icons as template_open_context_action_ribbon_icons } from './src/actions/template/open_context.js';
 
 
 export const smart_env_config = {
@@ -31,6 +32,7 @@ export const smart_env_config = {
     context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "2.4.6" },
     context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "2.4.6" },
     template_build_prompt: { action: template_build_prompt_action, version: "2.4.6" },
-    template_copy_with_context: { action: template_copy_with_context_action, version: "2.4.6" }
+    template_copy_with_context: { action: template_copy_with_context_action, version: "2.4.6" },
+    template_open_context: { action: template_open_context_action, display_name: template_open_context_action_display_name, commands: template_open_context_action_commands, ribbon_icons: template_open_context_action_ribbon_icons, version: "2.4.6" }
   }
 };

@@ -32,11 +32,11 @@ export class SmartTemplatesPlugin extends SmartPlugin {
    * @returns {Promise<void>}
    */
   async initialize() {
+    this.register_ribbon_actions();
     await this.SmartEnv.wait_for({ loaded: true });
 
-    this.register_commands();
-    this.register_ribbon_icons();
-    this.register_item_views();
+    this.register_command_actions();
+    this.register_item_views({ skip_command_registration: true });
     this.register_file_menu();
 
     await this.check_for_updates();
@@ -46,42 +46,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     return {
       release_notes: this.ReleaseNotesView,
     };
-  }
-
-  get ribbon_icons() {
-    return {
-      open_template_context: {
-        icon_name: 'file-plus',
-        description: 'Smart Templates: Open template context',
-        callback: () => {
-          this.open_template_context_modal();
-        },
-      },
-    };
-  }
-
-  get commands() {
-    return {
-      open_template_context: {
-        id: 'open-template-context',
-        name: 'Open template context',
-        checkCallback: (checking) => {
-          if (!this.can_open_template_context()) return false;
-          if (checking) return true;
-          this.open_template_context_modal();
-          return true;
-        },
-      },
-    };
-  }
-
-  /**
-   * Determine whether the template modal can be opened.
-   *
-   * @returns {boolean}
-   */
-  can_open_template_context() {
-    return Boolean(this.env?.smart_templates && this.env?.smart_contexts);
   }
 
   /**
