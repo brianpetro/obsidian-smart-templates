@@ -1,4 +1,5 @@
 import { ContextModal } from 'obsidian-smart-env/src/modals/context_selector.js';
+import { setIcon } from 'obsidian';
 import {
   get_selected_template_items,
   normalize_selected_template_keys,
@@ -331,7 +332,35 @@ export class TemplateContextModal extends ContextModal {
    */
   async render(params = this.params) {
     this.sync_request_state_from_params(params);
-    await super.render(params);
+
+    this.modalEl.style.display = 'flex';
+    this.modalEl.style.flexDirection = 'column';
+
+    const owner_document = this.modalEl.ownerDocument || document;
+    const context_view_el = owner_document.createElement('div');
+    context_view_el.className = 'sc-context-view st-template-context-summary';
+    context_view_el.dataset.contextKey = this.smart_context.key;
+
+    const open_builder_btn = owner_document.createElement('button');
+    open_builder_btn.type = 'button';
+    open_builder_btn.className = 'clickable-icon st-template-context-summary__open-builder';
+    open_builder_btn.setAttribute('aria-label', 'Open context builder');
+    setIcon(open_builder_btn, 'smart-context-builder');
+    open_builder_btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.smart_context.emit_event('context_selector:open');
+    });
+    context_view_el.appendChild(open_builder_btn);
+
+    const context_meta_el = await this.env.smart_components.render_component(
+      'smart_context_meta',
+      this.smart_context,
+      params,
+    );
+    if (context_meta_el) context_view_el.appendChild(context_meta_el);
+
+    this.modalEl.prepend(context_view_el);
 
     this.modalEl?.classList?.add('st-template-context-modal');
     if (this.modalEl?.style) {
