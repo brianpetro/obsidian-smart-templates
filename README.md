@@ -17,6 +17,8 @@
 
 ![Templates-Context-Pro-Modal-2026-03-13.png](/assets/Templates-Context-Pro-Modal-2026-03-13.png)
 
+![templates-multi-template-prompt-workflow-editorial-hero-reviewed-1280x720-2026-07-29](images/templates-multi-template-prompt-workflow-editorial-hero-reviewed-1280x720-2026-07-29.png)
+
 > [!QUESTION] Is this you?
 > You already have useful structures in your vault: meeting notes, research outlines, recommendation tables, writing briefs, summaries, postmortems.
 > But when you use AI, you still rebuild the same prompt by hand.
@@ -52,6 +54,8 @@
 
 <!-- Add annotated screenshot of the shared modal -->
 
+![templates-file-menu-open-template-context-core-crop-highlighted-desktop-2026-07-27](images/templates-file-menu-open-template-context-core-crop-highlighted-desktop-2026-07-27.png)
+
 ## Works with your existing templates
 
 Smart Templates does not ask you to replace the template system you already like.
@@ -80,10 +84,14 @@ Smart Templates starts with the work in front of you.
 Open it from the note you are writing, or from a selection inside that note.
 Then refine the context, choose the template, and copy the final prompt.
 
+![templates-context-copy-menu-core-crop-highlighted-desktop-2026-07-27](images/templates-context-copy-menu-core-crop-highlighted-desktop-2026-07-27.png)
+
 ## Multiple templates when one structure is not enough
 
 Some jobs need more than one constraint.
 Smart Templates can merge multiple templates in the order you select them, so one output can follow several reusable structures at once.
+
+![templates-template-picker-two-built-ins-selected-output-ready-pro-crop-highlighted-desktop-2026-07-30](images/templates-template-picker-two-built-ins-selected-output-ready-pro-crop-highlighted-desktop-2026-07-30.png)
 
 ## Key commands
 
@@ -104,6 +112,8 @@ Smart Templates can merge multiple templates in the order you select them, so on
 - Review streamed output
 - Copy, insert, or create a note
 - Choose the generate model in Smart Templates settings
+
+![templates-copy-prompt-completed-notice-pro-crop-highlighted-desktop-2026-07-30](images/templates-copy-prompt-completed-notice-pro-crop-highlighted-desktop-2026-07-30.png)
 
 ## Private by Design
 
