@@ -19,7 +19,7 @@ export const smart_env_config = {
     smart_templates
   },
   items: {
-    smart_template: { class: SmartTemplate, version: "2.4.6" }
+    smart_template: { class: SmartTemplate, version: "3.1.0" }
   },
   modules: {
 
@@ -29,10 +29,10 @@ export const smart_env_config = {
     template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version }
   },
   actions: {
-    context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "2.4.6" },
-    context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "2.4.6" },
-    template_build_prompt: { action: template_build_prompt_action, version: "2.4.6" },
-    template_copy_with_context: { action: template_copy_with_context_action, version: "2.4.6" },
-    template_open_context: { action: template_open_context_action, display_name: template_open_context_action_display_name, commands: template_open_context_action_commands, ribbon_icons: template_open_context_action_ribbon_icons, version: "2.4.6" }
+    context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "3.1.0" },
+    context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "3.1.0" },
+    template_build_prompt: { action: template_build_prompt_action, version: "3.1.0" },
+    template_copy_with_context: { action: template_copy_with_context_action, version: "3.1.0" },
+    template_open_context: { action: template_open_context_action, display_name: template_open_context_action_display_name, commands: template_open_context_action_commands, ribbon_icons: template_open_context_action_ribbon_icons, version: "3.1.0" }
   }
 };

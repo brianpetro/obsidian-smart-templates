@@ -1,23 +1,55 @@
-[Also in this release: suite-wide Smart Environment improvements for every Smart Plugin. Read the Substrate Update.](https://smartconnections.app/smart-plugins/substrate-update/)
+> This release is part of the [Smart Environment v3 release train](https://smartconnections.app/smart-environment/releases/3-0/?utm_source=smart-templates-release). Update all installed Smart Plugins before restarting Obsidian.
 
-# Smart Templates Core `v2.1`
+# Smart Templates Core v2.3
 
-> [!NOTE] What's new in `v2.1.1`
-> Added: Context builder menu action to open current context in template selector
+## Build template input in the same Context Builder you use everywhere else
 
-Smart Templates Core v2.1 is a refinement release for the context-first templating workflow. There is no new headline template feature in this drop; the goal is to keep the Core flow simple, dependable, and ready when you want structured prompts fast.
+Smart Templates no longer carries a separate, retired context tree. v2.3 moves template context selection onto the redesigned Smart Context foundation, so choosing evidence for a template feels like the same workflow you use in Context, Chat, and the rest of the suite.
 
-## Highlights
 
-### The Core promise stays clean
+![](https://smartconnections.app/assets/templates-file-menu-open-template-context-core-crop-desktop-2026-07-27.png)
 
-- Smart Templates remains the fast path from note context plus reusable structure to a ready-to-run prompt.
-- This release keeps that Core workflow dependable without adding extra complexity.
+## Why this matters
 
-### Built for repeatable prompt work
+A reusable template is only as useful as the material you give it. Keeping a second context tree inside Templates created unnecessary differences in how sources were selected and reviewed.
 
-- When you rely on Smart Templates for structured outputs, the value here is steadiness: open the flow, choose context, choose structure, and keep moving.
+Now the workflow is easier to remember:
 
-Updated: 2026-05-30
+1. Choose the context in the current Builder.
+2. Choose the reusable template.
+3. Add instructions when the specific job needs them.
+4. Copy the result into the note or destination that owns the work.
 
-[More details about the latest releases](https://smartconnections.app/smart-templates/releases/2-1/)
+## Before / After
+
+| Before | With Smart Templates Core v2.3 |
+| --- | --- |
+| Templates maintained its own retired context tree. | Templates uses the current Smart Context foundation. |
+| Source selection could feel different depending on which plugin opened it. | Context selection follows one suite-wide mental model. |
+| Shared menu improvements had to be recreated in the Templates surface. | Supported file and copy actions use the Smart Environment v3 action layer. |
+
+
+![](https://smartconnections.app/assets/templates-context-copy-menu-core-crop-desktop-2026-07-27.png)
+
+## Supporting improvements
+
+- Shared file and copy actions align with the rest of the Smart Plugin suite.
+- The existing template-selection and instruction flow remains unchanged.
+- Smart Templates now participates in the coordinated Smart Environment v3 release train.
+
+## Learn more
+
+- [Smart Templates documentation](https://smartconnections.app/docs/templates/?utm_source=smart-templates-release)
+- [Smart Templates getting started](https://smartconnections.app/smart-templates/getting-started/?utm_source=smart-templates-release)
+- [Smart Templates FAQ](https://smartconnections.app/smart-templates/faq/?utm_source=smart-templates-release)
+
+## Additional notes
+
+Remove v1 context tree from template builder modal
+
+
+Updated: Smart Environment v3
+
+Updated: 2026-08-04
+
+[More details about the latest releases](https://smartconnections.app/smart-templates/releases/2-3/?utm_source=smart-templates-release)
