@@ -28,7 +28,7 @@
 
 > [!NOTE] What Smart Templates does
 > Smart Templates helps you start from your current note or selection, refine the context, choose one or more templates, and copy a ready-to-run prompt for any AI chat.
-> Core focuses on prompt building and clipboard workflows. Pro adds in-Obsidian generation.
+> Core and Pro both build context-aware prompts and end at **Copy prompt** in current Smart Templates 2.3; paste the reviewed prompt into the AI tool you choose.
 
 > [!SUCCESS] What success looks like
 > You stop rebuilding prompts from scratch. Your best note structures become reusable AI workflows. The template and the context travel together, so outputs are more consistent and easier to trust.
