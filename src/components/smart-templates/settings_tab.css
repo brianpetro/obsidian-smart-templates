@@ -1,0 +1,30 @@
+/* Match the existing native settings rows; advanced source edits stay secondary. */
+.smart-templates-settings-tab [hidden] { display: none !important; }
+.smart-templates-settings-tab .st-template-settings__source { padding-top: 0; }
+.st-template-base-settings__source { overflow-wrap: anywhere; }
+.st-template-base-settings, .st-template-settings__maintenance { margin-block: var(--size-4-4, 16px); }
+.st-template-base-settings > summary, .st-template-settings__maintenance > summary { cursor: pointer; }
+.st-template-base-settings p, .st-template-settings__maintenance p, .st-template-settings__rules-note { color: var(--text-muted); font-size: var(--font-ui-small); }
+.st-template-base-settings .setting-item-info > span { display: block; }
+.st-template-base-settings .setting-item-control { min-width: 0; flex: 0 1 60%; }
+.st-template-base-settings input { width: 100%; min-width: 0; }
+.st-template-base-settings__advanced { margin-block: var(--size-4-3, 12px); }
+.st-template-base-settings__advanced label { display: block; margin-block: var(--size-4-2, 8px); }
+.st-template-base-settings textarea { width: 100%; resize: vertical; }
+.st-template-base-settings__actions { display: flex; flex-wrap: wrap; gap: var(--size-4-2, 8px); }
+.st-template-settings__rules { border: 0; padding: 0; margin: 0; min-width: 0; }
+.st-template-settings__rules > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.st-template-settings__rules:disabled { opacity: 0.6; pointer-events: none; }
+.st-template-base-settings__error { color: var(--text-error); white-space: pre-wrap; overflow-wrap: anywhere; }
+.st-template-base-settings__error:empty { display: none; }
+@media (max-width: 500px) {
+  .st-template-base-settings .setting-item { flex-wrap: wrap; gap: var(--size-4-2, 8px); }
+  .st-template-base-settings .setting-item-control { flex: 1 1 100%; }
+  .st-template-base-settings__actions button { white-space: normal; height: auto; }
+}
+@media (max-width: 500px) {
+  .smart-templates-settings-tab .setting-item { flex-direction: column; align-items: stretch; gap: var(--size-4-2, 8px); }
+  .smart-templates-settings-tab .setting-item-info, .smart-templates-settings-tab .setting-item-control { width: 100%; flex: 1 1 auto; }
+  .smart-templates-settings-tab .setting-item-control input { width: 100%; min-width: 0; }
+  .smart-templates-settings-tab .setting-item-control button { white-space: normal; height: auto; }
+}

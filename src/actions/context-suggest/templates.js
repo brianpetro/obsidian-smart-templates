@@ -13,9 +13,8 @@ const MOD_CHAR = Platform.isMacOS ? '⌘' : 'Ctrl';
  * @param {object} env
  * @returns {object[]}
  */
-function get_template_items(env) {
-  const items = Object.values(env?.smart_templates?.items || {});
-  return items.filter(Boolean);
+function get_template_items(env, params) {
+  return env.smart_templates.get_visible_templates(params);
 }
 
 /**
@@ -197,7 +196,7 @@ function restore_context_suggestions(modal) {
  */
 function select_template_and_refresh(ctx, modal, template_item) {
   toggle_selected_template(modal, template_item);
-  return context_suggest_templates.call(ctx, { modal });
+  return ctx.actions.context_suggest_templates({ modal });
 }
 
 /**
@@ -219,7 +218,7 @@ async function select_template_and_run(ctx, modal, template_item) {
     modal.close();
   }
 
-  return context_suggest_templates.call(ctx, { modal });
+  return ctx.actions.context_suggest_templates({ modal });
 }
 
 /**
@@ -254,7 +253,9 @@ export function context_suggest_templates(params = {}) {
   set_template_suggest_instructions(modal);
 
   const template_records = sort_template_records(
-    dedupe_template_records(get_template_items(ctx?.env)),
+    dedupe_template_records(get_template_items(ctx?.env, {
+      scope_source_key: params.scope_source_key ?? modal?.params?.scope_source_key ?? null,
+    })),
   );
 
   if (!template_records.length) {

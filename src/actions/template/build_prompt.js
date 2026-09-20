@@ -1,5 +1,5 @@
-import { build_prompt_text } from '../../utils/build_prompt_text.js';
-import { resolve_request_template } from '../../utils/selected_templates.js';
+import { build_prompt_text, get_vault_tags } from '../../utils/build_prompt_text.js';
+import { get_selected_template_items, get_merged_template_text } from '../../utils/selected_templates.js';
 
 /**
  * Build a single prompt string from the selected template(s) and a SmartContext.
@@ -19,8 +19,8 @@ export async function template_build_prompt(params = {}) {
     throw new Error('template_build_prompt requires params.ctx or params.ctx_key');
   }
 
-  const request_template = await resolve_request_template(this, params);
-  if (!request_template) {
+  const template_items = get_selected_template_items(this.env, { ...params, strict: true }, this);
+  if (!template_items.length) {
     throw new Error('template_build_prompt requires at least one selected template');
   }
 
@@ -31,7 +31,17 @@ export async function template_build_prompt(params = {}) {
       : ''
   ;
 
-  return await build_prompt_text(ctx, request_template, user_message);
+  // Resolve the complete identity set before any read can change execution state.
+  const context_text = await ctx.get_text();
+  const template_text = await get_merged_template_text(template_items);
+  const needs_vault_tags = template_text.includes('{{vault_tags}}')
+    || user_message.includes('{{vault_tags}}');
+  return build_prompt_text({
+    context_text,
+    template_text,
+    user_message,
+    vault_tags: needs_vault_tags ? get_vault_tags(this.env) : '',
+  });
 }
 
 function resolve_ctx(template_item, params = {}) {

@@ -3,7 +3,7 @@ import {
   collect_block_heading_candidates,
   parse_template_headings,
   stringify_template_headings,
-} from '../collections/smart_templates.js';
+} from '../utils/template_discovery.js';
 
 /**
  * Fuzzy modal to select headings for template block detection.
@@ -12,7 +12,7 @@ export class TemplateHeadingsModal extends FuzzySuggestModal {
   /**
    * @param {import('obsidian').App} app
    * @param {object} params
-   * @param {import('../collections/smart_templates.js').SmartTemplates} params.scope
+   * @param {import('../utils/template_discovery.js').SmartTemplates} params.scope
    * @param {Function} [params.on_change]
    */
   constructor(app, params = {}) {

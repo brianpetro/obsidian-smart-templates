@@ -1,0 +1,5 @@
+.st-template-request-preview { margin-top: var(--size-4-2); padding: var(--size-4-3); border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); min-height: 0; }
+.st-template-request-preview[hidden] { display: none; }
+.st-template-request-preview__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); }
+.st-template-request-preview__status { color: var(--text-muted); font-size: var(--font-ui-small); }
+.st-template-request-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 28vh; overflow: auto; user-select: text; }

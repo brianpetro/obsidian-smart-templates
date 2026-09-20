@@ -3,7 +3,7 @@ import {
   collect_template_folder_candidates,
   parse_template_folders,
   stringify_template_folders,
-} from '../collections/smart_templates.js';
+} from '../utils/template_discovery.js';
 
 /**
  * Fuzzy modal to select a folder for template discovery.
@@ -12,7 +12,7 @@ export class TemplateFolderModal extends FuzzySuggestModal {
   /**
    * @param {import('obsidian').App} app
    * @param {object} params
-   * @param {import('../collections/smart_templates.js').SmartTemplates} params.scope
+   * @param {import('../utils/template_discovery.js').SmartTemplates} params.scope
    * @param {Function} [params.on_change]
    */
   constructor(app, params = {}) {

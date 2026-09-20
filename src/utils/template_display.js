@@ -1,7 +1,7 @@
 import {
   parse_template_headings,
   resolve_template_folders,
-} from '../collections/smart_templates.js';
+} from './template_discovery.js';
 
 const DEFAULT_DISPLAY_RIGHT = 'source';
 const BUILT_IN_DISPLAY_RIGHT = 'default';
@@ -22,7 +22,7 @@ export function dedupe_template_records(template_items = []) {
 
     seen_keys.add(template_key);
     records.push({
-      label: template_key,
+      label: get_template_name(template_item),
       template_item,
     });
   }
@@ -35,14 +35,14 @@ export function dedupe_template_records(template_items = []) {
  * @returns {Array<{ label: string, template_item: any }>}
  */
 export function sort_template_records(template_records = []) {
-  return [...(Array.isArray(template_records) ? template_records : [])]
-    .filter((record) => record?.template_item)
-    .sort((left, right) => {
-      const left_label = String(left?.label || '').toLocaleLowerCase();
-      const right_label = String(right?.label || '').toLocaleLowerCase();
-      return left_label.localeCompare(right_label);
-    })
-  ;
+  return [...template_records].filter((record) => record?.template_item).sort((left, right) => {
+    const left_suggested = is_suggested_template(left.template_item);
+    const right_suggested = is_suggested_template(right.template_item);
+    if (left_suggested !== right_suggested) return left_suggested ? 1 : -1;
+    // Derived snapshot insertion order is the configured inference ranking.
+    if (left_suggested) return 0;
+    return left.label.localeCompare(right.label) || left.template_item.key.localeCompare(right.template_item.key);
+  });
 }
 
 /**
@@ -77,11 +77,18 @@ function get_template_key(template_item) {
  * @returns {string}
  */
 function resolve_template_match_reason(modal, template_item) {
+  if (is_suggested_template(template_item)) return 'inferred | ' + get_template_support(template_item);
+  if (template_item?.data?.provenance?.origin === 'derived_headings') return 'confirmed inferred template';
+  if (!template_item?.data?.source_key && !template_item?.data?.built_in) return 'confirmed inline template';
   if (template_item?.data?.built_in) {
     return BUILT_IN_DISPLAY_RIGHT;
   }
 
   const env = template_item?.env || modal?.env;
+  const discovery = env?.smart_templates?.get_discovery_state?.(modal?.params || {});
+  if (discovery?.adapter_key === 'bases' && template_item?.data?.source_key) {
+    return `Base: ${discovery.view_name || discovery.base_key || 'configured scope'}`;
+  }
   const settings = env?.smart_templates?.settings || {};
   const source_key = get_template_source_key(template_item);
   const source_path = get_source_path(source_key);
@@ -211,4 +218,58 @@ function get_matching_folder(source_path = '', template_folders = []) {
  */
 function get_default_templates_folder(env) {
   return env?.plugin?.app?.internalPlugins?.plugins?.templates?.instance?.options?.folder || '';
+}
+
+/** Only this existing transient ownership contract represents a suggestion. */
+export function is_suggested_template(item) {
+  return item?.data?.transient === true && item.data.provider_key === 'derived_headings';
+}
+
+/** Readable labels without fetching content or interpreting synthetic keys. */
+export function get_template_name(item) {
+  if (typeof item?.data?.name === 'string' && item.data.name.trim()) return item.data.name.trim();
+  if (item?.data?.built_in) return get_template_key(item).replace(/ \(default\)$/i, '');
+  const source_key = item?.data?.source_key;
+  if (source_key) {
+    const [path, ...headings] = source_key.split('#');
+    const name = path.split('/').pop().replace(/\.(md|txt)$/i, '');
+    return headings.filter(Boolean).length ? `${name} / ${headings.filter(Boolean).join(' / ')}` : name;
+  }
+  const headings = String(item?.data?.content || '').split(/\r?\n/)
+    .map((line) => line.match(/^#{1,6}\s+(.+?)\s*#*\s*$/)?.[1]).filter(Boolean);
+  if (headings.length) return headings.slice(0, 3).join(' / ') + (headings.length > 3 ? ` + ${headings.length - 3} more` : '');
+  return get_template_key(item);
+}
+
+export function get_template_support(item) {
+  const provenance = item?.data?.provenance;
+  if (!Number.isInteger(provenance?.support)) return 'Support not recorded';
+  const coverage = Number.isFinite(provenance.coverage) ? ` (${Math.round(provenance.coverage * 100)}% of eligible sources)` : '';
+  return `${provenance.support} supporting sources${coverage}`;
+}
+
+export function get_template_origin(item) {
+  if (item.data.built_in) return 'Built-in';
+  if (item.data.source_key) return 'Vault';
+  if (is_suggested_template(item)) return 'Suggested';
+  return item.data.provenance?.origin === 'derived_headings' ? 'Confirmed inferred' : 'Confirmed inline';
+}
+
+/** Presentation groups preserve the collection's membership and inferred order. */
+export function get_template_groups(items, query = '') {
+  const groups = new Map([
+    ['Vault', { title: 'Vault templates', section: 'Available', records: [] }],
+    ['Confirmed inferred', { title: 'Confirmed inferred templates', section: 'Available', records: [] }],
+    ['Confirmed inline', { title: 'Inline templates', section: 'Available', records: [] }],
+    ['Built-in', { title: 'Built-in templates', section: 'Available', records: [] }],
+    ['Suggested', { title: 'Inferred headings', section: 'Suggested', records: [] }],
+  ]);
+  const search = query.trim().toLowerCase();
+  for (const record of sort_template_records(dedupe_template_records(items))) {
+    const item = record.template_item;
+    const description = typeof item.data.description === 'string' ? item.data.description : '';
+    if (search && !`${record.label} ${item.key} ${item.data.source_key || ''} ${description}`.toLowerCase().includes(search)) continue;
+    groups.get(get_template_origin(item)).records.push(record);
+  }
+  return [...groups.values()].filter((group) => group.records.length);
 }

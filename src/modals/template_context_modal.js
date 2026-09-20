@@ -1,5 +1,4 @@
 import { ContextModal } from 'obsidian-smart-env/src/modals/context_selector.js';
-import { setIcon } from 'obsidian';
 import {
   get_selected_template_items,
   normalize_selected_template_keys,
@@ -11,13 +10,6 @@ const DEFAULT_REQUEST_STATE = Object.freeze({
   preferred_output_target: null,
 });
 
-const DEFAULT_CONTEXT_SUGGEST_ACTION_KEYS = Object.freeze([
-  'context_suggest_sources',
-  'context_suggest_contexts',
-  'context_suggest_blocks',
-]);
-
-const CONTEXT_SUGGEST_ACTION_PREFIX = 'context_suggest_';
 const TEMPLATE_SUGGEST_ACTION_KEY = 'context_suggest_templates';
 
 /**
@@ -85,25 +77,6 @@ function dedupe_action_keys(action_keys = []) {
   ));
 }
 
-/**
- * @param {string} action_key
- * @returns {boolean}
- */
-function is_context_suggest_action_key(action_key) {
-  if (typeof action_key !== 'string' || !action_key.length) return false;
-  if (!action_key.startsWith(CONTEXT_SUGGEST_ACTION_PREFIX)) return false;
-  return action_key !== TEMPLATE_SUGGEST_ACTION_KEY;
-}
-
-/**
- * @param {object} env
- * @returns {string[]}
- */
-function get_available_context_suggest_action_keys(env) {
-  const configured_actions = Object.keys(env?.config?.actions || {});
-  return configured_actions.filter((action_key) => is_context_suggest_action_key(action_key));
-}
-
 export class TemplateContextModal extends ContextModal {
   static plugin_version = '2.0.0';
   static version = 2.0;
@@ -129,9 +102,26 @@ export class TemplateContextModal extends ContextModal {
     this.selected_template_key = this.request_state.selected_template_keys[0] || null;
     this.request_panel_el = null;
     this.request_panel_render_id = 0;
+    this.request_panel_controller = null;
+    this.mounted_request_panel_controller = null;
+    this.preview_open = false;
+    this.preview_status = 'empty';
+    this.preview_text = null;
+    this.preview_error = '';
+    this.preview_request_id = 0;
+    this.preview_refresh = null;
+    this.preview_unsubscribers = [];
+    this.closed = false;
+    this.copy_pending = false;
     this.workspace_el = null;
-    this.context_pane_el = null;
     this.request_pane_el = null;
+    this.picker_open = false;
+    this.picker_revision = 0;
+    this.picker_el = null;
+    this.context_summary_refresh = null;
+    this.request_feedback = '';
+    this.request_shortcut_event = null;
+    this.structure_open = false;
     this.user_message_touched = Object.prototype.hasOwnProperty.call(params, 'user_message');
 
     this.context_default_suggest_action_keys = this.build_context_suggest_action_keys(params);
@@ -139,39 +129,27 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Build the default context-suggest action set for this modal.
-   *
-   * The template modal cannot rely on `context_selector` modal defaults because it
-   * has its own modal key. Resolve the available actions directly from the env so
-   * core and early/pro both get a usable context-first flow.
-   *
-   * Order:
-   *   1. Explicit per-open overrides
-   *   2. `context_selector` modal defaults
-   *   3. Preferred built-in order
-   *   4. Any remaining registered `context_suggest_*` action
+   * Resolve placed context modes in menu order. An explicit per-open allowlist,
+   * including an empty one, narrows these modes without relying on key prefixes.
    *
    * @param {object} [params={}]
    * @returns {string[]}
    */
   build_context_suggest_action_keys(params = {}) {
-    const available_action_keys = get_available_context_suggest_action_keys(this.env);
-    const explicit_action_keys = dedupe_action_keys(params.default_suggest_action_keys)
-      .filter((action_key) => available_action_keys.includes(action_key))
-    ;
-    if (explicit_action_keys.length) return explicit_action_keys;
-
-    const context_selector_defaults = dedupe_action_keys(
-      this.env?.config?.modals?.context_selector?.default_suggest_action_keys,
-    ).filter((action_key) => available_action_keys.includes(action_key));
-
-    const ordered_action_keys = dedupe_action_keys([
-      ...context_selector_defaults,
-      ...DEFAULT_CONTEXT_SUGGEST_ACTION_KEYS,
-      ...available_action_keys,
-    ]);
-
-    return ordered_action_keys.filter((action_key) => available_action_keys.includes(action_key));
+    const placements = this.env.resolve_menu_actions(
+      'smart_context:suggest',
+      this.smart_context,
+      { modal: this, surface: 'template_context' },
+    );
+    const available_keys = placements
+      .filter((placement) => !placement.disabled && !placement.menu_only)
+      .map((placement) => placement.action_key)
+      .filter((action_key) => action_key !== TEMPLATE_SUGGEST_ACTION_KEY);
+    if (Array.isArray(params.default_suggest_action_keys)) {
+      return dedupe_action_keys(params.default_suggest_action_keys)
+        .filter((action_key) => available_keys.includes(action_key));
+    }
+    return dedupe_action_keys(available_keys);
   }
 
   /**
@@ -181,11 +159,13 @@ export class TemplateContextModal extends ContextModal {
    * @returns {string[]}
    */
   get default_suggest_action_keys() {
-    const explicit_action_keys = dedupe_action_keys(this.params?.default_suggest_action_keys);
-    if (explicit_action_keys.length) return explicit_action_keys;
+    if (Array.isArray(this.params?.default_suggest_action_keys)) {
+      return this.build_context_suggest_action_keys(this.params);
+    }
 
-    const resolved_action_keys = dedupe_action_keys(this.context_default_suggest_action_keys);
-    if (resolved_action_keys.length) return resolved_action_keys;
+    if (Array.isArray(this.context_default_suggest_action_keys)) {
+      return dedupe_action_keys(this.context_default_suggest_action_keys);
+    }
 
     return this.build_context_suggest_action_keys(this.params);
   }
@@ -277,7 +257,7 @@ export class TemplateContextModal extends ContextModal {
    * @returns {boolean}
    */
   should_open_template_suggest_on_open(params = {}) {
-    if (this.has_explicit_suggest_action_override(params)) return false;
+    if (this.has_explicit_suggest_action_override(params) || this.get_selected_template_keys().length) return false;
     return Boolean(this.smart_context?.has_context_items);
   }
 
@@ -292,8 +272,10 @@ export class TemplateContextModal extends ContextModal {
    */
   prime_initial_suggestions(params = {}) {
     this.suggestions = null;
+    this.is_template_suggest_mode = this.should_open_template_suggest_on_open(params);
+    this.picker_open = !this.get_selected_template_keys().length || this.has_explicit_suggest_action_override(params);
 
-    if (!this.should_open_template_suggest_on_open(params)) {
+    if (!this.is_template_suggest_mode) {
       return;
     }
 
@@ -318,107 +300,198 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   open(params = {}) {
+    this.closed = false;
+    this.preview_unsubscribers.splice(0).forEach((unsubscribe) => unsubscribe());
+    const invalidate = () => this.invalidate_request_preview();
+    const unsubscribe_context = this.smart_context.on_event?.('context:updated', () => {
+      invalidate();
+      this.context_summary_refresh?.();
+    });
+    if (typeof unsubscribe_context === 'function') this.preview_unsubscribers.push(unsubscribe_context);
+    for (const name of ['templates:index_changed', 'sources:modified', 'sources:renamed', 'sources:deleted']) {
+      const unsubscribe = this.env.events.on(name, invalidate);
+      if (typeof unsubscribe === 'function') this.preview_unsubscribers.push(unsubscribe);
+    }
     this.params = { ...this.params, ...params };
-    this.sync_request_state_from_params(this.params);
+    this.sync_request_state_from_params(params);
     this.prime_initial_suggestions(params);
     super.open(this.params);
+    this.ensure_picker_layout();
+    this.sync_picker();
   }
 
-  /**
-   * Render the modal shell, then arrange the context view and request panel side by side.
-   *
-   * @param {object} [params]
-   * @returns {Promise<void>}
-   */
+  /** Render one request workspace. Context review stays with Context's builder. */
   async render(params = this.params) {
-    this.sync_request_state_from_params(params);
-
-    this.modalEl.style.display = 'flex';
-    this.modalEl.style.flexDirection = 'column';
-
-    const owner_document = this.modalEl.ownerDocument || document;
-    const context_view_el = owner_document.createElement('div');
-    context_view_el.className = 'sc-context-view st-template-context-summary';
-    context_view_el.dataset.contextKey = this.smart_context.key;
-
-    const open_builder_btn = owner_document.createElement('button');
-    open_builder_btn.type = 'button';
-    open_builder_btn.className = 'clickable-icon st-template-context-summary__open-builder';
-    open_builder_btn.setAttribute('aria-label', 'Open context builder');
-    setIcon(open_builder_btn, 'smart-context-builder');
-    open_builder_btn.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      this.smart_context.emit_event('context_selector:open');
-    });
-    context_view_el.appendChild(open_builder_btn);
-
-    const context_meta_el = await this.env.smart_components.render_component(
-      'smart_context_meta',
-      this.smart_context,
-      params,
-    );
-    if (context_meta_el) context_view_el.appendChild(context_meta_el);
-
-    this.modalEl.prepend(context_view_el);
-
-    this.modalEl?.classList?.add('st-template-context-modal');
-    if (this.modalEl?.style) {
-      this.modalEl.style.height = 'auto';
-      this.modalEl.style.maxHeight = '94vh';
-    }
-
+    if (this.closed) return;
+    this.modalEl.classList.add('st-template-context-modal');
     this.ensure_workspace_layout();
+    this.ensure_picker_layout();
     await this.render_request_panel();
+    if (!this.closed) this.sync_picker();
   }
 
-  /**
-   * Ensure the side-by-side workspace wrapper exists and owns the context view.
-   *
-   * @returns {void}
-   */
+  /** Keep the request above its temporary, existing native fuzzy picker. */
   ensure_workspace_layout() {
     if (!this.modalEl) return;
-
     if (!this.workspace_el) {
       const owner_document = this.modalEl.ownerDocument || document;
       this.workspace_el = owner_document.createElement('div');
       this.workspace_el.className = 'st-template-context-modal__workspace';
-
-      this.context_pane_el = owner_document.createElement('div');
-      this.context_pane_el.className = 'st-template-context-modal__context-pane';
-
       this.request_pane_el = owner_document.createElement('div');
       this.request_pane_el.className = 'st-template-context-modal__request-pane';
-
-      this.workspace_el.appendChild(this.context_pane_el);
       this.workspace_el.appendChild(this.request_pane_el);
       this.modalEl.prepend(this.workspace_el);
     }
-
-    const context_view_el = this.modalEl.querySelector('.sc-context-view');
-    if (context_view_el && context_view_el.parentElement !== this.context_pane_el) {
-      this.context_pane_el.replaceChildren(context_view_el);
-    }
-
-    if (
-      this.request_panel_el &&
-      this.request_pane_el &&
-      this.request_panel_el.parentElement !== this.request_pane_el
-    ) {
+    if (this.request_panel_el && this.request_panel_el.parentElement !== this.request_pane_el) {
       this.request_pane_el.replaceChildren(this.request_panel_el);
     }
   }
 
+  /** Move native picker elements, not their implementation, into a bounded area. */
+  ensure_picker_layout() {
+    if (!this.modalEl?.querySelector || this.closed) return;
+    if (!this.picker_el) {
+      const doc = this.modalEl.ownerDocument || document;
+      this.picker_el = doc.createElement('section');
+      this.picker_el.className = 'st-template-picker';
+      this.picker_el.setAttribute('aria-label', 'Template and context selection');
+      const toolbar = doc.createElement('div');
+      toolbar.className = 'st-template-picker__toolbar';
+      this.picker_title_el = doc.createElement('strong');
+      this.picker_summary_el = doc.createElement('span');
+      this.picker_summary_el.className = 'st-template-picker__selection';
+      this.picker_summary_el.setAttribute('aria-live', 'polite');
+      const done = doc.createElement('button');
+      done.type = 'button'; done.textContent = 'Done';
+      done.dataset.templatePicker = 'done';
+      done.addEventListener('click', () => this.finish_picker());
+      // Arrow keys/Enter on toolbar controls must not select a hidden fuzzy row.
+      toolbar.addEventListener('keydown', (event) => event.stopPropagation());
+      toolbar.appendChild(this.picker_title_el);
+      toolbar.appendChild(this.picker_summary_el);
+      toolbar.appendChild(done);
+      this.picker_el.appendChild(toolbar);
+      this.modalEl.appendChild(this.picker_el);
+    }
+    const input = this.inputEl?.closest?.('.prompt-input-container') || this.inputEl;
+    for (const element of [input, this.modalEl.querySelector('.prompt-results'), this.modalEl.querySelector('.prompt-instructions')]) {
+      if (element && element.parentElement !== this.picker_el) this.picker_el.appendChild(element);
+    }
+  }
+
+  sync_picker() {
+    this.ensure_picker_layout();
+    if (!this.picker_el || this.closed) return;
+    this.picker_el.hidden = !this.picker_open;
+    this.picker_title_el.textContent = this.is_template_suggest_mode ? 'Choose templates' : 'Add context';
+    const count = this.get_selected_template_keys().length;
+    this.picker_summary_el.textContent = this.is_template_suggest_mode
+      ? `${count} selected. Selection order is preserved.` : 'Only added items become Context.';
+    this.inputEl?.setAttribute?.('aria-label', this.is_template_suggest_mode ? 'Find templates' : 'Find context');
+  }
+
+  /** Closing selection never clears Context, instructions, selected keys or query. */
+  finish_picker() {
+    this.picker_open = false;
+    this.picker_revision += 1;
+    this.sync_picker();
+    this.request_panel_el?.querySelector('.st-template-request-panel__textarea')?.focus();
+  }
+
+  get_suggestions() {
+    if (!this.picker_open) return [];
+    // A prepared empty list is final, not a reason to rerun the active mode.
+    if (Array.isArray(this.suggestions)) return this.filter_suggestions(this.suggestions);
+    return super.get_suggestions();
+  }
+
+  selectActiveSuggestion(event) {
+    const request_target = this.request_panel_el?.contains?.(event?.target);
+    const picker_target = !event?.target || !this.picker_el || this.picker_el.contains(event.target);
+    if (this.closed || !this.picker_open || !picker_target || event?.target?.closest?.('[data-template-picker]')) {
+      // Native Scope callbacks may run before DOM bubbling and set these flags
+      // even in the composer. Never carry them into the next picker selection.
+      const copy_shortcut = !this.closed && request_target && this.use_mod_select;
+      this.use_mod_select = false;
+      this.use_shift_select = false;
+      this.use_arrow_left = false;
+      this.use_arrow_right = false;
+      if (copy_shortcut && this.request_shortcut_event !== event) {
+        this.request_shortcut_event = event;
+        event.preventDefault();
+        this.request_feedback = '';
+        const feedback = this.request_panel_el.querySelector('.st-template-request-panel__feedback');
+        if (feedback) feedback.textContent = '';
+        void this.run_primary_action().catch((error) => this.handle_primary_action_error(error));
+      }
+      return;
+    }
+    return super.selectActiveSuggestion(event);
+  }
+
+  onChooseSuggestion(...args) {
+    if (this.closed || !this.picker_open) return;
+    return super.onChooseSuggestion(...args);
+  }
+
+  /** Guard async picker publication locally; no shared fuzzy-modal changes. */
+  async update_suggestions(suggest_ref) {
+    const revision = ++this.picker_revision;
+    const action = typeof suggest_ref === 'string' ? this.smart_context.actions[suggest_ref] : suggest_ref;
+    this._set_custom_instructions = false;
+    try {
+      const result = typeof action === 'function' ? await action({ modal: this }) : action;
+      if (this.closed || !this.picker_open || revision !== this.picker_revision) return;
+      if (!Array.isArray(result)) throw new Error('The picker returned no suggestion list.');
+      this.suggestions = result;
+      this.updateSuggestions();
+      if (!this._set_custom_instructions) this.set_default_instructions();
+      this.sync_picker();
+    } catch (error) {
+      if (!this.closed && this.picker_open && revision === this.picker_revision) this.handle_primary_action_error(error);
+    }
+  }
+
+  /** Avoid the parent's delayed redraw after Done/close; retain row dispatch. */
+  async handle_choose_action(suggestion, action_key) {
+    const revision = this.picker_revision;
+    const index = this.chooser?.values?.findIndex((row) => row.item?.key === suggestion.key) ?? -1;
+    try {
+      const result = await suggestion[action_key]({ modal: this });
+      if (this.closed || !this.picker_open || revision !== this.picker_revision) return;
+      if (Array.isArray(result)) this.suggestions = result;
+      this.updateSuggestions();
+      if (index >= 0) this.chooser?.setSelectedItem(index);
+      this.context_summary_refresh?.();
+      this.sync_picker();
+    } catch (error) {
+      if (!this.closed) this.handle_primary_action_error(error);
+    }
+  }
+
   onClose() {
+    this.closed = true;
+    this.picker_open = false;
+    this.request_shortcut_event = null;
+    this.picker_revision += 1;
+    this.picker_el?.remove();
+    this.picker_el = null;
+    this.context_summary_refresh = null;
+    this.preview_request_id += 1;
+    this.preview_unsubscribers.splice(0).forEach((unsubscribe) => unsubscribe());
+    this.request_panel_controller?.abort();
+    this.mounted_request_panel_controller?.abort();
+    this.mounted_request_panel_controller = null;
+    this.preview_refresh = null;
+    this.preview_text = null;
+    this.preview_status = 'empty';
     this.request_panel_render_id += 1;
     this.request_panel_el = null;
     this.request_pane_el?.replaceChildren?.();
     this.workspace_el?.remove?.();
     this.workspace_el = null;
-    this.context_pane_el = null;
     this.request_pane_el = null;
-    this.modalEl?.classList?.remove?.('st-template-context-modal');
+    this.modalEl?.classList?.remove?.('st-template-context-modal', 'st-template-context-modal--preview');
     super.onClose();
   }
 
@@ -464,10 +537,13 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   set_selected_template_keys(template_keys = []) {
+    this.invalidate_request_preview();
     this.request_state.selected_template_keys = normalize_selected_template_keys(template_keys);
     this.selected_template_key = this.request_state.selected_template_keys[0] || null;
 
     this.sync_default_user_message();
+    this.structure_open = false;
+    this.sync_picker();
     this.params = {
       ...(this.params || {}),
       selected_template_keys: this.request_state.selected_template_keys,
@@ -541,6 +617,8 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   open_template_suggest() {
+    this.picker_open = true;
+    this.is_template_suggest_mode = true;
     if (this.inputEl) {
       this.last_input_value = this.inputEl.value;
       this.inputEl.value = '';
@@ -549,7 +627,10 @@ export class TemplateContextModal extends ContextModal {
       ...(this.params || {}),
       default_suggest_action_keys: null,
     };
-    this.update_suggestions('context_suggest_templates');
+    this.ensure_picker_layout();
+    this.sync_picker();
+    void this.update_suggestions('context_suggest_templates');
+    this.inputEl?.focus?.();
   }
 
   /**
@@ -558,6 +639,9 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   restore_context_suggestions() {
+    this.picker_open = true;
+    this.picker_revision += 1;
+    this.is_template_suggest_mode = false;
     const default_action_keys = this.default_suggest_action_keys;
 
     if (this.inputEl) {
@@ -577,6 +661,8 @@ export class TemplateContextModal extends ContextModal {
       default_suggest_action_keys: default_action_keys,
     };
     this.set_default_instructions();
+    this.ensure_picker_layout();
+    this.sync_picker();
 
     if (default_action_keys.length === 1) {
       this.update_suggestions(default_action_keys[0]);
@@ -611,6 +697,7 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   set_user_message(user_message) {
+    this.invalidate_request_preview();
     this.user_message_touched = true;
     this.request_state.user_message =
       typeof user_message === 'string'
@@ -625,21 +712,26 @@ export class TemplateContextModal extends ContextModal {
   }
 
   /**
-   * Resolve the user message, falling back to template metadata when no explicit value exists.
-   *
-   * Auto-seeding only applies when exactly one template is selected.
+   * Return the instructions already displayed in the textarea. Defaults are
+   * seeded by sync_default_user_message(), not restored after an explicit clear.
    *
    * @returns {string}
    */
   get_resolved_user_message() {
-    const explicit_user_message = String(this.request_state.user_message || '').trim();
-    if (explicit_user_message.length) {
-      return explicit_user_message;
-    }
+    return this.request_state.user_message.trim();
+  }
 
-    const selected_templates = this.get_selected_templates();
-    if (selected_templates.length !== 1) return '';
-    return get_default_user_message(selected_templates[0]);
+  /**
+   * Evidence membership must not hide the same source as a structure template.
+   * Context suggestion modes retain the inherited already-added filtering.
+   *
+   * @param {object[]} suggestions
+   * @returns {object[]}
+   */
+  filter_suggestions(suggestions) {
+    return this.is_template_suggest_mode
+      ? suggestions
+      : super.filter_suggestions(suggestions);
   }
 
   /**
@@ -677,7 +769,8 @@ export class TemplateContextModal extends ContextModal {
    * @returns {Promise<void>}
    */
   async run_copy_prompt_action() {
-    const selected_template_keys = this.get_selected_template_keys();
+    if (this.closed || this.copy_pending) return;
+    const params = this.get_request_action_params();
     const template_item = this.get_selected_template();
     if (!template_item) {
       this.env?.events?.emit?.('templates:selection_required', {
@@ -687,12 +780,50 @@ export class TemplateContextModal extends ContextModal {
       });
       return;
     }
+    this.copy_pending = true;
+    try {
+      return await template_item.actions.template_copy_with_context(params);
+    } finally { this.copy_pending = false; }
+  }
 
-    await template_item.actions.template_copy_with_context({
+  /** A captured semantic request, shared by preview and copy but never cached output. */
+  get_request_action_params() {
+    return {
       ctx: this.smart_context,
       user_message: this.get_resolved_user_message(),
-      selected_template_keys,
-    });
+      selected_template_keys: this.get_selected_template_keys(),
+    };
+  }
+
+  invalidate_request_preview() {
+    this.preview_request_id += 1;
+    this.preview_status = this.preview_text === null ? 'empty' : 'stale';
+    this.preview_refresh?.();
+  }
+
+  async build_request_preview() {
+    if (this.closed) return;
+    const request_id = ++this.preview_request_id;
+    const params = this.get_request_action_params();
+    this.preview_open = true;
+    this.preview_status = 'loading';
+    this.preview_error = '';
+    this.preview_refresh?.();
+    try {
+      const item = this.get_selected_template();
+      if (!item) throw new Error('Select at least one template.');
+      const text = await item.actions.template_build_prompt(params);
+      if (this.closed || request_id !== this.preview_request_id) return;
+      if (typeof text !== 'string') throw new Error('The template builder returned no request text.');
+      this.preview_text = text;
+      this.preview_status = 'ready';
+    } catch (error) {
+      if (this.closed || request_id !== this.preview_request_id) return;
+      this.preview_text = null;
+      this.preview_error = error.message;
+      this.preview_status = 'error';
+    }
+    this.preview_refresh?.();
   }
 
   /**
@@ -702,6 +833,10 @@ export class TemplateContextModal extends ContextModal {
    * @returns {void}
    */
   handle_primary_action_error(error) {
+    if (this.closed) return;
+    this.request_feedback = error?.message || String(error);
+    const feedback = this.request_panel_el?.querySelector('.st-template-request-panel__feedback');
+    if (feedback) feedback.textContent = this.request_feedback;
     console.error('TemplateContextModal: primary action failed', error);
     this.env?.events?.emit?.('templates:primary_action_failed', {
       level: 'error',
@@ -744,25 +879,53 @@ export class TemplateContextModal extends ContextModal {
    * @returns {Promise<void>}
    */
   async render_request_panel() {
-    if (!this.modalEl) return;
+    if (!this.modalEl || this.closed) return;
 
     this.ensure_workspace_layout();
+    // Cancel superseded pending renders, but keep the mounted panel interactive
+    // until its replacement is ready. Otherwise typing during the await is lost.
+    if (this.request_panel_controller !== this.mounted_request_panel_controller) {
+      this.request_panel_controller?.abort();
+    }
+    const controller = new AbortController();
+    this.request_panel_controller = controller;
 
     const render_id = ++this.request_panel_render_id;
     const component_key = 'template_request_panel';
 
-    const next_request_panel_el = await this.env.smart_components.render_component(
-      component_key,
-      this,
-    );
+    let next_request_panel_el;
+    try {
+      next_request_panel_el = await this.env.smart_components.render_component(
+        component_key,
+        this,
+        { signal: controller.signal },
+      );
+    } catch (error) {
+      controller.abort();
+      throw error;
+    }
 
-    if (render_id !== this.request_panel_render_id || !next_request_panel_el) {
+    if (controller.signal.aborted || render_id !== this.request_panel_render_id || !next_request_panel_el) {
+      controller.abort();
       return;
     }
 
+    // Component rendering can yield while the user is still typing in the old
+    // panel. Mount current state, not the earlier HTML snapshot, and retain focus.
+    const previous_input = this.request_panel_el?.querySelector('.st-template-request-panel__textarea');
+    const next_input = next_request_panel_el.querySelector('.st-template-request-panel__textarea');
+    const retain_focus = previous_input && this.modalEl.ownerDocument?.activeElement === previous_input;
+    if (next_input) next_input.value = this.request_state.user_message;
+    this.mounted_request_panel_controller?.abort();
+    this.mounted_request_panel_controller = controller;
     this.request_panel_el = next_request_panel_el;
     this.ensure_workspace_layout();
     this.request_pane_el?.replaceChildren?.(next_request_panel_el);
+    this.context_summary_refresh?.();
+    if (retain_focus && next_input) {
+      next_input.focus();
+      next_input.setSelectionRange(previous_input.selectionStart, previous_input.selectionEnd);
+    }
   }
 }
 

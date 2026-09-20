@@ -1,29 +1,26 @@
 /**
- * Build a single prompt string from instructions, template, and context.
+ * Format one request from already-read context, template text, and instructions.
+ * Empty sections are omitted. `{{vault_tags}}` expands only in instructions
+ * and template text, never in source evidence.
  *
- * Empty sections are omitted.
- * `{{vault_tags}}` is expanded before assembly.
- *
- * @param {import('smart-contexts').SmartContext} ctx
- * @param {import('../items/smart_template.js').SmartTemplate} template_item
- * @param {string} [instructions='']
- * @returns {Promise<string>}
+ * @param {object} params
+ * @param {string} [params.context_text='']
+ * @param {string} [params.template_text='']
+ * @param {string} [params.user_message='']
+ * @param {string} [params.vault_tags='']
+ * @returns {string}
  */
-export async function build_prompt_text(ctx, template_item, instructions = '') {
-  const env = ctx?.env || template_item?.env || null;
-
-  const context_text = await get_context_text(ctx);
-  const template_text = await get_template_text(template_item);
-
-  const resolved_instructions = replace_vault_tags_var(
-    String(instructions ?? '').trim(),
-    env,
-  );
-
-  const resolved_template = replace_vault_tags_var(
-    String(template_text ?? '').trim(),
-    env,
-  );
+export function build_prompt_text({
+  context_text = '',
+  template_text = '',
+  user_message = '',
+  vault_tags = '',
+} = {}) {
+  const normalized_context = String(context_text ?? '').trim();
+  const resolved_instructions = String(user_message ?? '').trim()
+    .replace(/{{vault_tags}}/g, () => vault_tags);
+  const resolved_template = String(template_text ?? '').trim()
+    .replace(/{{vault_tags}}/g, () => vault_tags);
 
   const sections = [];
 
@@ -43,9 +40,9 @@ export async function build_prompt_text(ctx, template_item, instructions = '') {
     ].join('\n'));
   }
 
-  if (context_text) {
+  if (normalized_context) {
     sections.push([
-      context_text,
+      normalized_context,
     ].join('\n'));
   }
 
@@ -84,70 +81,26 @@ export async function build_prompt_text(ctx, template_item, instructions = '') {
 }
 
 /**
- * @param {import('smart-contexts').SmartContext} ctx
- * @returns {Promise<string>}
- */
-async function get_context_text(ctx) {
-  if (!ctx || typeof ctx.get_text !== 'function') return '';
-  const value = await ctx.get_text();
-  if (typeof value === 'string') return value.trim();
-  if (value == null) return '';
-  return String(value).trim();
-}
-
-/**
- * @param {import('../items/smart_template.js').SmartTemplate} template_item
- * @returns {Promise<string>}
- */
-async function get_template_text(template_item) {
-  if (!template_item || typeof template_item.get_template !== 'function') return '';
-  const value = await template_item.get_template();
-  if (typeof value === 'string') return value.trim();
-  if (value == null) return '';
-  return String(value).trim();
-}
-
-/**
- * Expand `{{vault_tags}}` using the best available environment source.
+ * Resolve vault tags from the host cache, falling back to indexed source metadata.
+ * The action calls this only when a template or instructions requests expansion.
  *
- * @param {string} value
- * @param {object | null} env
+ * @param {object} env
  * @returns {string}
  */
-function replace_vault_tags_var(value, env) {
-  if (!value || !value.includes('{{vault_tags}}')) return value;
-
-  const vault_tags = get_vault_tags(env);
-  return value.replace(/{{vault_tags}}/g, vault_tags);
-}
-
-/**
- * Resolve vault tags from app metadata cache when available, else aggregate from smart_sources.
- *
- * @param {object | null} env
- * @returns {string}
- */
-function get_vault_tags(env) {
-  const app_tags = env?.plugin?.app?.metadataCache?.getTags?.();
-  if (app_tags && typeof app_tags === 'object') {
-    const tags = Object.keys(app_tags)
-      .map((tag) => String(tag).trim())
-      .filter(Boolean)
-      .sort((left, right) => left.localeCompare(right))
-    ;
-    if (tags.length) return tags.join(', ');
+export function get_vault_tags(env) {
+  const app = env?.plugin?.app || env?.main?.app;
+  const app_tags = app?.metadataCache?.getTags?.();
+  if (app_tags && Object.keys(app_tags).length) {
+    return Object.keys(app_tags).map((tag) => tag.trim()).filter(Boolean)
+      .sort((left, right) => left.localeCompare(right)).join(', ');
   }
-
-  const tags_set = new Set();
-  const source_items = Object.values(env?.smart_sources?.items || {});
-  source_items.forEach((source_item) => {
-    const tags = source_item?.metadata?.tags;
-    if (!Array.isArray(tags)) return;
-    tags.forEach((tag) => {
+  const tags = new Set();
+  for (const source of Object.values(env?.smart_sources?.items || {})) {
+    if (!Array.isArray(source?.metadata?.tags)) continue;
+    for (const tag of source.metadata.tags) {
       const normalized_tag = String(tag ?? '').trim();
-      if (normalized_tag) tags_set.add(normalized_tag);
-    });
-  });
-
-  return [...tags_set].sort((left, right) => left.localeCompare(right)).join(', ');
+      if (normalized_tag) tags.add(normalized_tag);
+    }
+  }
+  return [...tags].sort((left, right) => left.localeCompare(right)).join(', ');
 }

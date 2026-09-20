@@ -3,10 +3,13 @@ import {
   TFile,
 } from 'obsidian';
 import { SmartEnv, SmartPlugin } from 'obsidian-smart-env';
+import { run_action_entry } from 'smart-environment/utils/action_entry.js';
 import { smart_env_config } from './default.config.js';
 import { SmartTemplatesSettingTab } from './views/settings_tab.js';
 import { ReleaseNotesView } from './views/release_notes_view.js';
 import { TemplateContextModal } from './modals/template_context_modal.js';
+import { TemplatesListView } from './views/templates_list_view.js';
+import { require_visible_templates } from './utils/selected_templates.js';
 
 /**
  * Smart Templates core plugin host.
@@ -45,6 +48,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
   get item_views() {
     return {
       release_notes: this.ReleaseNotesView,
+      templates_list: TemplatesListView,
     };
   }
 
@@ -87,6 +91,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     const timestamp = Date.now();
     return {
       key: `selection:${timestamp}:${source_label}`,
+      kind: 'text',
       content: selection_text,
       size: selection_text.length,
       mtime: timestamp,
@@ -107,7 +112,7 @@ export class SmartTemplatesPlugin extends SmartPlugin {
       ? params.context_items.filter(Boolean)
       : null
     ;
-    if (explicit_items?.length) return explicit_items;
+    if (explicit_items !== null) return explicit_items;
 
     if (typeof params.source_key === 'string' && params.source_key.trim().length) {
       return [params.source_key];
@@ -117,11 +122,11 @@ export class SmartTemplatesPlugin extends SmartPlugin {
     const active_file = this.get_active_file();
     const ignore_selection = params.ignore_selection === true;
     const selection_text = !ignore_selection && editor
-      ? String(editor.getSelection?.() || '').trim()
+      ? String(editor.getSelection?.() || '')
       : ''
     ;
 
-    if (selection_text.length) {
+    if (selection_text.trim().length) {
       return [this.build_selection_context_item(selection_text, active_file)];
     }
 
@@ -147,14 +152,23 @@ export class SmartTemplatesPlugin extends SmartPlugin {
    * Open the shared template context modal.
    *
    * @param {object} [params={}]
-   * @returns {import('./modals/template_context_modal.js').TemplateContextModal}
+   * @returns {Promise<import('./modals/template_context_modal.js').TemplateContextModal|null>}
    */
-  open_template_context_modal(params = {}) {
-    const ctx = this.create_seed_context(params);
-    const ModalClass = this.get_template_context_modal_class();
-    return ModalClass.open(ctx, {
+  async open_template_context_modal(params = {}) {
+    // Capture selection and origin before preparation can yield to another editor.
+    const request_params = {
       ...params,
-    });
+      context_items: this.get_default_context_items(params),
+      scope_source_key: params.scope_source_key ?? params.source_key ?? this.get_active_file()?.path ?? null,
+    };
+    await this.env.smart_templates.prepare_templates(request_params);
+    if (this.env.smart_templates.unloaded) return null;
+    if (params.selected_template_keys != null) {
+      require_visible_templates(this.env.smart_templates, params.selected_template_keys, request_params);
+    }
+    const ctx = this.create_seed_context(request_params);
+    const ModalClass = this.get_template_context_modal_class();
+    return ModalClass.open(ctx, request_params);
   }
 
   /**
@@ -171,11 +185,20 @@ export class SmartTemplatesPlugin extends SmartPlugin {
         item
           .setTitle('Open template context')
           .setIcon('file-plus')
-          .onClick(() => {
-            this.open_template_context_modal({
-              source_key: file.path,
-              ignore_selection: true,
-            });
+          .onClick(async () => {
+            try {
+              await run_action_entry(this.env, 'template_open_context', {
+                plugin: this,
+                source_key: file.path,
+                ignore_selection: true,
+              }, { event_source: 'smart_templates.file_menu' });
+            } catch (error) {
+              this.env.events.emit('templates:open_failed', {
+                level: 'error',
+                message: 'Unable to open template context.',
+                details: error.message,
+              });
+            }
           });
       });
     }));

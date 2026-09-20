@@ -8,7 +8,7 @@ export class SmartTemplatesSettingTab extends SmartPluginSettingsTab {
     if (!container) return;
     container.empty?.();
     container.createEl('p', {
-      text: 'Configure how Smart Templates discovers templates and opens the shared template request flow.',
+      text: 'Choose where your templates come from.',
     });
   }
 

@@ -4,7 +4,7 @@ import {
   menus,
 } from './copy_with_template.js';
 
-test('context_copy_with_template opens configured template modal with context scope', (t) => {
+test('P1-10: context_copy_with_template prepares then opens the existing context', async (t) => {
   const calls = [];
   class ModalClass {
     static open(ctx) {
@@ -13,6 +13,7 @@ test('context_copy_with_template opens configured template modal with context sc
   }
   const ctx = {
     env: {
+      smart_templates: { async prepare_templates() { calls.push('prepared'); } },
       config: {
         modals: {
           template_context: {
@@ -23,8 +24,8 @@ test('context_copy_with_template opens configured template modal with context sc
     },
   };
 
-  t.true(context_copy_with_template.call(ctx));
-  t.deepEqual(calls, [ctx]);
+  t.true(await context_copy_with_template.call(ctx));
+  t.deepEqual(calls, ['prepared', ctx]);
 });
 
 test('copy-with-template menu metadata targets Smart Context copy menu', (t) => {

@@ -1,0 +1,8 @@
+.st-template-index-status { font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
+.st-template-index-status [hidden] { display: none !important; }
+.st-template-index-status p { margin: var(--size-4-1, 4px) 0; }
+.st-template-index-status__summary { color: var(--text-normal); }
+.st-template-index-status__warning { color: var(--text-warning, var(--text-normal)); }
+.st-template-index-status details { margin-top: var(--size-4-1, 4px); }
+.st-template-index-status summary { cursor: pointer; }
+.st-template-index-status__details { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 240px; overflow: auto; }

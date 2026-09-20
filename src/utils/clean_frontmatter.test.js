@@ -100,3 +100,24 @@ test('should return exact content if no frontmatter', t => {
 	const content = 'Just some text without frontmatter.';
 	t.is(clean_frontmatter(content, ['foo']), content);
 });
+
+test('P1-06: remove only owned fields while preserving complex YAML and CRLF bytes', (t) => {
+  const original = '---\r\n# retain\r\nsmart template: true\r\nidentifier: "001"\r\nconfig:\r\n  enabled: true\r\ndescription: |\r\n  first\r\n  second\r\nprompt: keep this\r\n---\r\n\r\n## Body\r\n';
+  t.is(clean_frontmatter(original, ['smart template']), original.replace('smart template: true\r\n', ''));
+  t.is(clean_frontmatter(original, ['absent']), original);
+});
+
+test('P1-06: quoted top-level keys and indented continuations do not affect unrelated keys', (t) => {
+  const original = '---\n"smart template":\n  nested: value\nother:\n  smart template: true\n---\nBody\n';
+  t.is(clean_frontmatter(original, ['smart template']), '---\nother:\n  smart template: true\n---\nBody\n');
+});
+
+test('P1-06: no frontmatter and unterminated frontmatter remain byte-identical', (t) => {
+  for (const original of ['  text\n\n', '---\nsmart template: true\nBody']) {
+    t.is(clean_frontmatter(original, ['smart template']), original);
+  }
+});
+
+test('P1-06: removing an owned field also removes indentless mapping-list continuations', (t) => {
+  t.is(clean_frontmatter('---\nsmart template:\n- nested: value\n  enabled: true\nother: keep\n---\nBody\n', ['smart template']), '---\nother: keep\n---\nBody\n');
+});

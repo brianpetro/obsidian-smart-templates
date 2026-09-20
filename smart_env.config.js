@@ -4,14 +4,28 @@ import smart_templates from './src/collections/smart_templates.js';
 
 import { SmartTemplate } from './src/items/smart_template.js';
 
+import { render as smart_templates_index_status_component, version as smart_templates_index_status_component_version } from './src/components/smart-templates/index_status.js';
 import { render as smart_templates_settings_tab_component, version as smart_templates_settings_tab_component_version } from './src/components/smart-templates/settings_tab.js';
+import { render as template_details_component, version as template_details_component_version } from './src/components/template/details.js';
+import { render as template_list_component, version as template_list_component_version } from './src/components/template/list.js';
+import { render as template_list_item_component, version as template_list_item_component_version } from './src/components/template/list_item.js';
 import { render as template_request_panel_component, version as template_request_panel_component_version } from './src/components/template/request_panel.js';
+import { render as template_request_preview_component, version as template_request_preview_component_version } from './src/components/template/request_preview.js';
 
 import { context_copy_with_template as context_copy_with_template_action, menus as context_copy_with_template_action_menus } from './src/actions/context/copy_with_template.js';
 import { context_suggest_templates as context_suggest_templates_action, display_name as context_suggest_templates_action_display_name } from './src/actions/context-suggest/templates.js';
+import { smart_blocks_infer_heading_templates as smart_blocks_infer_heading_templates_action, display_name as smart_blocks_infer_heading_templates_action_display_name, display_description as smart_blocks_infer_heading_templates_action_display_description, action_scope as smart_blocks_infer_heading_templates_action_action_scope } from './src/actions/smart-blocks/infer_heading_templates.js';
+import { smart_templates_create_base as smart_templates_create_base_action, display_name as smart_templates_create_base_action_display_name, action_scope as smart_templates_create_base_action_action_scope } from './src/actions/smart-templates/create_base.js';
+import { smart_templates_open_discovery_base as smart_templates_open_discovery_base_action, display_name as smart_templates_open_discovery_base_action_display_name, action_scope as smart_templates_open_discovery_base_action_action_scope, menus as smart_templates_open_discovery_base_action_menus } from './src/actions/smart-templates/open_discovery_base.js';
+import { smart_templates_open_list as smart_templates_open_list_action, display_name as smart_templates_open_list_action_display_name, display_description as smart_templates_open_list_action_display_description, action_scope as smart_templates_open_list_action_action_scope, commands as smart_templates_open_list_action_commands, menus as smart_templates_open_list_action_menus } from './src/actions/smart-templates/open_list.js';
+import { smart_templates_update_index as smart_templates_update_index_action, display_name as smart_templates_update_index_action_display_name, action_scope as smart_templates_update_index_action_action_scope, commands as smart_templates_update_index_action_commands, menus as smart_templates_update_index_action_menus } from './src/actions/smart-templates/update_index.js';
 import { template_build_prompt as template_build_prompt_action } from './src/actions/template/build_prompt.js';
+import { template_confirm as template_confirm_action, display_name as template_confirm_action_display_name, display_description as template_confirm_action_display_description, action_scope as template_confirm_action_action_scope, menus as template_confirm_action_menus } from './src/actions/template/confirm.js';
+import { template_copy_markdown as template_copy_markdown_action, display_name as template_copy_markdown_action_display_name, action_scope as template_copy_markdown_action_action_scope, menus as template_copy_markdown_action_menus } from './src/actions/template/copy_markdown.js';
 import { template_copy_with_context as template_copy_with_context_action } from './src/actions/template/copy_with_context.js';
-import { template_open_context as template_open_context_action, display_name as template_open_context_action_display_name, commands as template_open_context_action_commands, ribbon_icons as template_open_context_action_ribbon_icons } from './src/actions/template/open_context.js';
+import { template_open_context as template_open_context_action, display_name as template_open_context_action_display_name, commands as template_open_context_action_commands, ribbon_icons as template_open_context_action_ribbon_icons, menus as template_open_context_action_menus } from './src/actions/template/open_context.js';
+import { template_open_source as template_open_source_action, display_name as template_open_source_action_display_name, action_scope as template_open_source_action_action_scope, menus as template_open_source_action_menus } from './src/actions/template/open_source.js';
+import { template_read as template_read_action, display_name as template_read_action_display_name, action_scope as template_read_action_action_scope } from './src/actions/template/read.js';
 
 
 export const smart_env_config = {
@@ -19,20 +33,34 @@ export const smart_env_config = {
     smart_templates
   },
   items: {
-    smart_template: { class: SmartTemplate, version: "3.1.0" }
+    smart_template: { class: SmartTemplate, version: "3.1.3" }
   },
   modules: {
 
   },
   components: {
+    smart_templates_index_status: { render: smart_templates_index_status_component, version: smart_templates_index_status_component_version },
     smart_templates_settings_tab: { render: smart_templates_settings_tab_component, version: smart_templates_settings_tab_component_version },
-    template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version }
+    template_details: { render: template_details_component, version: template_details_component_version },
+    template_list: { render: template_list_component, version: template_list_component_version },
+    template_list_item: { render: template_list_item_component, version: template_list_item_component_version },
+    template_request_panel: { render: template_request_panel_component, version: template_request_panel_component_version },
+    template_request_preview: { render: template_request_preview_component, version: template_request_preview_component_version }
   },
   actions: {
-    context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "3.1.0" },
-    context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "3.1.0" },
-    template_build_prompt: { action: template_build_prompt_action, version: "3.1.0" },
-    template_copy_with_context: { action: template_copy_with_context_action, version: "3.1.0" },
-    template_open_context: { action: template_open_context_action, display_name: template_open_context_action_display_name, commands: template_open_context_action_commands, ribbon_icons: template_open_context_action_ribbon_icons, version: "3.1.0" }
+    context_copy_with_template: { action: context_copy_with_template_action, menus: context_copy_with_template_action_menus, version: "3.1.3" },
+    context_suggest_templates: { action: context_suggest_templates_action, display_name: context_suggest_templates_action_display_name, version: "3.1.3" },
+    smart_blocks_infer_heading_templates: { action: smart_blocks_infer_heading_templates_action, display_name: smart_blocks_infer_heading_templates_action_display_name, display_description: smart_blocks_infer_heading_templates_action_display_description, action_scope: smart_blocks_infer_heading_templates_action_action_scope, version: "3.1.3" },
+    smart_templates_create_base: { action: smart_templates_create_base_action, display_name: smart_templates_create_base_action_display_name, action_scope: smart_templates_create_base_action_action_scope, version: "3.1.3" },
+    smart_templates_open_discovery_base: { action: smart_templates_open_discovery_base_action, display_name: smart_templates_open_discovery_base_action_display_name, action_scope: smart_templates_open_discovery_base_action_action_scope, menus: smart_templates_open_discovery_base_action_menus, version: "3.1.3" },
+    smart_templates_open_list: { action: smart_templates_open_list_action, display_name: smart_templates_open_list_action_display_name, display_description: smart_templates_open_list_action_display_description, action_scope: smart_templates_open_list_action_action_scope, commands: smart_templates_open_list_action_commands, menus: smart_templates_open_list_action_menus, version: "3.1.3" },
+    smart_templates_update_index: { action: smart_templates_update_index_action, display_name: smart_templates_update_index_action_display_name, action_scope: smart_templates_update_index_action_action_scope, commands: smart_templates_update_index_action_commands, menus: smart_templates_update_index_action_menus, version: "3.1.3" },
+    template_build_prompt: { action: template_build_prompt_action, version: "3.1.3" },
+    template_confirm: { action: template_confirm_action, display_name: template_confirm_action_display_name, display_description: template_confirm_action_display_description, action_scope: template_confirm_action_action_scope, menus: template_confirm_action_menus, version: "3.1.3" },
+    template_copy_markdown: { action: template_copy_markdown_action, display_name: template_copy_markdown_action_display_name, action_scope: template_copy_markdown_action_action_scope, menus: template_copy_markdown_action_menus, version: "3.1.3" },
+    template_copy_with_context: { action: template_copy_with_context_action, version: "3.1.3" },
+    template_open_context: { action: template_open_context_action, display_name: template_open_context_action_display_name, commands: template_open_context_action_commands, ribbon_icons: template_open_context_action_ribbon_icons, menus: template_open_context_action_menus, version: "3.1.3" },
+    template_open_source: { action: template_open_source_action, display_name: template_open_source_action_display_name, action_scope: template_open_source_action_action_scope, menus: template_open_source_action_menus, version: "3.1.3" },
+    template_read: { action: template_read_action, display_name: template_read_action_display_name, action_scope: template_read_action_action_scope, version: "3.1.3" }
   }
 };

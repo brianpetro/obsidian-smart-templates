@@ -58,6 +58,7 @@ export class SmartTemplate extends CollectionItem {
 
   get metadata() {
     if (this.source) return this.source.metadata;
+    if (typeof this.data.content !== 'string') return {};
     const { frontmatter } = parse_frontmatter(this.data.content);
     return frontmatter || {};
   }
