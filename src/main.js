@@ -20,10 +20,11 @@ export class SmartTemplatesPlugin extends SmartPlugin {
   SettingsTab = SmartTemplatesSettingTab;
 
   onload() {
-    this.app.workspace.onLayoutReady(this.initialize.bind(this));
     this.SmartEnv.create(this, smart_env_config);
     this.register_item_views({ skip_command_registration: true });
     this.addSettingTab(new this.SettingsTab(this.app, this, 'file-plus'));
+    this.register_ribbon_actions();
+    this.app.workspace.onLayoutReady(this.initialize.bind(this));
   }
 
   onunload() {
@@ -36,7 +37,6 @@ export class SmartTemplatesPlugin extends SmartPlugin {
    * @returns {Promise<void>}
    */
   async initialize() {
-    this.register_ribbon_actions();
     await this.SmartEnv.wait_for({ loaded: true });
 
     this.register_command_actions();
